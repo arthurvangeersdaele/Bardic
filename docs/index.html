@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bardic — the sound table for game masters</title>
+<meta name="description" content="Bardic is an Android app that lets tabletop RPG game masters run music, ambience and sound effects from their phone.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0F0F13; --bar:#15151B; --card:#1C1C24; --line:#2E2E39; --text:#ECE8DE; --muted:#A29FAE; --accent:#E0A84B;
+  --music:#E0A84B; --amb:#4FB3A5; --evt:#E06A63; --blue:#2F8BFF;
+}
+:root[data-theme="parchment"]{ --bg:#1E1912; --bar:#251F16; --card:#30281D; --line:#4A3D2B; --text:#F1E6CF; --muted:#BBA987; --accent:#E0B062; }
+:root[data-theme="blood"]{ --bg:#140B0C; --bar:#1A0E10; --card:#261517; --line:#43242A; --text:#F2E4E2; --muted:#B79A9D; --accent:#F0606A; }
+:root[data-theme="divination"]{ --bg:#0B1020; --bar:#0F1529; --card:#18213D; --line:#2B3762; --text:#E6E9F8; --muted:#9EA6C8; --accent:#C9A7F5; }
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Barlow Semi Condensed',system-ui,sans-serif;font-size:18px;line-height:1.5;transition:background .4s,color .4s}
+a{color:var(--accent)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:'Cormorant SC',serif;font-weight:700;line-height:1.05;margin:0}
+nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 0}
+.logo{font-family:'Cormorant SC',serif;font-weight:700;font-size:28px;letter-spacing:1px;color:var(--text);text-decoration:none}
+.navlinks{display:flex;gap:20px;font-size:16px}
+.navlinks a{color:var(--muted);text-decoration:none}.navlinks a:hover{color:var(--text)}
+.hero{padding:40px 0 24px;display:grid;gap:36px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--muted)}
+.badge i{width:8px;height:8px;border-radius:50%;background:var(--accent);display:block}
+.hero h1{font-size:clamp(44px,8vw,88px);margin:16px 0 12px}
+.hero p.lead{font-size:clamp(19px,2.2vw,23px);color:var(--muted);max-width:640px;margin:0 0 24px}
+.ctas{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 20px;border-radius:12px;font-weight:600;font-size:17px;text-decoration:none;border:1px solid var(--line)}
+.btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn.ghost{color:var(--text)}
+.btn[aria-disabled="true"]{opacity:.55;cursor:default}
+.themes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:20px;font-size:15px;color:var(--muted)}
+.themes button{height:36px;padding:0 14px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+.themes button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+
+/* phone mock */
+.phone{width:100%;max-width:960px;margin:0 auto;border-radius:34px;padding:12px;background:#050507;box-shadow:0 30px 80px rgba(0,0,0,.45),0 0 0 1px #2a2a30}
+.screen{position:relative;width:100%;aspect-ratio:844/390;border-radius:24px;overflow:hidden;background:var(--bg)}
+.table{position:absolute;left:0;top:0;width:844px;height:390px;transform-origin:0 0;display:flex;flex-direction:column;background:var(--bg);font-size:14px;line-height:1.2}
+.tbar{height:52px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--bar)}
+.ico{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card);display:flex;align-items:center;justify-content:center;flex:none}
+.ttl{flex:1;min-width:0}.ttl b{display:block;font-family:'Cormorant SC',serif;font-size:19px}.ttl span{font-size:12px;color:var(--muted)}
+.chip{height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.rows{flex:1;display:flex;flex-direction:column;gap:6px;padding:6px 0 6px 10px}
+.row{flex:1;display:flex;gap:8px;min-height:0}
+.zl{width:26px;flex:none;border-radius:8px;background:var(--bar);display:flex;align-items:center;justify-content:center}
+.zl span{writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Cormorant SC',serif;font-weight:700;font-size:13px;letter-spacing:1.5px}
+.cards{flex:1;display:flex;gap:8px;overflow:hidden}
+.c{width:228px;flex:none;border-radius:12px;background:var(--card);border:1px solid var(--line);padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.c.on{border-color:var(--z)}
+.ch{display:flex;align-items:center;gap:6px}.ch b{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch small{font-size:11px;color:var(--muted)}.ch em{font-style:normal;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.track{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.fill{height:6px;border-radius:3px}
+.ctrl{display:flex;align-items:center;gap:6px}
+.pb{width:38px;height:38px;border-radius:10px;background:var(--line);flex:none;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.c.on .pb{background:var(--z);color:var(--bg)}
+.vol{flex:1;height:4px;border-radius:2px;background:var(--line);position:relative}.vol i{position:absolute;left:0;top:0;height:4px;border-radius:2px;background:var(--z)}
+
+section{padding:64px 0}
+.kicker{font-size:15px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 8px}
+section h2{font-size:clamp(34px,5vw,52px);margin-bottom:16px}
+.intro{color:var(--muted);max-width:680px;margin:0 0 32px}
+.zones{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.zone{padding:22px;border-radius:16px;background:var(--card);border:1px solid var(--line);border-top:4px solid var(--z)}
+.zone h3{font-size:28px;color:var(--z);margin-bottom:8px}.zone p{margin:0;color:var(--muted)}
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px 40px}
+.feat div h3{font-size:24px;margin-bottom:6px}.feat div p{margin:0;color:var(--muted)}
+.gradient{height:10px;border-radius:5px;background:linear-gradient(90deg,hsl(130,72%,50%),hsl(65,72%,50%),hsl(0,72%,50%));margin:10px 0 4px;max-width:280px}
+.tree{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;background:var(--bar);border:1px solid var(--line);border-radius:12px;padding:16px 20px;color:var(--text);overflow-x:auto;margin:0}
+.road{list-style:none;padding:0;margin:0;display:grid;gap:10px;counter-reset:s}
+.road li{counter-increment:s;display:flex;gap:16px;align-items:baseline;padding:14px 18px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
+.road li::before{content:counter(s);font-family:'Cormorant SC',serif;font-weight:700;font-size:24px;color:var(--accent);width:20px;flex:none}
+.road li span{flex:1}.road li small{font-size:14px;color:var(--muted);white-space:nowrap}
+.road li.now{border-color:var(--accent)}.road li.now small{color:var(--accent);font-weight:600}
+footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);font-size:15px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
+@media (max-width:640px){.navlinks{display:none}section{padding:44px 0}body{font-size:17px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="#">Bardic</a>
+    <div class="navlinks"><a href="#table">The table</a><a href="#features">Features</a><a href="#roadmap">Roadmap</a><a href="https://github.com/arthurvangeersdaele/bardic">GitHub</a></div>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <span class="badge"><i></i>In development · Android</span>
+      <h1>Your table deserves a soundtrack.</h1>
+      <p class="lead">Bardic turns your phone into a sound desk for tabletop RPGs. Prepare music, ambience and events for each chapter of your story, then play them live with one hand while you run the game.</p>
+      <div class="ctas">
+        <a class="btn primary" href="https://github.com/arthurvangeersdaele/bardic">Follow on GitHub</a>
+        <a class="btn ghost" href="https://github.com/arthurvangeersdaele/bardic/releases/tag/dev-latest">Engine test build (APK)</a>
+      </div>
+      <div class="themes" role="group" aria-label="Preview a theme">Try a theme:
+        <button data-t="obsidian" aria-pressed="true">Obsidian</button>
+        <button data-t="parchment" aria-pressed="false">Parchment</button>
+        <button data-t="blood" aria-pressed="false">Blood</button>
+        <button data-t="divination" aria-pressed="false">Divination</button>
+      </div>
+    </div>
+
+    <div class="phone" id="table" aria-label="Preview of the Bardic mixing table" role="img">
+      <div class="screen"><div class="table" id="mock">
+        <div class="tbar">
+          <div class="ico">‹</div>
+          <div class="ttl"><b>The Drowned Abbey</b><span>Chapter 2 · The Flooded Nave</span></div>
+          <div class="chip">Loaded <b style="color:var(--text)">6/20</b></div>
+          <div class="chip" style="color:var(--text)">❚❚ &nbsp;■ &nbsp;Master 80</div>
+          <div class="chip" style="color:var(--accent);border-color:var(--accent)">★ Soundbox</div>
+        </div>
+        <div class="rows" id="rows"></div>
+      </div></div>
+    </div>
+  </header>
+
+  <section>
+    <p class="kicker">Three zones</p>
+    <h2>Everything a scene needs, stacked.</h2>
+    <p class="intro">Each chapter opens on a landscape mixing table split into three rows. Scroll each row sideways to reach its sound cards.</p>
+    <div class="zones">
+      <div class="zone" style="--z:var(--music)"><h3>Music</h3><p>One track at a time. Starting a new one crossfades from the current track automatically.</p></div>
+      <div class="zone" style="--z:var(--amb)"><h3>Ambience</h3><p>Rain, fire, wind, crowds. Layer as many as you like, usually on infinite loop.</p></div>
+      <div class="zone" style="--z:var(--evt)"><h3>Events</h3><p>Church bells, a full battle, a volcano erupting. Short or long, triggered when the story calls for it.</p></div>
+    </div>
+  </section>
+
+  <section id="features">
+    <p class="kicker">Features</p>
+    <h2>Built for the heat of the game.</h2>
+    <div class="feat">
+      <div><h3>Sound cards</h3><p>Play, pause, fade-out end, volume, and a loop mode per card: once, twice or forever.</p></div>
+      <div><h3>See the end coming</h3><p>Progress bars shift from green to red, with a countdown in the last stretch, so a sound never cuts out by surprise.</p><div class="gradient" aria-hidden="true"></div></div>
+      <div><h3>Up to 20 sounds at once</h3><p>A low-latency native audio engine (Oboe) mixes everything into one stream, without lag.</p></div>
+      <div><h3>Soundbox</h3><p>Level-ups, explosions, critical hits: a shared pad of quick effects, reachable from every table. Pin your favorites.</p></div>
+      <div><h3>Master controls</h3><p>One volume, one play/pause and one stop for the whole table. Keeps playing with the screen off.</p></div>
+      <div><h3>Stories &amp; chapters</h3><p>Prepare each session ahead of time. Chapters are locked during play, so nothing moves by accident.</p></div>
+      <div><h3>Share your campaigns</h3><p>Export a story as a single .bardic file, sounds included, and import it on another phone.</p></div>
+      <div><h3>Four themes</h3><p>Parchment, Obsidian, Blood and Divination, each in light and dark.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Your sounds</p>
+    <h2>Bring your own library.</h2>
+    <p class="intro">Bardic plays your own MP3 files. Import them from the app, or drop them from a computer into a folder on your phone.</p>
+<pre class="tree">Bardic/
+├── Music/
+├── Ambience/
+├── Events/
+├── Soundbox/
+└── Exports/</pre>
+  </section>
+
+  <section id="roadmap">
+    <p class="kicker">Roadmap</p>
+    <h2>Where we are.</h2>
+    <ol class="road">
+      <li class="now"><span>Audio engine prototype: 20 tracks, loops, fades, stress test</span><small>In progress</small></li>
+      <li><span>Stories, chapters and local database</span><small>Next</small></li>
+      <li><span>Live mixing table</span><small>Planned</small></li>
+      <li><span>Chapter editor and sound picker</span><small>Planned</small></li>
+      <li><span>Soundbox, settings, themes, .bardic export</span><small>Planned</small></li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>Bardic · an Android app for game masters</span>
+    <a href="https://github.com/arthurvangeersdaele/bardic">github.com/arthurvangeersdaele/bardic</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var zones=[
+    {name:'Music',v:'--music',cards:[['Tavern Hearth',0,true,38,70],['Abbey Organ',2,false,0,65],['Storm at Sea',0,false,0,80],['Final Duel',1,false,0,85]]},
+    {name:'Ambience',v:'--amb',cards:[['Rain on Stone',2,true,100,55],['Crackling Fire',2,true,100,40],['Distant Gulls',1,true,62,30],['Wind Howl',2,false,0,50]]},
+    {name:'Events',v:'--evt',cards:[['Church Bells',1,true,88,75],['Battle Melee',0,false,0,80],['Volcano Eruption',0,false,0,90],['Door Creak',0,false,0,60]]}
+  ];
+  var L=['1×','2×','∞'];
+  var rows=document.getElementById('rows');
+  zones.forEach(function(z){
+    var r=document.createElement('div');r.className='row';
+    var lab=document.createElement('div');lab.className='zl';lab.style.borderLeft='3px solid var('+z.v+')';
+    lab.innerHTML='<span style="color:var('+z.v+')">'+z.name+'</span>';
+    var cs=document.createElement('div');cs.className='cards';
+    z.cards.forEach(function(c){
+      var inf=c[1]===2, pct=c[3], hue=Math.round(130-1.3*pct);
+      var col=inf?'var(--blue)':'hsl('+hue+',72%,50%)';
+      var d=document.createElement('div');d.className='c'+(c[2]?' on':'');d.style.setProperty('--z','var('+z.v+')');
+      d.innerHTML='<div class="ch"><b>'+c[0]+'</b>'+(inf&&c[2]?'<small>∞ loop</small>':'')+'<em style="color:'+(inf?'var(--blue)':'inherit')+'">'+L[c[1]]+'</em></div>'+
+        '<div class="track"><div class="fill" style="width:'+pct+'%;background:'+col+'"></div></div>'+
+        '<div class="ctrl"><div class="pb">'+(c[2]?'❚❚':'▶')+'</div><div class="pb" style="background:transparent;border:1px solid var(--line);color:var(--text)">≡</div><div class="vol"><i style="width:'+c[4]+'%"></i></div></div>';
+      cs.appendChild(d);
+    });
+    r.appendChild(lab);r.appendChild(cs);rows.appendChild(r);
+  });
+  var mock=document.getElementById('mock'), screen=mock.parentNode;
+  function fit(){mock.style.transform='scale('+(screen.clientWidth/844)+')';}
+  window.addEventListener('resize',fit);fit();
+  var btns=document.querySelectorAll('.themes button');
+  btns.forEach(function(b){b.addEventListener('click',function(){
+    var t=b.getAttribute('data-t');
+    if(t==='obsidian')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);
+    btns.forEach(function(o){o.setAttribute('aria-pressed',o===b?'true':'false');});
+  });});
+})();
+</script>
+</body>
+</html>
