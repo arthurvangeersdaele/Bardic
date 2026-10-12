@@ -4,6 +4,8 @@ Game Master Phone Sound Table: an Android app that lets tabletop RPG game master
 
 Project page: https://arthurvangeersdaele.github.io/bardic/
 
+**Play it now in your browser (free):** https://arthurvangeersdaele.github.io/bardic/play/ — three ready-made stories (The Forest Adventure, The Big War, Underwater Adventure) with the mixing table and the soundbox. No import and no story editing in the web edition; its sounds live in [`docs/play/sounds/`](docs/play/sounds/).
+
 ## Status
 
 **Step 1 — audio engine prototype** (in progress). The app currently opens on an engine test screen: 20 sound slots mixed by a native engine, with live CPU load, xruns and latency, to validate that 20 simultaneous MP3s play without glitches.
@@ -32,6 +34,16 @@ Engine details (`app/src/main/cpp/audio_engine.cpp`):
 - loop once / twice / infinite handled at decode time for gapless loops;
 - fade-out on End, smoothed volume changes (no clicks), linear resampling to the device rate;
 - automatic stream reopen when the output device changes (headphones, Bluetooth).
+
+## Web edition
+
+`docs/play/` is a static page served by GitHub Pages (no build step):
+
+- `stories.json`: the three stories and their chapters;
+- `sounds/<story>/<chapter>/{music,ambience,events}/*.mp3` and `sounds/soundbox/*.mp3`: the audio files;
+- `library.json`: the list of sound files, rebuilt automatically by the **Update sound library** action when MP3s are pushed (or by hand with `python3 .github/scripts/build_sound_library.py`).
+
+Opening a story downloads every MP3 of every chapter into memory, so each sound starts instantly. Themes (Obsidian, Parchment, Blood, Divination, each dark or light), fade-out length, music crossfade and screen wake lock are in Settings.
 
 ## Build locally
 

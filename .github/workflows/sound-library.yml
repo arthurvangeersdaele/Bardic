@@ -1,0 +1,41 @@
+name: Update sound library
+
+# Rebuilds docs/play/library.json whenever MP3s are added, renamed or removed,
+# so the web player picks them up without editing any list by hand.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/play/sounds/**"
+      - "docs/play/stories.json"
+      - ".github/scripts/build_sound_library.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sound-library
+  cancel-in-progress: false
+
+jobs:
+  library:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build library.json
+        run: python3 .github/scripts/build_sound_library.py
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- docs/play/library.json; then
+            echo "library.json already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/play/library.json
+          git commit -m "Update web player sound library"
+          git pull --rebase origin main
+          git push origin HEAD:main

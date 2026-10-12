@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" data-theme="obsidian" data-mode="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bardic — Web Edition</title>
+<meta name="description" content="Play the Bardic sound table in your browser: three ready-made stories with music, ambience, events and a soundbox. Free.">
+<meta name="theme-color" content="#15151B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2315151B'/%3E%3Crect x='7' y='13' width='4' height='10' rx='2' fill='%23E0A84B'/%3E%3Crect x='14' y='8' width='4' height='16' rx='2' fill='%234FB3A5'/%3E%3Crect x='21' y='11' width='4' height='12' rx='2' fill='%23E06A63'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>
+  // Apply the saved theme before first paint (no flash).
+  (function () {
+    try {
+      var s = JSON.parse(localStorage.getItem('bardic.settings') || '{}');
+      var mode = s.mode || 'dark';
+      if (mode === 'system') mode = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.dataset.theme = s.theme || 'obsidian';
+      document.documentElement.dataset.mode = mode;
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+
+<!-- Stories -->
+<main id="stories" class="stories" hidden>
+  <header class="sbar">
+    <a class="logo" href="../">Bardic</a>
+    <span class="edition">Web edition</span>
+    <span class="grow"></span>
+    <button class="ico" data-action="settings" aria-label="Settings" title="Settings"></button>
+  </header>
+  <div class="stories-wrap">
+    <h1>Choose a story</h1>
+    <p class="lead">Three ready-made adventures to run at your table. Opening a story loads every chapter, so each sound starts the moment you tap it.</p>
+    <div id="story-list" class="story-list"></div>
+    <p class="note">Free web edition with fixed stories. The <a href="../">Android app</a> lets you import your own sounds and build your own stories and chapters.</p>
+  </div>
+</main>
+
+<!-- Mixing table -->
+<main id="table" class="table" hidden>
+  <header class="tbar">
+    <button class="ico" data-action="back" aria-label="Back to stories" title="Back to stories"></button>
+    <div class="ttl"><b id="t-story"></b><span id="t-chapter"></span></div>
+    <div class="chip load" id="load-chip" title="Sounds loaded for this story">
+      <span>Loaded</span><b id="load-count">0/0</b><i class="load-bar"><i id="load-fill"></i></i>
+    </div>
+    <div class="chip master">
+      <button class="mini" data-action="pause-all" id="pause-all" aria-label="Pause all" title="Pause all (Space)"></button>
+      <button class="mini" data-action="stop-all" aria-label="Fade out everything" title="Fade out everything"></button>
+      <label class="mlabel" for="master">Master</label>
+      <input type="range" id="master" min="0" max="1" step="0.01" value="0.8" aria-label="Master volume">
+      <b id="master-val">80</b>
+    </div>
+    <button class="chip sb-toggle" data-action="soundbox" aria-pressed="false" id="sb-toggle"><span class="star"></span><span class="sb-label">Soundbox</span></button>
+    <button class="ico" data-action="settings" aria-label="Settings" title="Settings"></button>
+  </header>
+
+  <div class="body">
+    <nav class="rail" id="rail" aria-label="Chapters"></nav>
+    <section class="zones" id="zones" aria-live="off"></section>
+    <aside class="soundbox" id="soundbox" aria-label="Soundbox" hidden>
+      <div class="sb-head">
+        <h2>Soundbox</h2>
+        <button class="ico small" data-action="soundbox" aria-label="Close soundbox" title="Close"></button>
+      </div>
+      <div class="sb-vol"><label for="sb-volume">Volume</label><input type="range" id="sb-volume" min="0" max="1" step="0.01" value="0.8"></div>
+      <div class="pads" id="pads"></div>
+      <p class="sb-hint">Tap to fire. ☆ pins a sound to the top. Keys 1–9 fire the first nine.</p>
+    </aside>
+    <div class="scrim" id="scrim" hidden></div>
+  </div>
+</main>
+
+<!-- Settings -->
+<dialog id="settings" class="settings" aria-labelledby="settings-title">
+  <form method="dialog" class="set-head">
+    <h2 id="settings-title">Settings</h2>
+    <button class="ico small" value="close" aria-label="Close settings"></button>
+  </form>
+
+  <section>
+    <h3>Theme</h3>
+    <div class="themes" id="theme-pick" role="radiogroup" aria-label="Theme"></div>
+  </section>
+
+  <section>
+    <h3>Appearance</h3>
+    <div class="seg" id="mode-pick" role="radiogroup" aria-label="Appearance">
+      <button role="radio" data-v="dark">Dark</button>
+      <button role="radio" data-v="light">Light</button>
+      <button role="radio" data-v="system">System</button>
+    </div>
+  </section>
+
+  <section>
+    <h3>Playback</h3>
+    <div class="row-set">
+      <span>Fade-out on stop</span>
+      <div class="seg small" id="fade-pick" role="radiogroup" aria-label="Fade-out duration">
+        <button role="radio" data-v="500">0.5 s</button>
+        <button role="radio" data-v="1000">1 s</button>
+        <button role="radio" data-v="2000">2 s</button>
+        <button role="radio" data-v="4000">4 s</button>
+      </div>
+    </div>
+    <label class="row-set toggle"><span>Crossfade music tracks<small>Starting a track fades out the one playing</small></span><input type="checkbox" id="opt-crossfade"><i></i></label>
+    <label class="row-set toggle"><span>Keep screen awake<small>While a story is open</small></span><input type="checkbox" id="opt-awake"><i></i></label>
+  </section>
+
+  <section class="about">
+    <h3>Shortcuts</h3>
+    <p><kbd>Space</kbd> pause / resume all · <kbd>1</kbd>–<kbd>9</kbd> soundbox · <kbd>←</kbd> <kbd>→</kbd> chapters · <kbd>S</kbd> soundbox · <kbd>Esc</kbd> close</p>
+    <p class="muted">Bardic web edition · free, three fixed stories. For your own sounds and stories, follow the <a href="../">Android app</a>.</p>
+  </section>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>

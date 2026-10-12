@@ -1,0 +1,75 @@
+{
+ "chapters": {
+  "forest/1-in-the-forest": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "forest/2-fight-with-a-bear": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "forest/3-a-night-at-the-pub": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "forest/4-the-human-village": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "big-war/1-the-soldier-training-camp": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "big-war/2-let-the-army-walk": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "big-war/3-the-fight": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "big-war/4-the-general-dies": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "big-war/5-the-battle-ends": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "underwater/1-chill-on-the-beach": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "underwater/2-its-a-tsunami": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "underwater/3-discovering-the-underwater-world": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "underwater/4-the-pirates-ship": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  },
+  "underwater/5-the-kraken-is-attacking-us": {
+   "music": [],
+   "ambience": [],
+   "events": []
+  }
+ },
+ "soundbox": []
+}
