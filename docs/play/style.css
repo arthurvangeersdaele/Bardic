@@ -55,6 +55,9 @@ svg { display: block; }
 .stories-wrap h1 { font-size: clamp(34px, 5vw, 52px); margin: 0 0 8px; line-height: 1.05; }
 .lead { color: var(--muted); font-size: 18px; max-width: 640px; margin: 0 0 28px; }
 .note { color: var(--muted); font-size: 15px; margin-top: 28px; }
+.discover { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 4px 28px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin: -12px 0 24px; font-size: 15px; color: var(--muted); }
+.discover p { margin: 0; }
+.discover b { color: var(--text); font-weight: 600; }
 
 .story-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
 .story {
