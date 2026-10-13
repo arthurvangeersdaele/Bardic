@@ -2,9 +2,9 @@
 
 Game Master Phone Sound Table: an Android app that lets tabletop RPG game masters run music, ambience and sound effects live from their phone.
 
-Project page: https://arthurvangeersdaele.github.io/bardic/
+Project page: https://arthurvangeersdaele.github.io/Bardic/
 
-**Play it now in your browser (free):** https://arthurvangeersdaele.github.io/bardic/play/ — three ready-made stories (The Forest Adventure, The Big War, Underwater Adventure) with the mixing table and the soundbox. No import and no story editing in the web edition; its sounds live in [`docs/play/sounds/`](docs/play/sounds/).
+**Play it now in your browser (free):** https://arthurvangeersdaele.github.io/Bardic/play/ — three ready-made stories (The Forest Adventure, The Big War, Underwater Adventure) with the mixing table and the soundbox. No import and no story editing in the web edition; its sounds live in [`docs/play/sounds/`](docs/play/sounds/).
 
 ## Status
 
