@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en" data-theme="obsidian" data-mode="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Recueil | Bardic</title>
+<meta name="description" content="The Recueil of the Compagnie des bardes: Bardic stories shared by game masters, ready to download.">
+<meta name="theme-color" content="#15151B">
+<link rel="icon" type="image/svg+xml" href="../icons/261013_bardic_icon.svg">
+<link rel="apple-touch-icon" href="../icons/261013_bardic_apple_touch_icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../play/style.css">
+<link rel="stylesheet" href="compagnie.css">
+<script>
+  (function () {
+    try {
+      var s = JSON.parse(localStorage.getItem('bardic.settings') || '{}');
+      var mode = s.mode || 'dark';
+      if (mode === 'system') mode = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.dataset.theme = s.theme || 'obsidian';
+      document.documentElement.dataset.mode = mode;
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+<div class="cpage">
+<header class="sbar">
+  <a class="logo" href="../">Bardic</a>
+  <nav class="tabs" aria-label="Sections">
+    <a href="../play/">Play</a>
+    <a href="./">Compagnie<span class="long"> des bardes</span></a>
+  </nav>
+  <span class="grow"></span>
+  
+</header>
+
+<main class="rec">
+  <header>
+    <p class="kicker">Compagnie des bardes</p>
+    <h1>Recueil</h1>
+    <p>Tales left behind by the bards of the Compagnie. Open one, take it to your table.</p>
+    <div class="ornament" aria-hidden="true"><i></i><svg width="34" height="34" viewBox="0 0 1024 1024"><rect x="224" y="416" width="128" height="320" rx="64" fill="var(--music)"/><rect x="448" y="256" width="128" height="512" rx="64" fill="var(--amb)"/><rect x="672" y="352" width="128" height="384" rx="64" fill="var(--evt)"/></svg><i></i></div>
+  </header>
+  <div class="seek" id="seek" hidden><input type="search" id="q" placeholder="Search a tale" aria-label="Search the Recueil"></div>
+  <ul class="tales" id="tales" aria-live="polite"></ul>
+  <section class="offer">
+    <div>
+      <h2>Add your tale</h2>
+      <ol>
+        <li>Forge your story in the <a href="builder.html">Story builder</a>.</li>
+        <li>Lay the .bardic file in the Recueil on GitHub. You only need a GitHub account: GitHub prepares the pull request for you.</li>
+        <li>Once it is accepted, your tale appears here for every bard.</li>
+      </ol>
+    </div>
+    <a class="btn primary" href="https://github.com/arthurvangeersdaele/Bardic/upload/main/docs/recueil" target="_blank" rel="noopener">Lay a tale in the Recueil</a>
+  </section>
+</main>
+</div>
+<script src="recueil.js"></script>
+</body>
+</html>

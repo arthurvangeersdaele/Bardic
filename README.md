@@ -45,6 +45,15 @@ Engine details (`app/src/main/cpp/audio_engine.cpp`):
 
 Opening a story downloads every MP3 of every chapter into memory, so each sound starts instantly. Themes (Obsidian, Parchment, Blood, Divination, each dark or light), fade-out length, music crossfade and screen wake lock are in Settings.
 
+## Compagnie des bardes
+
+`docs/compagnie/` is the community corner of the site:
+
+- **Story builder** (`builder.html`): name a story and its chapters, drop MP3s into Music, Ambience, Events and the Soundbox, and download a `.bardic` file. Everything runs in the browser, nothing is uploaded. It can also open an existing `.bardic` to edit it.
+- **Recueil** (`recueil.html`): the shared library of `.bardic` files stored in `docs/recueil/`. Anyone can add one through a pull request ([how](docs/recueil/README.md)); the **Recueil** action checks pull requests and rebuilds `docs/recueil/index.json` once they are merged.
+
+The `.bardic` format (a ZIP with `story.json` and the audio files) is specified in [BARDIC_FORMAT.md](BARDIC_FORMAT.md). The Android app must read and write exactly this format.
+
 ## Icons
 
 - `branding/`: the Bardic icon and its pumpkin version, each with rounded corners (web, social) and as a full square (stores; Android and iOS cut their own shape). 1024 × 1024 SVG.

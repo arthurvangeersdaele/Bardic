@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en" data-theme="obsidian" data-mode="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Compagnie des bardes | Bardic</title>
+<meta name="description" content="Join the Compagnie des bardes: forge your own Bardic stories and discover the tales other game masters share.">
+<meta name="theme-color" content="#15151B">
+<link rel="icon" type="image/svg+xml" href="../icons/261013_bardic_icon.svg">
+<link rel="apple-touch-icon" href="../icons/261013_bardic_apple_touch_icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../play/style.css">
+<link rel="stylesheet" href="compagnie.css">
+<script>
+  (function () {
+    try {
+      var s = JSON.parse(localStorage.getItem('bardic.settings') || '{}');
+      var mode = s.mode || 'dark';
+      if (mode === 'system') mode = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.dataset.theme = s.theme || 'obsidian';
+      document.documentElement.dataset.mode = mode;
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+<div class="cpage">
+<header class="sbar">
+  <a class="logo" href="../">Bardic</a>
+  <nav class="tabs" aria-label="Sections">
+    <a href="../play/">Play</a>
+    <a href="./" aria-current="page">Compagnie<span class="long"> des bardes</span></a>
+  </nav>
+  <span class="grow"></span>
+  
+</header>
+
+<main class="hall">
+  <svg class="sigil" width="72" height="72" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="256" fill="var(--bar)" stroke="var(--line)" stroke-width="16"/><rect x="224" y="416" width="128" height="320" rx="64" fill="var(--music)"/><rect x="448" y="256" width="128" height="512" rx="64" fill="var(--amb)"/><rect x="672" y="352" width="128" height="384" rx="64" fill="var(--evt)"/></svg>
+  <p class="kicker">Bardic</p>
+  <h1>Compagnie des bardes</h1>
+  <div class="oath">
+    <p>Every table has its tales, and some of them deserve to travel.</p>
+    <p>Take up the lute. Forge your story into a <em>.bardic</em> file, with its music, its ambiences and its thunderclaps, and lay it in the Recueil for every game master to find.</p>
+    <p>Then wander through the tales the other bards have left behind, and bring one home to your table tonight.</p>
+  </div>
+  <nav class="doors" aria-label="Compagnie">
+    <a class="door builder" href="builder.html"><svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg><b>Story builder</b><span>Name your story and its chapters, drop your MP3s, and forge a .bardic file.</span></a>
+    <a class="door recueil" href="recueil.html"><svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg><b>Recueil</b><span>An old book of tales, filled by the bards of the Compagnie. Who knows what you will find.</span></a>
+  </nav>
+</main>
+</div>
+</body>
+</html>

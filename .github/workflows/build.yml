@@ -8,6 +8,8 @@ on:
       - "**.md"
       - ".github/scripts/**"
       - ".github/workflows/sound-library.yml"
+      - ".github/workflows/recueil.yml"
+      - "BARDIC_FORMAT.md"
   workflow_dispatch:
 
 permissions:

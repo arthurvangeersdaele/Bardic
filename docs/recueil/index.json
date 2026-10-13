@@ -1,0 +1,17 @@
+{
+ "updated": "2026-10-13T16:44:54Z",
+ "tales": [
+  {
+   "file": "werewolf.bardic",
+   "title": "Werewolf",
+   "author": "Bardic",
+   "description": "Run a game of Loup Garou: the village debates and votes by day, the werewolves hunt by night. Sounds from Stendhal, Battle for Wesnoth, 0 A.D. and Flare (see the Bardic sound credits).",
+   "chapters": [
+    "Day: the village and the vote",
+    "Night"
+   ],
+   "sounds": 49,
+   "size": 13319642
+  }
+ ]
+}

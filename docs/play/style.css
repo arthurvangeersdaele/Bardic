@@ -49,6 +49,15 @@ svg { display: block; }
   display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 max(16px, env(safe-area-inset-left));
   background: var(--bar); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2;
 }
+.tabs { display: flex; gap: 4px; margin-left: 8px; }
+.tabs a {
+  height: 36px; padding: 0 12px; border-radius: 9px; display: inline-flex; align-items: center;
+  color: var(--muted); text-decoration: none; font-weight: 600; font-size: 15px; border: 1px solid transparent;
+}
+.tabs a:hover { color: var(--text); background: var(--card); }
+.tabs a[aria-current="page"] { color: var(--text); background: var(--card); border-color: var(--line); }
+@media (max-width: 480px) { .tabs .long { display: none; } .tabs { margin-left: 2px; } }
+@media (max-width: 560px) { .tabs a { padding: 0 8px; font-size: 14px; } .sbar .edition { display: none; } }
 .logo { font-size: 24px; color: var(--text); text-decoration: none; }
 .edition { font-size: 13px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
 .stories-wrap { max-width: 1240px; margin: 0 auto; padding: 36px 20px 48px; }
