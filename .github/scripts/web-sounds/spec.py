@@ -193,3 +193,52 @@ REPEAT = {
 # Ambience shorter than this is extended with crossfades so it loops smoothly
 MIN_LOOP = 30
 NO_XFADE = {"forest/2-fight-with-a-bear/ambience/01_heartbeat.mp3"}
+
+# ---------------- Werewolf (Loup Garou) ----------------
+# "S:" Stendhal data/
+PLAN.update({
+ "werewolf/1-day/music/01_market-day.mp3": ("one", "S:music/market_day.ogg", None),
+ "werewolf/1-day/music/02_quiet-village.mp3": ("one", "S:music/town-03.ogg", None),
+ "werewolf/1-day/music/03_the-debate.mp3": ("one", "S:music/eerie_curious.ogg", None),
+ "werewolf/1-day/music/04_mourning.mp3": ("one", "W:music/sad.ogg", None),
+ "werewolf/1-day/ambience/01_village-square.mp3": ("one", "Z:ambient/building/amb_trade_12.ogg", None),
+ "werewolf/1-day/ambience/02_villagers-argue.mp3": ("one", "S:music/ambiance-restaurant-1.ogg", None),
+ "werewolf/1-day/ambience/03_sunny-morning.mp3": ("one", "Z:ambient/dayscape/day_temperate_14.ogg", None),
+ "werewolf/1-day/events/01_the-village-wakes-up.mp3": ("one", "S:music/ambiance-church-1.ogg", "atrim=0:10,afade=t=out:st=7.5:d=2.5"),
+ "werewolf/1-day/events/02_a-body-is-found.mp3": ("one", "S:sounds/scream-fem-2.ogg", None),
+ "werewolf/1-day/events/03_the-mayor-is-elected.mp3": ("one", "W:sounds/horn-signals/horn-7.ogg", None),
+ "werewolf/1-day/events/04_call-to-the-vote.mp3": ("one", "W:sounds/horn-signals/horn-2.ogg", None),
+ "werewolf/1-day/events/05_the-rope-creaks.mp3": ("one", "S:sounds/creak-tree-2.ogg", None),
+ "werewolf/1-day/events/06_death-knell.mp3": ("one", "S:sounds/bell-1.ogg", None),
+ "werewolf/1-day/events/07_the-hunter's-last-shot.mp3": ("one", "Z:attack/weapon/Musket_2.ogg", None),
+ "werewolf/1-day/events/08_the-villagers-win.mp3": ("one", "W:music/victory2.ogg", None),
+ "werewolf/1-day/events/09_the-werewolves-win.mp3": ("mix", ["S:sounds/werewolf_howl-01.ogg", "S:sounds/laugh-evil-01.ogg"],
+     "[1]adelay=1800:all=1,volume=0.9[b];[0][b]amix=inputs=2:duration=longest:normalize=0[out]"),
+
+ "werewolf/2-night/music/01_night-town.mp3": ("one", "S:music/night_town.ogg", None),
+ "werewolf/2-night/music/02_spooky-forest.mp3": ("one", "S:music/spooky_forest.ogg", None),
+ "werewolf/2-night/music/03_into-the-shadows.mp3": ("one", "W:music/into_the_shadows.ogg", None),
+ "werewolf/2-night/ambience/01_crickets.mp3": ("one", "W:sounds/ambient/night.ogg", None),
+ "werewolf/2-night/ambience/02_night-wind.mp3": ("one", "S:sounds/weather/wind_light.ogg", None),
+ "werewolf/2-night/ambience/03_ticking-clock.mp3": ("one", "S:sounds/clock-1.ogg", None),
+ "werewolf/2-night/events/01_night-falls.mp3": ("mix", ["S:sounds/bell-1.ogg", "S:sounds/yawn-female-1.ogg"],
+     "[1]adelay=1400:all=1,volume=0.8[b];[0][b]amix=inputs=2:duration=longest:normalize=0[out]"),
+ "werewolf/2-night/events/02_the-werewolves-wake-up.mp3": ("one", "S:sounds/werewolf_growl-01.ogg", None),
+ "werewolf/2-night/events/03_werewolf-howl.mp3": ("one", "S:sounds/werewolf_howl-01.ogg", None),
+ "werewolf/2-night/events/04_the-pack-answers.mp3": ("mix", ["S:sounds/wolf-howl-02.ogg", "S:sounds/wolf-howl-01.ogg"],
+     "[0]volume=0.8[a];[1]adelay=1200:all=1,lowpass=f=2500,volume=0.6[b];[a][b]amix=inputs=2:duration=longest:normalize=0[out]"),
+ "werewolf/2-night/events/05_the-attack.mp3": ("mix", ["S:sounds/werewolf_snarl-01.ogg", "W:sounds/bite.ogg", "W:sounds/claws.ogg", "W:sounds/human-hit-3.ogg"],
+     "[1]adelay=500:all=1[b];[2]adelay=750:all=1[c];[3]adelay=850:all=1,volume=0.8[d];[0][b][c][d]amix=inputs=4:duration=longest:normalize=0[out]"),
+ "werewolf/2-night/events/06_the-seer-looks.mp3": ("one", "W:sounds/magic-faeriefire.ogg", None),
+ "werewolf/2-night/events/07_the-witch's-potion.mp3": ("mix", ["S:sounds/liquid-fill-01.ogg", "S:sounds/witch-cackle-1.ogg"],
+     "[1]adelay=1500:all=1[b];[0][b]amix=inputs=2:duration=longest:normalize=0[out]"),
+ "werewolf/2-night/events/08_Cupid's-arrow.mp3": ("mix", ["Z:attack/weapon/arrowfly_04.ogg", "S:sounds/kiss-female-01.ogg"],
+     "[1]adelay=700:all=1[b];[0][b]amix=inputs=2:duration=longest:normalize=0[out]"),
+ "werewolf/2-night/events/09_a-door-creaks.mp3": ("one", "S:sounds/creaky-door-open-1.ogg", None),
+})
+# A real bear for The Forest Adventure
+PLAN["forest/2-fight-with-a-bear/events/01_bear-roar.mp3"] = ("one", "S:sounds/bear-03.ogg", None)
+PLAN["forest/2-fight-with-a-bear/events/02_bear-growl.mp3"] = ("one", "S:sounds/bear-01.ogg", None)
+REPEAT.pop("forest/2-fight-with-a-bear/events/02_bear-growl.mp3", None)
+REPEAT["werewolf/1-day/events/06_death-knell.mp3"] = (3, 1.2)
+NO_XFADE.add("werewolf/2-night/ambience/03_ticking-clock.mp3")

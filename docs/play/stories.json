@@ -5,10 +5,22 @@
       "title": "The Forest Adventure",
       "blurb": "Deep woods, a hungry bear, and a warm pub at the end of the road.",
       "chapters": [
-        { "id": "1-in-the-forest", "title": "In the forest" },
-        { "id": "2-fight-with-a-bear", "title": "Fight with a bear" },
-        { "id": "3-a-night-at-the-pub", "title": "A night at the pub" },
-        { "id": "4-the-human-village", "title": "The human village" }
+        {
+          "id": "1-in-the-forest",
+          "title": "In the forest"
+        },
+        {
+          "id": "2-fight-with-a-bear",
+          "title": "Fight with a bear"
+        },
+        {
+          "id": "3-a-night-at-the-pub",
+          "title": "A night at the pub"
+        },
+        {
+          "id": "4-the-human-village",
+          "title": "The human village"
+        }
       ]
     },
     {
@@ -16,11 +28,26 @@
       "title": "The Big War",
       "blurb": "From the training camp to the last charge of a battle that changes everything.",
       "chapters": [
-        { "id": "1-the-soldier-training-camp", "title": "The soldier training camp" },
-        { "id": "2-let-the-army-walk", "title": "Let the army walk" },
-        { "id": "3-the-fight", "title": "The fight" },
-        { "id": "4-the-general-dies", "title": "The general dies" },
-        { "id": "5-the-battle-ends", "title": "The battle ends" }
+        {
+          "id": "1-the-soldier-training-camp",
+          "title": "The soldier training camp"
+        },
+        {
+          "id": "2-let-the-army-walk",
+          "title": "Let the army walk"
+        },
+        {
+          "id": "3-the-fight",
+          "title": "The fight"
+        },
+        {
+          "id": "4-the-general-dies",
+          "title": "The general dies"
+        },
+        {
+          "id": "5-the-battle-ends",
+          "title": "The battle ends"
+        }
       ]
     },
     {
@@ -28,11 +55,41 @@
       "title": "Underwater Adventure",
       "blurb": "A lazy day at the beach turns into a dive among pirates and monsters.",
       "chapters": [
-        { "id": "1-chill-on-the-beach", "title": "Chill on the beach" },
-        { "id": "2-its-a-tsunami", "title": "Fuck, it's a tsunami" },
-        { "id": "3-discovering-the-underwater-world", "title": "Discovering the underwater world" },
-        { "id": "4-the-pirates-ship", "title": "The Pirates ship" },
-        { "id": "5-the-kraken-is-attacking-us", "title": "The Kraken is attacking us" }
+        {
+          "id": "1-chill-on-the-beach",
+          "title": "Chill on the beach"
+        },
+        {
+          "id": "2-its-a-tsunami",
+          "title": "Fuck, it's a tsunami"
+        },
+        {
+          "id": "3-discovering-the-underwater-world",
+          "title": "Discovering the underwater world"
+        },
+        {
+          "id": "4-the-pirates-ship",
+          "title": "The Pirates ship"
+        },
+        {
+          "id": "5-the-kraken-is-attacking-us",
+          "title": "The Kraken is attacking us"
+        }
+      ]
+    },
+    {
+      "id": "werewolf",
+      "title": "Werewolf",
+      "blurb": "Run a game of Loup Garou. By day the village debates and votes, by night the werewolves hunt.",
+      "chapters": [
+        {
+          "id": "1-day",
+          "title": "Day: the village and the vote"
+        },
+        {
+          "id": "2-night",
+          "title": "Night"
+        }
       ]
     }
   ]

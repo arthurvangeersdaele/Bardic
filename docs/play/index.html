@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bardic — Web Edition</title>
-<meta name="description" content="Play the Bardic sound table in your browser: three ready-made stories with music, ambience, events and a soundbox. Free.">
+<title>Bardic Web Edition</title>
+<meta name="description" content="Play the Bardic sound table in your browser: four ready-made stories with music, ambience, events and a soundbox.">
 <meta name="theme-color" content="#15151B">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2315151B'/%3E%3Crect x='7' y='13' width='4' height='10' rx='2' fill='%23E0A84B'/%3E%3Crect x='14' y='8' width='4' height='16' rx='2' fill='%234FB3A5'/%3E%3Crect x='21' y='11' width='4' height='12' rx='2' fill='%23E06A63'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,9 +36,9 @@
   </header>
   <div class="stories-wrap">
     <h1>Choose a story</h1>
-    <p class="lead">Three ready-made adventures to run at your table. Opening a story loads every chapter, so each sound starts the moment you tap it.</p>
+    <p class="lead">Four ready-made stories to run at your table. Opening a story loads every chapter, so each sound starts the moment you tap it.</p>
     <div id="story-list" class="story-list"></div>
-    <p class="note">Free web edition with fixed stories. The <a href="../">Android app</a> lets you import your own sounds and build your own stories and chapters. Music and sounds: Battle for Wesnoth, 0 A.D. and Flare (<a href="https://github.com/arthurvangeersdaele/bardic/blob/main/docs/play/sounds/CREDITS.md" target="_blank" rel="noopener">credits</a>).</p>
+    <p class="note">The web edition plays fixed stories. The <a href="../">Android app</a> lets you import your own sounds and build your own stories and chapters. Music and sounds: Battle for Wesnoth, 0 A.D., Flare and Stendhal (<a href="https://github.com/arthurvangeersdaele/bardic/blob/main/docs/play/sounds/CREDITS.md" target="_blank" rel="noopener">credits</a>).</p>
   </div>
 </main>
 
@@ -71,7 +71,7 @@
       </div>
       <div class="sb-vol"><label for="sb-volume">Volume</label><input type="range" id="sb-volume" min="0" max="1" step="0.01" value="0.8"></div>
       <div class="pads" id="pads"></div>
-      <p class="sb-hint">Tap to fire. ☆ pins a sound to the top. Keys 1–9 fire the first nine.</p>
+      <p class="sb-hint">Tap to fire. ☆ pins a sound to the top. Keys 1 to 9 fire the first nine.</p>
     </aside>
     <div class="scrim" id="scrim" hidden></div>
   </div>
@@ -115,9 +115,9 @@
 
   <section class="about">
     <h3>Shortcuts</h3>
-    <p><kbd>Space</kbd> pause / resume all · <kbd>1</kbd>–<kbd>9</kbd> soundbox · <kbd>←</kbd> <kbd>→</kbd> chapters · <kbd>S</kbd> soundbox · <kbd>Esc</kbd> close</p>
-    <p class="muted">Bardic web edition · free, three fixed stories. For your own sounds and stories, follow the <a href="../">Android app</a>.</p>
-    <p class="muted">Music and sounds from Battle for Wesnoth, 0 A.D. and Flare, under GPL and Creative Commons BY-SA licences. <a href="https://github.com/arthurvangeersdaele/bardic/blob/main/docs/play/sounds/CREDITS.md" target="_blank" rel="noopener">Sound credits</a></p>
+    <ul class="keys"><li><kbd>Space</kbd> pause or resume all</li><li><kbd>1</kbd> to <kbd>9</kbd> soundbox</li><li><kbd>←</kbd> <kbd>→</kbd> chapters</li><li><kbd>S</kbd> soundbox</li><li><kbd>Esc</kbd> close</li></ul>
+    <p class="muted">Bardic web edition with four fixed stories. For your own sounds and stories, follow the <a href="../">Android app</a>.</p>
+    <p class="muted">Music and sounds from Battle for Wesnoth, 0 A.D., Flare and Stendhal, under GPL, Creative Commons and public domain licences. <a href="https://github.com/arthurvangeersdaele/bardic/blob/main/docs/play/sounds/CREDITS.md" target="_blank" rel="noopener">Sound credits</a></p>
   </section>
 </dialog>
 

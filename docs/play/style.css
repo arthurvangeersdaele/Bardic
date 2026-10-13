@@ -1,4 +1,4 @@
-/* Bardic — web edition. Same palettes and shapes as the Android app (Theme.kt) and the project page. */
+/* Bardic web edition. Same palettes and shapes as the Android app (Theme.kt) and the project page. */
 
 /* ---------- Themes: 4 families × dark / light ---------- */
 :root, [data-theme="obsidian"][data-mode="dark"] {
@@ -67,6 +67,7 @@ svg { display: block; }
 .story:nth-child(1) { --z: var(--amb); }
 .story:nth-child(2) { --z: var(--evt); }
 .story:nth-child(3) { --z: var(--blue); }
+.story:nth-child(4) { --z: var(--music); }
 .story h2 { font-size: 30px; margin: 0; line-height: 1; color: var(--text); }
 .story p { margin: 0; color: var(--muted); }
 .story ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; counter-reset: c; flex: 1; }
@@ -222,6 +223,7 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .toggle input:checked + i::after { transform: translateX(18px); background: var(--on-z); }
 .toggle input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
 .about p { margin: 0 0 8px; font-size: 14px; }
+.keys { list-style: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 12px; font-size: 14px; }
 .muted { color: var(--muted); }
 kbd { font: 600 12px/1 ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 2px 5px; background: var(--card); }
 

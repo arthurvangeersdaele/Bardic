@@ -1,5 +1,5 @@
-/* Bardic — web edition.
- * Three fixed stories, a live mixing table (Music / Ambience / Events) and a soundbox.
+/* Bardic web edition.
+ * Fixed stories, a live mixing table (Music / Ambience / Events) and a soundbox.
  * Opening a story downloads every MP3 of every chapter into memory, so any sound starts instantly.
  * Long sounds play through <audio> elements fed from in-memory blobs (low RAM, gapless enough);
  * soundbox effects are fully decoded (AudioBuffer) so they fire with zero delay and can overlap.
@@ -245,7 +245,7 @@
       s.chapters.forEach((c) => ol.append(el('li', '', c.title)));
       const meta = el('div', 'meta');
       meta.append(
-        el('span', '', sounds.length ? `${s.chapters.length} chapters · ${sounds.length} sounds · ${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB` : `${s.chapters.length} chapters · sounds coming soon`),
+        el('span', '', sounds.length ? `${s.chapters.length} chapters, ${sounds.length} sounds, ${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB` : `${s.chapters.length} chapters, sounds coming soon`),
         el('span', 'open', 'Open'),
       );
       b.append(ol, meta);
@@ -256,7 +256,7 @@
   function showStories() {
     $('#table').hidden = true;
     $('#stories').hidden = false;
-    document.title = 'Bardic — Web Edition';
+    document.title = 'Bardic Web Edition';
     releaseWake();
   }
 
@@ -280,7 +280,7 @@
     $('#t-story').textContent = meta.title;
     $('#stories').hidden = true;
     $('#table').hidden = false;
-    document.title = `${meta.title} — Bardic`;
+    document.title = `${meta.title} | Bardic`;
     renderRail();
     setChapter(idx);
     setSoundbox(settings.sbOpen ?? WIDE.matches);
@@ -377,7 +377,7 @@
       const b = el('button', 'chap');
       b.type = 'button';
       b.append(el('span', 'n', String(i + 1)), el('span', 't', c.meta.title), el('i', 'live'));
-      b.title = `Chapter ${i + 1} · ${c.meta.title}`;
+      b.title = `Chapter ${i + 1}: ${c.meta.title}`;
       b.addEventListener('click', () => goChapter(i));
       c.railBtn = b;
       rail.append(b);
@@ -387,7 +387,7 @@
   function setChapter(i) {
     chapterIdx = i;
     const ch = story.chapters[i];
-    $('#t-chapter').textContent = `Chapter ${i + 1} · ${ch.meta.title}`;
+    $('#t-chapter').textContent = `Chapter ${i + 1}: ${ch.meta.title}`;
     story.chapters.forEach((c, j) => c.railBtn.setAttribute('aria-current', String(j === i)));
     ch.railBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     const zones = $('#zones');

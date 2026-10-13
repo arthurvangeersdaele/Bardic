@@ -1,7 +1,8 @@
-"""Builds the web edition MP3s from the free sources listed in spec.py.
+"""Builds the web edition MP3s from the open-source game assets listed in spec.py.
 
-Usage: put blob-less sparse clones of wesnoth/wesnoth, 0ad/0ad and flareteam/flare-game
-in ./src/ next to this script (plus Wesnoth's copyrights.csv as src/wes_copyrights.csv),
+Usage: put blob-less sparse clones of wesnoth/wesnoth, 0ad/0ad, flareteam/flare-game and
+arianne/stendhal in ./src/ next to this script, plus Wesnoth's copyrights.csv as
+src/wes_copyrights.csv and Stendhal's doc/sources/audio-*.txt as src/stendhal_audio-*.txt,
 then run:  python3 build.py ../../../docs/play/sounds  [optional name filter]
 Needs ffmpeg with libmp3lame.
 """
@@ -13,7 +14,7 @@ OUT = sys.argv[1]  # docs/play/sounds
 ns = {}
 exec(open(os.path.join(HERE, 'spec.py')).read(), ns)
 PLAN, REPEAT, MIN_LOOP, NO_XFADE = ns['PLAN'], ns['REPEAT'], ns['MIN_LOOP'], ns['NO_XFADE']
-PRE = {'W': ('wesnoth', 'data/core/'), 'WC': ('wesnoth', 'data/campaigns/'),
+PRE = {'S': ('stendhal', 'data/'), 'W': ('wesnoth', 'data/core/'), 'WC': ('wesnoth', 'data/campaigns/'),
        'Z': ('0ad', 'binaries/data/mods/public/audio/'), 'F': ('flare-game', 'mods/fantasycore/')}
 TMP = os.path.join(HERE, 'work'); os.makedirs(TMP, exist_ok=True)
 
@@ -23,6 +24,39 @@ def src_path(s):
     k, p = s.split(':', 1); repo, pre = PRE[k]
     return os.path.join(HERE, 'src', repo, pre + p), repo, pre + p
 
+def _stendhal_index():
+    idx = []
+    for name in ('audio-sfx', 'audio-music', 'audio-loop', 'audio-weather'):
+        section = ''
+        for line in open(os.path.join(HERE, 'src', f'stendhal_{name}.txt'), encoding='utf-8'):
+            line = line.rstrip('\n')
+            if not line.strip():
+                continue
+            if line.endswith('/') and ' ' not in line.strip():
+                section = line.strip()
+                continue
+            m = re.match(r'(\S+)\s+(.*)$', line)
+            if not m:
+                continue
+            pat = re.escape(m.group(1))
+            pat = re.sub(r'\\\[(\d+)\\-(\d+)\\\]', lambda r: '(' + '|'.join(str(i).zfill(len(r.group(1))) for i in range(int(r.group(1)), int(r.group(2)) + 1)) + ')', pat)
+            pat = pat.replace('\\*', '.*')
+            parts = [p.strip() for p in m.group(2).split(';')]
+            idx.append((section, re.compile(pat + r'(\.ogg)?$'), parts))
+    return idx
+STENDHAL = _stendhal_index()
+
+def stendhal_credit(rel):
+    folder, fname = rel.rsplit('/', 1)
+    for section, rx, parts in STENDHAL:
+        if section.rstrip('/') == folder and rx.match(fname):
+            author = parts[0]
+            lic = parts[1] if len(parts) > 1 else 'see Stendhal'
+            lic = lic.split(':')[0].strip()
+            lic = {'GPL': 'GNU GPL', 'public domain': 'Public domain'}.get(lic, lic)
+            return author, lic, parts[2] if len(parts) > 2 else ''
+    raise KeyError(rel)
+
 def credit(s):
     path, repo, rel = src_path(s)
     if repo == 'wesnoth':
@@ -30,6 +64,10 @@ def credit(s):
         authors = '; '.join(a.strip() for a in r.get('Author - Real Name(other name);Real Name(other name);etc', '').split(';') if a.strip())
         return {'project': 'Battle for Wesnoth', 'url': f'https://github.com/wesnoth/wesnoth/blob/master/{rel}',
                 'file': rel.split('/')[-1], 'author': authors or 'Wesnoth contributors', 'license': r.get('License', 'GNU GPL v2+')}
+    if repo == 'stendhal':
+        author, lic, url = stendhal_credit(rel)
+        return {'project': 'Stendhal', 'url': f'https://github.com/arianne/stendhal/blob/master/{rel}', 'file': rel.split('/')[-1],
+                'author': author, 'license': lic, 'origin': url}
     if repo == '0ad':
         return {'project': '0 A.D.', 'url': f'https://github.com/0ad/0ad/blob/main/{rel}', 'file': rel.split('/')[-1],
                 'author': 'Wildfire Games', 'license': 'CC BY-SA 3.0'}
