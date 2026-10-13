@@ -400,7 +400,7 @@
       const cards = el('div', 'cards');
       const voices = ch.voices[zone.id];
       if (!voices.length) cards.append(el('div', 'empty', zone.empty));
-      voices.forEach((v) => cards.append(v.card || buildCard(v)));
+      voices.forEach((v) => cards.append(v.card ? v.card.root : buildCard(v)));
       row.append(label, cards);
       zones.append(row);
     });
