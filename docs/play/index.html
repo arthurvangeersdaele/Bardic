@@ -22,6 +22,9 @@
       document.documentElement.dataset.theme = s.theme || 'obsidian';
       document.documentElement.dataset.mode = mode;
     } catch (e) {}
+    try {
+      document.documentElement.classList.toggle('pc', matchMedia('(hover: hover) and (pointer: fine) and (min-width: 900px)').matches);
+    } catch (e) {}
   })();
 </script>
 </head>
@@ -47,7 +50,44 @@
       <p>The <a href="../">Android app</a> is made for real sessions: your own sounds and stories, a low-latency engine, playback with the screen off, and everything stays on your phone.</p>
     </div>
     <div id="story-list" class="story-list"></div>
+    <a class="more-tales" href="../compagnie/">
+      <span class="kick">More tales</span>
+      <b>The Compagnie des bardes</b>
+      <span>Stories forged by other game masters wait in its Recueil.<span class="pc-only"> On this computer, you can also play your own .bardic files.</span></span>
+    </a>
     <p class="note">Music and sounds: Battle for Wesnoth, 0 A.D., Flare and Stendhal (<a href="https://github.com/arthurvangeersdaele/bardic/blob/main/docs/play/sounds/CREDITS.md" target="_blank" rel="noopener">credits</a>).</p>
+  </div>
+</main>
+
+<!-- Play your own .bardic (computer only) -->
+<main id="import" class="stories" hidden>
+  <header class="sbar">
+    <a class="logo" href="../">Bardic</a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="./">Play</a>
+      <a href="../compagnie/" aria-current="page">Compagnie<span class="long">&nbsp;des bardes</span></a>
+    </nav>
+    <span class="grow"></span>
+    <button class="ico" data-action="settings" aria-label="Settings" title="Settings"></button>
+  </header>
+  <div class="stories-wrap import-wrap">
+    <p class="kicker">Compagnie des bardes</p>
+    <h1>Play a tale</h1>
+    <div class="pc-only">
+      <p class="lead">Open a .bardic file from your computer, forged in the Story builder or the Bardic app, and run it on the mixing table.</p>
+      <label class="dropbig" id="bardic-drop">
+        <input type="file" id="bardic-input" accept=".bardic,application/zip" hidden>
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+        <b id="drop-title">Drop a .bardic file here</b>
+        <span id="drop-sub">or click to browse your computer</span>
+        <span class="bar" hidden><i></i></span>
+      </label>
+      <p class="note">The file is read by your browser and never uploaded. Looking for a tale? Browse the <a href="../compagnie/recueil.html">Recueil</a>.</p>
+    </div>
+    <div class="phone-only">
+      <p class="lead">Playing your own .bardic files is for a computer. On your phone, the Bardic app is your table: open the file there.</p>
+      <p><a class="btn-link" href="../compagnie/recueil.html">Browse the Recueil</a></p>
+    </div>
   </div>
 </main>
 
@@ -135,6 +175,7 @@
   </section>
 </dialog>
 
+<script src="../compagnie/bardic-format.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

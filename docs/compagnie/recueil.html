@@ -22,6 +22,9 @@
       document.documentElement.dataset.theme = s.theme || 'obsidian';
       document.documentElement.dataset.mode = mode;
     } catch (e) {}
+    try {
+      document.documentElement.classList.toggle('pc', matchMedia('(hover: hover) and (pointer: fine) and (min-width: 900px)').matches);
+    } catch (e) {}
   })();
 </script>
 </head>
@@ -50,7 +53,7 @@
     <div>
       <h2>Add your tale</h2>
       <ol>
-        <li>Forge your story in the <a href="builder.html">Story builder</a>.</li>
+        <li>Forge your story <span class="pc-only">in the <a href="builder.html">Story builder</a> or </span>in the Bardic app.</li>
         <li>Lay the .bardic file in the Recueil on GitHub. You only need a GitHub account: GitHub prepares the pull request for you.</li>
         <li>Once it is accepted, your tale appears here for every bard.</li>
       </ol>

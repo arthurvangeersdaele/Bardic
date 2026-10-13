@@ -48,12 +48,14 @@
       (t.chapters || []).forEach((c) => ol.append(el('li', '', c)));
       const acts = el('div', 'acts');
       const href = `../recueil/${encodeURIComponent(t.file)}`;
-      const dl = el('a', 'btn primary', 'Download');
+      const play = el('a', 'btn primary pc-only', 'Play');
+      play.href = `../play/?bardic=${encodeURIComponent(href)}`;
+      const dl = el('a', 'btn dl', 'Download');
       dl.href = href;
       dl.setAttribute('download', t.file);
-      const open = el('a', 'btn', 'Open in the builder');
+      const open = el('a', 'btn pc-only', 'Open in the builder');
       open.href = `builder.html?open=${encodeURIComponent(href)}`;
-      acts.append(dl, open);
+      acts.append(play, dl, open);
       inside.append(ol, acts);
       head.onclick = () => {
         const on = !li.hasAttribute('open');

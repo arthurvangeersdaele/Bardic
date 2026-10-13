@@ -49,6 +49,9 @@ Opening a story downloads every MP3 of every chapter into memory, so each sound 
 
 `docs/compagnie/` is the community corner of the site:
 
+Builder and playing your own files are for computers (the app does both on a phone); on a phone the Compagnie shows the Recueil only.
+
+- **Play a tale** (`../play/#/bardic`): opens a `.bardic` file from the computer, or a tale of the Recueil, on the player's mixing table.
 - **Story builder** (`builder.html`): name a story and its chapters, drop MP3s into Music, Ambience, Events and the Soundbox, and download a `.bardic` file. Everything runs in the browser, nothing is uploaded. It can also open an existing `.bardic` to edit it.
 - **Recueil** (`recueil.html`): the shared library of `.bardic` files stored in `docs/recueil/`. Anyone can add one through a pull request ([how](docs/recueil/README.md)); the **Recueil** action checks pull requests and rebuilds `docs/recueil/index.json` once they are merged.
 
@@ -69,6 +72,8 @@ gradle assembleDebug
 ```
 
 ## Roadmap
+
+- Web edition (available): play in the browser on a computer, with the Compagnie des bardes (Story builder, Recueil, playing your own `.bardic` files). On a phone, the web offers the discovery stories and the Recueil.
 
 1. Audio engine prototype (in progress)
 2. Stories, chapters and local database (Room)

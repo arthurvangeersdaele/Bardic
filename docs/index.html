@@ -6,6 +6,7 @@
 <link rel="icon" type="image/svg+xml" href="icons/261013_bardic_icon.svg">
 <link rel="apple-touch-icon" href="icons/261013_bardic_apple_touch_icon.png">
 <meta name="theme-color" content="#0F0F13">
+<script>try{document.documentElement.classList.toggle('pc',matchMedia('(hover: hover) and (pointer: fine) and (min-width: 900px)').matches)}catch(e){}</script>
 <title>Bardic, the sound table for game masters</title>
 <meta name="description" content="Bardic is an Android app that lets tabletop RPG game masters run music, ambience and sound effects from their phone.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,6 +43,12 @@ nav{display:flex;align-items:center;justify-content:space-between;gap:16px;paddi
 .btn.big{height:56px;padding:0 26px;font-size:19px}
 .ctas{align-items:center}
 .d20{display:inline-flex;color:var(--muted);transition:color .2s,transform .4s}.d20:hover{color:var(--accent);transform:rotate(-12deg)}.d20 .gh{fill:currentColor}
+html:not(.pc) .pc-only{display:none!important}
+.cta-pc{display:inline-flex;align-items:center;gap:12px;margin-top:14px;padding:10px 16px;border-radius:12px;border:1px solid var(--line);color:var(--text);text-decoration:none;font-size:16px;max-width:620px;transition:border-color .2s,background .2s}
+.cta-pc:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.cta-pc b{color:var(--accent);font-weight:600}
+.cta-pc svg{flex:none;color:var(--accent)}
+.road li.done{border-color:color-mix(in srgb,var(--amb) 60%,var(--line))}.road li.done small{color:var(--amb);font-weight:600}
 .cta-note{font-size:15px;color:var(--muted);max-width:560px;margin:12px 0 0}.cta-note a{color:var(--muted)}.cta-note a:hover{color:var(--text)}
 .themes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:20px;font-size:15px;color:var(--muted)}
 .themes button{height:36px;padding:0 14px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
@@ -95,7 +102,7 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
 <div class="wrap">
   <nav>
     <a class="logo" href="#">Bardic</a>
-    <div class="navlinks"><a href="play/" style="color:var(--accent);font-weight:600">Try it online</a><a href="compagnie/">Compagnie des bardes</a><a href="#table">The table</a><a href="#features">Features</a><a href="#roadmap">Roadmap</a><a href="https://github.com/arthurvangeersdaele/bardic">GitHub</a></div>
+    <div class="navlinks"><a href="play/" style="color:var(--accent);font-weight:600">Test it online</a><a href="compagnie/">Compagnie des bardes</a><a href="#table">The table</a><a href="#features">Features</a><a href="#roadmap">Roadmap</a><a href="https://github.com/arthurvangeersdaele/bardic">GitHub</a></div>
   </nav>
 
   <header class="hero">
@@ -104,9 +111,10 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
       <h1>Your table deserves a soundtrack.</h1>
       <p class="lead">Bardic turns your phone into a sound desk for tabletop RPGs. Prepare music, ambience and events for each chapter of your story, then play them live with one hand while you run the game.</p>
       <div class="ctas">
-        <a class="btn primary big" href="play/">▶ Try it in your browser</a>
+        <a class="btn primary big" href="play/"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.3" cy="8.3" r="1.7" fill="currentColor"/><circle cx="15.7" cy="8.3" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="8.3" cy="15.7" r="1.7" fill="currentColor"/><circle cx="15.7" cy="15.7" r="1.7" fill="currentColor"/></svg>Gain Bardic Inspiration</a>
         <a class="d20" href="https://github.com/arthurvangeersdaele/bardic" aria-label="Bardic on GitHub" title="Bardic on GitHub"><svg viewBox="0 0 48 48" width="56" height="56" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M24 2 43 13v22L24 46 5 35V13Z"/><path d="M24 9 9 34h30Z"/><path d="M24 2v7M43 13 24 9M5 13l19-4M5 13l4 21M43 13l-4 21M5 35l4-1M43 35l-4-1M24 46 9 34M24 46l15-12"/></g><path class="gh" transform="translate(16 17.7)" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg></a>
       </div>
+      <a class="cta-pc pc-only" href="compagnie/"><span>On a computer, join the <b>Compagnie des bardes</b> and play online: tales from the Recueil, your own .bardic files, and a builder to forge new ones.</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       <p class="cta-note">The web version is a discovery edition: four ready-made stories, nothing to install. The Android app, in development, is the one built for real sessions, with your own sounds and stories, a low-latency engine and playback with the screen off. <a href="https://github.com/arthurvangeersdaele/bardic/releases/tag/dev-latest">Engine test build (APK)</a></p>
       <div class="themes" role="group" aria-label="Preview a theme">Try a theme:
         <button data-t="obsidian" aria-pressed="true">Obsidian</button>
@@ -172,6 +180,7 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
     <p class="kicker">Roadmap</p>
     <h2>Where we are.</h2>
     <ol class="road">
+      <li class="done"><span>Web edition: play in the browser on a computer, with the Compagnie des bardes (Story builder, Recueil, your own .bardic files)</span><small>Available</small></li>
       <li class="now"><span>Audio engine prototype: 20 tracks, loops, fades, stress test</span><small>In progress</small></li>
       <li><span>Stories, chapters and local database</span><small>Next</small></li>
       <li><span>Live mixing table</span><small>Planned</small></li>

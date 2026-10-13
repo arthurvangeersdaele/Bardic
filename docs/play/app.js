@@ -184,7 +184,11 @@
   let chapterIdx = 0;
   let pausedByAll = [];
   let loader = null;
-  const sb = { sounds: [], loaded: false, sources: new Set() };
+  const sb = { sounds: [], loaded: false, sources: new Set(), shared: null };
+  // A .bardic file opened from this computer: { meta, chapters: [{ music|ambience|events: [sound] }], soundbox: [sound] }.
+  // Its sounds carry their blob, so nothing is downloaded.
+  let CUSTOM = null;
+  const LOOP_INDEX = { once: 0, twice: 1, infinite: 2 };
 
   async function boot() {
     renderStaticIcons();
@@ -204,6 +208,12 @@
     sb.sounds = (LIBRARY.soundbox || []).map((s) => ({ ...s, buffer: null, state: 'loading' }));
     renderStories();
     window.addEventListener('hashchange', route);
+    const src = new URLSearchParams(location.search).get('bardic');
+    if (src && /^[\w./%-]+\.bardic$/i.test(src)) {
+      history.replaceState(null, '', location.pathname + '#/bardic');
+      openBardic(src, decodeURIComponent(src.split('/').pop()));
+      return;
+    }
     route();
   }
 
@@ -219,10 +229,11 @@
   /* ---------------- Routing ---------------- */
   function route() {
     const m = location.hash.match(/^#\/([\w-]+)(?:\/(\d+))?/);
-    const meta = m && STORIES.find((s) => s.id === m[1]);
+    if (m && m[1] === 'bardic' && !CUSTOM) { closeStory(); showImport(); return; }
+    const meta = m && (m[1] === 'bardic' ? CUSTOM.meta : STORIES.find((s) => s.id === m[1]));
     if (!meta) { closeStory(); showStories(); return; }
     const idx = Math.min(Math.max(parseInt(m[2] || '1', 10) - 1, 0), meta.chapters.length - 1);
-    if (!story || story.meta.id !== meta.id) openStory(meta, idx);
+    if (!story || story.meta !== meta) openStory(meta, idx);
     else setChapter(idx);
   }
   const goChapter = (i) => {
@@ -254,6 +265,7 @@
     });
   }
   function showStories() {
+    $('#import').hidden = true;
     $('#table').hidden = true;
     $('#stories').hidden = false;
     document.title = 'Bardic Web Edition';
@@ -263,14 +275,17 @@
   /* ---------------- Opening a story: preload everything ---------------- */
   function openStory(meta, idx) {
     closeStory();
+    useSoundbox(meta.custom ? CUSTOM.soundbox : null);
     story = { meta, chapters: [], all: [] };
     meta.chapters.forEach((c, i) => {
       const key = `${meta.id}/${c.id}`;
-      const lib = LIBRARY.chapters[key] || {};
+      const lib = (meta.custom ? CUSTOM.chapters[i] : LIBRARY.chapters[key]) || {};
       const ch = { meta: c, index: i, key, voices: {} };
       ZONES.forEach((zone) => {
         ch.voices[zone.id] = (lib[zone.id] || []).map((s) => {
           const v = new Voice(s, zone, ch);
+          if (s.loop in LOOP_INDEX) v.loop = LOOP_INDEX[s.loop];
+          if (typeof s.volume === 'number') v.vol = s.volume;
           story.all.push(v);
           return v;
         });
@@ -279,6 +294,7 @@
     });
     $('#t-story').textContent = meta.title;
     $('#stories').hidden = true;
+    $('#import').hidden = true;
     $('#table').hidden = false;
     document.title = `${meta.title} | Bardic`;
     renderRail();
@@ -317,7 +333,8 @@
         const info = item.sound || item;
         let got = 0;
         try {
-          const blob = await download(info.file, ctrl.signal, (n) => { got += n; doneBytes += n; tick(); });
+          const blob = info.blob || await download(info.file, ctrl.signal, (n) => { got += n; doneBytes += n; tick(); });
+          if (info.blob) doneBytes += info.blob.size;
           if (ctrl.signal.aborted) return;
           if (item instanceof Voice) item.attach(blob);
           else await decodePad(item, blob);
@@ -366,6 +383,89 @@
     $('#load-count').textContent = `${ready}/${total}`;
     $('#load-fill').style.width = `${Math.round(frac * 100)}%`;
     $('#load-chip').classList.toggle('done', ready === total);
+  }
+
+  /* The shared web soundbox, or the soundbox of an opened .bardic file. */
+  function useSoundbox(own) {
+    if (own) {
+      if (!sb.shared) sb.shared = { sounds: sb.sounds, loaded: sb.loaded };
+      stopSoundbox();
+      sb.sounds = own.map((s, i) => ({ name: s.name, file: `bardic:${CUSTOM.meta.key}:${i}`, blob: s.blob, size: s.size, buffer: null, state: 'loading' }));
+      sb.loaded = false;
+    } else if (sb.shared) {
+      stopSoundbox();
+      sb.sounds = sb.shared.sounds;
+      sb.loaded = sb.shared.loaded;
+      sb.shared = null;
+    }
+    renderPads();
+  }
+
+  /* ---------------- Play your own .bardic (computer) ---------------- */
+  function showImport() {
+    $('#stories').hidden = true;
+    $('#table').hidden = true;
+    $('#import').hidden = false;
+    document.title = 'Play a tale | Bardic';
+    releaseWake();
+  }
+  function dropState(title, sub, frac, busy, err) {
+    const d = $('#bardic-drop');
+    d.classList.toggle('busy', !!busy);
+    d.classList.toggle('err', !!err);
+    $('#drop-title').textContent = title;
+    $('#drop-sub').textContent = sub;
+    const bar = d.querySelector('.bar');
+    bar.hidden = frac == null;
+    if (frac != null) bar.firstElementChild.style.width = `${Math.round(frac * 100)}%`;
+  }
+  async function openBardic(source, label) {
+    showImport();
+    const started = Date.now();
+    try {
+      let blob = source;
+      if (typeof source === 'string') {
+        dropState('Fetching the tale', label, 0, true);
+        blob = await download(source, undefined, (() => { let got = 0; return (n) => { got += n; dropState('Fetching the tale', `${label}, ${fmtSize(got)}`, null, true); }; })());
+      }
+      dropState('Opening the tale', label, 0, true);
+      const d = await window.Bardic.unpack(blob, (done, total) => dropState('Opening the tale', `Reading sound ${done} of ${total}`, done / total, true));
+      const wait = 700 - (Date.now() - started);
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+      const conv = (s) => ({ name: s.name, blob: s.blob, size: s.blob.size, loop: s.loop, volume: s.volume });
+      const key = `t${Date.now()}`;
+      CUSTOM = {
+        meta: {
+          id: 'bardic', key, custom: true, title: d.title || 'Untitled tale', bard: d.bard, revision: d.revision,
+          chapters: d.chapters.map((c, i) => ({ id: `c${i + 1}`, title: c.title || `Chapter ${i + 1}` })),
+        },
+        chapters: d.chapters.map((c) => ({ music: c.music.map(conv), ambience: c.ambience.map(conv), events: c.events.map(conv) })),
+        soundbox: d.soundbox.map(conv),
+      };
+      if (!CUSTOM.meta.chapters.length) throw new Error('This tale has no chapter.');
+      dropState('Drop a .bardic file here', 'or click to browse your computer', null, false);
+      audio();
+      location.hash = '#/bardic/1';
+    } catch (e) {
+      dropState('This file could not be opened', e.message || String(e), null, false, true);
+    }
+  }
+  function fmtSize(b) { return b < 1048576 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1048576).toFixed(1)} MB`; }
+  {
+    const drop = $('#bardic-drop');
+    $('#bardic-input').addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      e.target.value = '';
+      if (f) openBardic(f, f.name);
+    });
+    drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', (e) => {
+      e.preventDefault();
+      drop.classList.remove('over');
+      const f = e.dataTransfer.files[0];
+      if (f) openBardic(f, f.name);
+    });
   }
 
   /* ---------------- Chapters & zones ---------------- */
@@ -627,7 +727,7 @@
     const a = e.target.closest('[data-action]');
     if (!a) return;
     switch (a.dataset.action) {
-      case 'back': stopAll(); location.hash = '#/'; break;
+      case 'back': stopAll(); if (story && story.meta.custom) { CUSTOM = null; } location.hash = story && story.meta.custom ? '#/bardic' : '#/'; break;
       case 'settings': $('#settings').showModal(); break;
       case 'soundbox': toggleSoundbox(); break;
       case 'pause-all': pauseAll(); break;

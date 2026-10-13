@@ -24,8 +24,9 @@
 .oath { max-width: 660px; font-size: clamp(18px, 2vw, 21px); line-height: 1.55; color: var(--muted); margin: 0 auto; }
 .oath p { margin: 0 0 14px; }
 .oath em { color: var(--text); font-style: normal; }
-.doors { display: grid; grid-template-columns: repeat(2, minmax(0, 300px)); gap: 18px; margin-top: 36px; justify-content: center; width: 100%; }
-@media (max-width: 680px) { .doors { grid-template-columns: minmax(0, 360px); } }
+.doors { display: grid; grid-template-columns: minmax(0, 360px); gap: 18px; margin-top: 36px; justify-content: center; width: 100%; }
+html.pc .doors { grid-template-columns: repeat(3, minmax(0, 290px)); }
+.phone-note { color: var(--muted); font-size: 15px; max-width: 360px; margin: 18px auto 0; }
 .door {
   position: relative; display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 8px; padding: 22px 22px 20px;
   border-radius: 16px; background: var(--card); border: 1px solid var(--line); color: var(--text); text-decoration: none;
@@ -36,6 +37,7 @@
 .door span { color: var(--muted); font-size: 15px; }
 .door .go { position: absolute; right: 18px; top: 22px; color: var(--z, var(--accent)); }
 .door.builder { --z: var(--amb); }
+.door.tale-door { --z: var(--evt); }
 .door.recueil { --z: var(--accent); background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 10%, var(--card)), var(--card) 55%); }
 .door.recueil b { color: var(--accent); }
 
@@ -136,14 +138,6 @@
 .forge .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin: 14px 0 4px; }
 .forge .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
 .forge .acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-/* opening animation: the three Bardic bars playing */
-.eq { display: flex; align-items: flex-end; justify-content: center; gap: 7px; height: 56px; margin: 6px 0 14px; }
-.eq i { width: 12px; border-radius: 6px; animation: eq 1s ease-in-out infinite; }
-.eq i:nth-child(1) { background: var(--music); height: 60%; animation-delay: -.2s; }
-.eq i:nth-child(2) { background: var(--amb); height: 100%; animation-delay: -.55s; }
-.eq i:nth-child(3) { background: var(--evt); height: 75%; animation-delay: -.8s; }
-@keyframes eq { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
-.eq i { transform-origin: bottom; }
 .forge.loading { text-align: center; }
 .forge .step { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; margin: 4px 0 0; }
 @media (prefers-reduced-motion: reduce) { .eq i { animation: none; } }
@@ -179,6 +173,10 @@
 .tale li { counter-increment: c; display: flex; gap: 12px; }
 .tale li::before { content: counter(c); font-family: 'Cormorant SC', serif; font-weight: 700; color: var(--accent); width: 16px; text-align: right; flex: none; }
 .tale .acts { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+html:not(.pc) .tale .dl { background: var(--accent); border-color: var(--accent); color: var(--on-z); }
+.bld-phone { flex: 1; max-width: 520px; margin: 0 auto; padding: 56px 24px; text-align: center; }
+.bld-phone h1 { font-size: 44px; margin: 0 0 14px; }
+.bld-phone p { color: var(--muted); font-size: 18px; margin: 0 0 22px; }
 @media (max-width: 600px) {
   .tale > button { grid-template-columns: minmax(0, 1fr) auto 16px; gap: 4px 12px; }
   .tale .ts { grid-column: 2; grid-row: 2; justify-self: end; }

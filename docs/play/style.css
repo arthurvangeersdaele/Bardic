@@ -19,6 +19,11 @@
 [data-theme="blood"][data-mode="light"]      { --bg:#F7EDED; --bar:#F0E1E1; --card:#FFF9F9; --line:#E2C6CA; --text:#2A1416; --muted:#84636A; --accent:#B3303B; }
 [data-theme="divination"][data-mode="light"] { --bg:#ECEFFA; --bar:#E3E8F7; --card:#FAFBFF; --line:#CBD2EE; --text:#141A33; --muted:#5D6590; --accent:#7450C2; }
 
+/* ---------- Computer or phone ---------- */
+/* .pc is set on <html> for a mouse and a screen of at least 900 px: the Story builder and playing your own files live there. */
+html:not(.pc) .pc-only { display: none !important; }
+html.pc .phone-only { display: none !important; }
+
 /* ---------- Base ---------- */
 * { box-sizing: border-box; }
 html, body { height: 100%; }
@@ -290,3 +295,39 @@ kbd { font: 600 12px/1 ui-monospace, Menlo, Consolas, monospace; border: 1px sol
   .load.done { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* opening animation: the three Bardic bars playing */
+.eq { display: flex; align-items: flex-end; justify-content: center; gap: 7px; height: 56px; margin: 6px 0 14px; }
+.eq i { width: 12px; border-radius: 6px; animation: eq 1s ease-in-out infinite; }
+.eq i:nth-child(1) { background: var(--music); height: 60%; animation-delay: -.2s; }
+.eq i:nth-child(2) { background: var(--amb); height: 100%; animation-delay: -.55s; }
+.eq i:nth-child(3) { background: var(--evt); height: 75%; animation-delay: -.8s; }
+@keyframes eq { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+.eq i { transform-origin: bottom; }
+@media (prefers-reduced-motion: reduce) { .eq i { animation: none; } }
+
+/* ---------- More tales + Play a tale ---------- */
+.more-tales {
+  display: grid; gap: 4px; margin-top: 18px; padding: 18px 20px; border-radius: 16px; text-decoration: none; color: var(--muted);
+  border: 1px dashed var(--line); background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 60%);
+  transition: border-color .2s, transform .2s;
+}
+.more-tales:hover { border-color: var(--accent); transform: translateY(-2px); }
+.more-tales .kick { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.more-tales b { font-family: 'Cormorant SC', serif; font-size: 28px; color: var(--text); line-height: 1.1; }
+.import-wrap { max-width: 760px; }
+.kicker { font-size: 14px; letter-spacing: 4px; text-transform: uppercase; color: var(--accent); font-weight: 600; margin: 0 0 8px; }
+.dropbig {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; cursor: pointer;
+  min-height: 260px; border: 2px dashed var(--line); border-radius: 18px; padding: 28px; background: var(--card); transition: border-color .15s, background .15s;
+}
+.dropbig:hover, .dropbig.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--card)); }
+.dropbig b { font-family: 'Cormorant SC', serif; font-size: 30px; color: var(--text); }
+.dropbig > span { color: var(--muted); }
+.dropbig .eq { margin: 0 0 6px; }
+.dropbig:not(.busy) .eq i { animation-play-state: paused; }
+.dropbig .bar { display: block; width: min(360px, 80%); height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 8px; }
+.dropbig .bar[hidden] { display: none; }
+.dropbig .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+.dropbig.err > span#drop-sub { color: var(--evt); }
+.btn-link { color: var(--accent); font-weight: 600; }

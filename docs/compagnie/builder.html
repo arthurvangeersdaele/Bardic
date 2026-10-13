@@ -22,6 +22,9 @@
       document.documentElement.dataset.theme = s.theme || 'obsidian';
       document.documentElement.dataset.mode = mode;
     } catch (e) {}
+    try {
+      document.documentElement.classList.toggle('pc', matchMedia('(hover: hover) and (pointer: fine) and (min-width: 900px)').matches);
+    } catch (e) {}
   })();
 </script>
 </head>
@@ -34,10 +37,16 @@
     <a href="./">Compagnie<span class="long">&nbsp;des bardes</span></a>
   </nav>
   <span class="grow"></span>
-  <button class="btn" type="button" id="open-btn"><span class="long">Open a .bardic</span><span class="short">Open</span></button><input type="file" id="open-input" accept=".bardic,application/zip" hidden>
+  <button class="btn pc-only" type="button" id="open-btn"><span class="long">Open a .bardic</span><span class="short">Open</span></button><input type="file" id="open-input" accept=".bardic,application/zip" hidden>
 </header>
 
-<main class="bld" id="bld">
+<main class="bld-phone phone-only">
+  <p class="kicker">Compagnie des bardes</p>
+  <h1>Story builder</h1>
+  <p>The Story builder is made for a computer, with room for every chapter and a mouse to drop your MP3s. On your phone, the Bardic app is your builder: export your story from there as a .bardic file.</p>
+  <a class="btn primary" href="recueil.html">Browse the Recueil</a>
+</main>
+<main class="bld pc-only" id="bld">
   <section class="bld-head">
     <div class="fields one">
       <label class="field"><span>Story title</span><input class="title" id="f-title" maxlength="120" placeholder="The Drowned Abbey" autocomplete="off"></label>
