@@ -36,8 +36,16 @@ def check(path: Path):
         return None, [f"story.json is not valid JSON ({exc})"]
     if story.get("format") != "bardic":
         errors.append('format must be "bardic"')
-    if story.get("version") != 1:
-        errors.append("version must be 1")
+    version = story.get("version")
+    if version not in (1, 2):
+        errors.append("version must be 1 or 2")
+    if version == 2:
+        if not str(story.get("bard", "")).strip():
+            errors.append("missing bard name")
+        if not isinstance(story.get("revision"), int) or story["revision"] < 1:
+            errors.append("revision must be a whole number from 1")
+        if not str(story.get("id", "")).strip():
+            errors.append("missing story id")
     title = story.get("title")
     if not isinstance(title, str) or not title.strip():
         errors.append("missing title")
@@ -72,7 +80,9 @@ def check(path: Path):
     entry = {
         "file": path.name,
         "title": (title or path.stem).strip() if isinstance(title, str) else path.stem,
-        "author": story.get("author", ""),
+        "id": story.get("id", ""),
+        "bard": str(story.get("bard") if version == 2 else story.get("author", "")).strip(),
+        "revision": story.get("revision", 1) if version == 2 else 1,
         "description": story.get("description", ""),
         "chapters": [str(c.get("title", "")).strip() for c in chapters if isinstance(c, dict)],
         "sounds": sounds,

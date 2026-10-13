@@ -26,9 +26,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,6 +53,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bardic.app.audio.NativeEngine
+import com.bardic.app.bardic.BardicArchive
+import com.bardic.app.bardic.LoopMode
+import com.bardic.app.bardic.UnpackedStory
+import com.bardic.app.settings.BardSettings
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -79,6 +88,86 @@ fun EngineTestScreen() {
     var loading by remember { mutableStateOf(false) }
     var snapshot by remember {
         mutableStateOf(EngineSnapshot(IntArray(n), FloatArray(n), FloatArray(6)))
+    }
+    var story by remember { mutableStateOf<UnpackedStory?>(null) }
+    var status by remember { mutableStateOf<String?>(null) }
+    var settingsOpen by remember { mutableStateOf(false) }
+    var exportAfterSettings by remember { mutableStateOf(false) }
+
+    // Opens a .bardic file and loads its first 20 sounds into the slots, with their loop mode and volume.
+    val openBardic = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        loading = true
+        status = "Opening the story…"
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val input = context.contentResolver.openInputStream(uri) ?: error("Cannot read this file.")
+                    input.use { BardicArchive.unpack(it, File(context.filesDir, "stories/current")) }
+                }
+            }
+            result.onSuccess { unpacked ->
+                story = unpacked
+                val sounds = unpacked.story.allSounds()
+                for (slot in 0 until n) {
+                    val sound = sounds.getOrNull(slot)
+                    if (sound == null) {
+                        NativeEngine.unload(slot)
+                        names[slot] = null
+                        continue
+                    }
+                    val loop = when (sound.loop) {
+                        LoopMode.ONCE -> NativeEngine.LOOP_ONCE
+                        LoopMode.TWICE -> NativeEngine.LOOP_TWICE
+                        LoopMode.INFINITE -> NativeEngine.LOOP_INFINITE
+                    }
+                    val volume = sound.volume.toFloat().coerceIn(0f, 1f)
+                    loops[slot] = loop
+                    volumes[slot] = volume
+                    val ok = withContext(Dispatchers.IO) {
+                        val loaded = runCatching {
+                            NativeEngine.load(context, slot, Uri.fromFile(unpacked.fileFor(sound)), loop)
+                        }.getOrDefault(false)
+                        NativeEngine.setVolume(slot, volume)
+                        loaded
+                    }
+                    names[slot] = if (ok) sound.name else "Unreadable file"
+                }
+                val s = unpacked.story
+                val more = if (sounds.size > n) " (first $n of ${sounds.size} sounds loaded)" else ""
+                status = "${s.title}, by ${s.bard.ifBlank { "an unknown bard" }}, revision ${s.revision}$more"
+            }.onFailure { status = "Could not open this file: ${it.message}" }
+            loading = false
+        }
+    }
+
+    // Exports the open story as its next revision, signed with the bard name from the settings.
+    val exportBardic = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        val current = story
+        if (uri == null || current == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val forged = current.story.forgedBy(BardSettings.bardName(context))
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val output = context.contentResolver.openOutputStream(uri) ?: error("Cannot write this file.")
+                    output.use { BardicArchive.pack(forged, current::fileFor, it) }
+                }
+            }
+            result.onSuccess {
+                story = UnpackedStory(forged, current.dir)
+                status = "${forged.title} exported: revision ${forged.revision}, signed by ${forged.bard}"
+            }.onFailure { status = "Export failed: ${it.message}" }
+        }
+    }
+
+    fun startExport() {
+        val current = story ?: return
+        if (BardSettings.bardName(context).isBlank()) {
+            exportAfterSettings = true
+            settingsOpen = true
+            return
+        }
+        exportBardic.launch(fileNameFor(current.story.title))
     }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -140,6 +229,9 @@ fun EngineTestScreen() {
             }
             BarButton("Pause all") { for (i in 0 until n) NativeEngine.pause(i) }
             BarButton("End all") { for (i in 0 until n) NativeEngine.end(i, 2000) }
+            BarButton("Open .bardic") { if (!loading) openBardic.launch(arrayOf("*/*")) }
+            if (story != null) BarButton("Export .bardic") { startExport() }
+            BarButton("Settings") { settingsOpen = true }
             Text("Master", color = Obsidian.Muted, fontSize = 13.sp)
             Slider(
                 value = master,
@@ -157,6 +249,15 @@ fun EngineTestScreen() {
         }
 
         StatsRow(snapshot)
+
+        status?.let {
+            Text(
+                it,
+                color = Obsidian.Text,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+            )
+        }
 
         if (names.all { it == null }) {
             Text(
@@ -199,6 +300,24 @@ fun EngineTestScreen() {
                 )
             }
         }
+    }
+
+    if (settingsOpen) {
+        SettingsDialog(
+            initialBardName = BardSettings.bardName(context),
+            onSave = { name ->
+                BardSettings.setBardName(context, name)
+                settingsOpen = false
+                if (exportAfterSettings) {
+                    exportAfterSettings = false
+                    startExport()
+                }
+            },
+            onDismiss = {
+                settingsOpen = false
+                exportAfterSettings = false
+            },
+        )
     }
 }
 
@@ -416,4 +535,51 @@ private fun displayName(context: Context, uri: Uri): String {
         }
     }.getOrNull() ?: uri.lastPathSegment ?: "Sound"
     return raw.substringBeforeLast('.')
+}
+
+/** App settings. For now: the bard name that signs every exported .bardic file. */
+@Composable
+private fun SettingsDialog(initialBardName: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf(initialBardName) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Obsidian.Bar,
+        title = { Text("Settings", color = Obsidian.Text, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Bard name", color = Obsidian.Muted, fontSize = 13.sp)
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it.take(BardSettings.MAX_BARD_NAME) },
+                    singleLine = true,
+                    placeholder = { Text("Your bard name", color = Obsidian.Muted) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Obsidian.Text,
+                        unfocusedTextColor = Obsidian.Text,
+                        focusedBorderColor = Obsidian.Music,
+                        unfocusedBorderColor = Obsidian.Line,
+                        cursorColor = Obsidian.Music,
+                    ),
+                )
+                Text(
+                    "Signs every .bardic file you export. Each export also raises the story's revision.",
+                    color = Obsidian.Muted,
+                    fontSize = 12.sp,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name.trim()) }, enabled = name.isNotBlank()) {
+                Text("Save", color = if (name.isNotBlank()) Obsidian.Music else Obsidian.Muted)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = Obsidian.Muted) }
+        },
+    )
+}
+
+private fun fileNameFor(title: String): String {
+    val slug = title.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-').take(48)
+    return "${slug.ifBlank { "story" }}.bardic"
 }

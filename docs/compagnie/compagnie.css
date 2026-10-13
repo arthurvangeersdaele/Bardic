@@ -44,6 +44,12 @@
 .bld-head { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; padding: 18px 20px 16px; border-bottom: 1px solid var(--line); }
 .bld-head .fields { flex: 1 1 520px; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 8px 14px; }
 .bld-head .fields .wide { grid-column: 1 / -1; }
+.bld-head .fields.one { grid-template-columns: minmax(0, 1fr); }
+.signed { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; padding: 4px 6px; border-radius: 8px; }
+.signed:hover { color: var(--text); background: var(--card); }
+.signed b { color: var(--accent); font-weight: 600; }
+.signed.missing { color: var(--evt); }
+.forge .field { margin: 6px 0 2px; }
 .field { display: flex; flex-direction: column; gap: 4px; }
 .field > span { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .field input, .field textarea, .chap-title {
@@ -130,6 +136,17 @@
 .forge .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin: 14px 0 4px; }
 .forge .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
 .forge .acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+/* opening animation: the three Bardic bars playing */
+.eq { display: flex; align-items: flex-end; justify-content: center; gap: 7px; height: 56px; margin: 6px 0 14px; }
+.eq i { width: 12px; border-radius: 6px; animation: eq 1s ease-in-out infinite; }
+.eq i:nth-child(1) { background: var(--music); height: 60%; animation-delay: -.2s; }
+.eq i:nth-child(2) { background: var(--amb); height: 100%; animation-delay: -.55s; }
+.eq i:nth-child(3) { background: var(--evt); height: 75%; animation-delay: -.8s; }
+@keyframes eq { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+.eq i { transform-origin: bottom; }
+.forge.loading { text-align: center; }
+.forge .step { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; margin: 4px 0 0; }
+@media (prefers-reduced-motion: reduce) { .eq i { animation: none; } }
 .errors { margin: 0 0 4px; padding-left: 18px; color: var(--evt); }
 .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; z-index: 30; box-shadow: 0 12px 30px var(--shadow); }
 

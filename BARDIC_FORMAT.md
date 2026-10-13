@@ -1,4 +1,4 @@
-# The `.bardic` file format (version 1)
+# The `.bardic` file format (version 2)
 
 A `.bardic` file is one story, sounds included, that can be shared between game masters. The web Story builder writes it, the Recueil lists it, and the Android app imports and exports it.
 
@@ -26,11 +26,14 @@ The folder layout above is what the builder writes, but readers find sounds **on
 ```json
 {
   "format": "bardic",
-  "version": 1,
+  "version": 2,
+  "id": "6f1c2a7e-4b8d-4f3a-9a51-2d0c8e7b1f42",
+  "revision": 3,
+  "bard": "Arthur",
   "title": "The Drowned Abbey",
-  "author": "Arthur",
   "description": "A flooded monastery, a choir of ghosts and a very angry abbot.",
   "created": "2026-10-13T18:40:00Z",
+  "forged": "2026-10-15T20:12:09Z",
   "generator": "Bardic Story builder (web)",
   "chapters": [
     {
@@ -51,11 +54,14 @@ The folder layout above is what the builder writes, but readers find sounds **on
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `format` | string | yes | Always `"bardic"`. |
-| `version` | integer | yes | `1`. A reader refuses versions it does not know. |
+| `version` | integer | yes | `2`. A reader refuses versions it does not know. |
+| `id` | string | yes | UUID of the story, created at the first forge and kept by every later revision. Lets the app recognise a newer revision of a story it already has. |
+| `revision` | integer | yes | Hidden counter, 1 for the first forge, +1 every time the story is forged again. Never typed by hand. |
+| `bard` | string | yes | Bard name of whoever forged this revision, taken from the settings (app or web). 1 to 60 characters. |
 | `title` | string | yes | Story title, 1 to 120 characters. |
-| `author` | string | no | Bard name of the author. |
 | `description` | string | no | One or two sentences. |
-| `created` | string | no | ISO 8601 date. |
+| `created` | string | no | ISO 8601 date of the first forge, kept across revisions. |
+| `forged` | string | no | ISO 8601 date of this revision. |
 | `generator` | string | no | Tool that wrote the file. |
 | `chapters` | array | yes | At least one chapter, in play order. |
 | `chapters[].title` | string | yes | Chapter title. |
@@ -75,3 +81,17 @@ A **sound**:
 Default loop modes used by the builder: Music and Ambience `infinite`, Events and Soundbox `once`.
 
 Unknown fields must be kept when a tool re-saves a file, so later versions can add things without breaking older ones.
+
+## Versioning a story
+
+Every tool that writes a `.bardic` file (web Story builder, Android app) does the same thing when it forges:
+
+1. keep `id` and `created` from the opened file, or create them for a new story;
+2. set `revision` to the opened revision + 1 (1 for a new story);
+3. set `bard` to the bard name from the settings, and `forged` to now.
+
+The bard name is set once, in the app settings or in the web player's Settings (it is shared with the Story builder). A file cannot be forged without one.
+
+## Version 1
+
+Version 1 files (October 2026) have no `id`, `revision` or `bard`, and an optional `author`. Readers still accept them: `author` becomes `bard`, `revision` counts as 1 and a new `id` is created when they are forged again, which writes version 2.

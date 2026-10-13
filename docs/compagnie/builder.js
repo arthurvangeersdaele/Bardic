@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const $ = (s) => document.querySelector(s);
-  const { ZONES, pack, unpack, validate, isAudio, formatSize, SHARE_LIMIT } = window.Bardic;
+  const { ZONES, pack, unpack, validate, isAudio, formatSize, SHARE_LIMIT, bardName, setBardName } = window.Bardic;
   const ZONE_INFO = {
     music: { label: 'Music', color: 'var(--music)', loop: 'infinite', hint: 'Drop music here, one track plays at a time' },
     ambience: { label: 'Ambience', color: 'var(--amb)', loop: 'infinite', hint: 'Drop ambiences here: rain, fire, crowds' },
@@ -29,7 +29,8 @@
   let uid = 0;
   const id = () => `s${++uid}`;
   const newChapter = (n) => ({ id: id(), title: `Chapter ${n}`, extra: {}, music: [], ambience: [], events: [] });
-  let state = { title: '', author: '', description: '', extra: {}, chapters: [newChapter(1)], soundbox: [] };
+  // id, revision and created are the hidden versioning of the story: kept from an opened file, bumped at each forge.
+  let state = { id: null, revision: 0, created: null, title: '', description: '', extra: {}, chapters: [newChapter(1)], soundbox: [] };
   let current = 0;
   let pickTarget = null;
   const cards = new Map();
@@ -306,12 +307,11 @@
   });
 
   /* ---------- story fields ---------- */
-  [['#f-title', 'title'], ['#f-author', 'author'], ['#f-desc', 'description']].forEach(([sel, key]) => {
+  [['#f-title', 'title'], ['#f-desc', 'description']].forEach(([sel, key]) => {
     $(sel).addEventListener('input', (e) => { state[key] = e.target.value; });
   });
   function fillFields() {
     $('#f-title').value = state.title;
-    $('#f-author').value = state.author;
     $('#f-desc').value = state.description;
   }
 
@@ -332,10 +332,43 @@
   function closeVeil() { $('#veil')?.remove(); }
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#veil') && !$('#veil').dataset.busy) closeVeil(); });
 
+  /* ---------- bard name (shared settings) ---------- */
+  function paintBard() {
+    const b = $('#bard-btn');
+    const name = bardName();
+    b.classList.toggle('missing', !name);
+    b.innerHTML = '';
+    if (name) { b.append('Signed by '); b.append(el('b', '', name)); } else b.textContent = 'Set your bard name';
+  }
+  function askBard(then) {
+    const box = veil(`<h2>Your bard name</h2>
+      <p>It signs every story you forge, here and in the player's Settings. Set it once.</p>
+      <label class="field"><span>Bard name</span><input id="bard-input" maxlength="60" autocomplete="nickname" placeholder="Arthur the Resonant"></label>
+      <div class="acts"><button class="btn primary" type="button" data-ok>${then ? 'Save and forge' : 'Save'}</button><button class="btn" type="button" data-close>Cancel</button></div>`);
+    const input = box.querySelector('#bard-input');
+    input.value = bardName();
+    input.focus();
+    const ok = () => {
+      if (!input.value.trim()) { input.focus(); return; }
+      setBardName(input.value);
+      paintBard();
+      closeVeil();
+      if (then) then();
+    };
+    box.querySelector('[data-ok]').onclick = ok;
+    input.onkeydown = (e) => { if (e.key === 'Enter') ok(); };
+    box.querySelector('[data-close]').onclick = closeVeil;
+  }
+  $('#bard-btn').addEventListener('click', () => askBard(null));
+  window.addEventListener('storage', (e) => { if (e.key === 'bardic.settings') paintBard(); });
+
+  /* ---------- forge ---------- */
   let lastForged = null;
-  $('#forge-btn').addEventListener('click', async () => {
+  async function forge() {
     stopPreview();
-    const errors = validate(state);
+    const bard = bardName();
+    const errors = validate(state, bard);
+    if (!bard && errors.length === 1) { askBard(forge); return; }
     if (errors.length) {
       const box = veil('<h2>Not quite ready</h2><ul class="errors"></ul><div class="acts"><button class="btn" type="button" data-close>Back to the story</button></div>');
       errors.forEach((m) => box.querySelector('.errors').append(el('li', '', m)));
@@ -345,7 +378,11 @@
     const box = veil('<h2>Forging…</h2><p>Packing your chapters and sounds into one file. Everything happens on this computer.</p><div class="bar"><i></i></div>');
     $('#veil').dataset.busy = '1';
     try {
-      const out = await pack(state, (f) => { box.querySelector('.bar i').style.width = `${Math.round(f * 100)}%`; });
+      const out = await pack(state, bard, (f) => { box.querySelector('.bar i').style.width = `${Math.round(f * 100)}%`; });
+      // The forged file is the new reference: the next forge makes the next revision.
+      state.id = out.story.id;
+      state.revision = out.story.revision;
+      state.created = out.story.created;
       lastForged = out;
       download(out);
       showForged(out);
@@ -354,7 +391,8 @@
       b.querySelector('.err').textContent = err.message || String(err);
       b.querySelector('[data-close]').onclick = closeVeil;
     }
-  });
+  }
+  $('#forge-btn').addEventListener('click', forge);
 
   function download(out) {
     const a = el('a');
@@ -369,7 +407,7 @@
   function showForged(out) {
     const heavy = out.blob.size > SHARE_LIMIT;
     const box = veil(`<h2>Your tale is forged</h2>
-      <p><b class="fname"></b> (${formatSize(out.blob.size)}) is in your downloads. Open it in the Bardic app, or keep it for your next session.</p>
+      <p><b class="fname"></b> (${formatSize(out.blob.size)}) is in your downloads, revision ${out.story.revision} signed by <b class="bname"></b>. Open it in the Bardic app, or keep it for your next session.</p>
       ${heavy ? '<p class="errors" style="list-style:none;padding:0">It weighs more than 100 MB, the limit for the Recueil on GitHub. Lighter MP3s (128 kbps) will make it fit.</p>'
               : '<p>Want other bards to play it? Lay it in the Recueil: GitHub opens a pull request for you, and once accepted your tale appears in the book.</p>'}
       <div class="acts">
@@ -378,32 +416,70 @@
         <button class="btn" type="button" data-close>Keep editing</button>
       </div>`);
     box.querySelector('.fname').textContent = out.fileName;
+    box.querySelector('.bname').textContent = out.story.bard;
     box.querySelector('[data-again]').onclick = () => download(lastForged);
     box.querySelector('[data-close]').onclick = closeVeil;
   }
 
   /* ---------- open an existing .bardic ---------- */
-  async function load(blob, label) {
-    const box = veil('<h2>Opening…</h2><p class="lbl"></p>');
+  function loadingVeil(label) {
+    const box = veil('<div class="eq" aria-hidden="true"><i></i><i></i><i></i></div><h2>Opening the tale</h2><p class="lbl"></p><div class="bar"><i></i></div><p class="step" aria-live="polite"></p>');
+    box.classList.add('loading');
     box.querySelector('.lbl').textContent = label;
     $('#veil').dataset.busy = '1';
+    return {
+      progress(frac, text) {
+        box.querySelector('.bar i').style.width = `${Math.round(frac * 100)}%`;
+        if (text != null) box.querySelector('.step').textContent = text;
+      },
+    };
+  }
+  async function load(source, label) {
+    const ui = loadingVeil(label);
+    const started = Date.now();
     try {
-      const d = await unpack(blob);
+      let blob = source;
+      if (typeof source === 'string') blob = await fetchWithProgress(source, (f, got, total) => ui.progress(f * 0.5, `Fetching from the Recueil, ${formatSize(got)}${total ? ` of ${formatSize(total)}` : ''}`));
+      const base = typeof source === 'string' ? 0.5 : 0;
+      const d = await unpack(blob, (done, total) => ui.progress(base + (1 - base) * (done / total), `Reading sound ${done} of ${total}`));
+      ui.progress(1, 'Ready');
+      // Leave the animation on screen long enough to be seen, even for a small file.
+      const wait = 700 - (Date.now() - started);
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
       stopPreview();
       d.chapters.forEach((c) => { c.id = id(); ZONES.forEach((z) => c[z].forEach((s) => { s.id = id(); })); });
       d.soundbox.forEach((s) => { s.id = id(); });
       if (!d.chapters.length) d.chapters.push(newChapter(1));
+      const by = d.bard;
+      delete d.bard;
       state = d;
       current = 0;
       fillFields();
       renderAll();
       closeVeil();
-      toast(`"${state.title}" is open. Edit it, then forge it again.`);
+      toast(by ? `"${state.title}" by ${by} is open. Forging it makes the next revision.` : `"${state.title}" is open.`);
     } catch (err) {
       const b = veil('<h2>Could not open this file</h2><p class="err"></p><div class="acts"><button class="btn" type="button" data-close>Close</button></div>');
       b.querySelector('.err').textContent = err.message || String(err);
       b.querySelector('[data-close]').onclick = closeVeil;
     }
+  }
+  async function fetchWithProgress(url, onProgress) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Could not fetch the story (${res.status}).`);
+    const total = Number(res.headers.get('content-length')) || 0;
+    if (!res.body || !res.body.getReader) return res.blob();
+    const reader = res.body.getReader();
+    const chunks = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      got += value.byteLength;
+      onProgress(total ? Math.min(1, got / total) : 0.5, got, total);
+    }
+    return new Blob(chunks, { type: 'application/zip' });
   }
   $('#open-btn').addEventListener('click', () => {
     if (allSounds().length && !confirm('Open another story? The current one will be replaced (forge it first to keep it).')) return;
@@ -415,15 +491,12 @@
     if (f) load(f, f.name);
   });
   const fromUrl = new URLSearchParams(location.search).get('open');
-  if (fromUrl && /^[\w./%-]+\.bardic$/i.test(fromUrl)) {
-    fetch(fromUrl).then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); })
-      .then((b) => load(b, decodeURIComponent(fromUrl.split('/').pop())))
-      .catch(() => toast('Could not fetch that story from the Recueil.'));
-  }
+  if (fromUrl && /^[\w./%-]+\.bardic$/i.test(fromUrl)) load(fromUrl, decodeURIComponent(fromUrl.split('/').pop()));
 
   window.addEventListener('beforeunload', (e) => {
     if (allSounds().length) { e.preventDefault(); e.returnValue = ''; }
   });
 
+  paintBard();
   renderAll();
 })();

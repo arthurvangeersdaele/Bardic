@@ -31,7 +31,7 @@
   <a class="logo" href="../">Bardic</a>
   <nav class="tabs" aria-label="Sections">
     <a href="../play/">Play</a>
-    <a href="./">Compagnie<span class="long"> des bardes</span></a>
+    <a href="./">Compagnie<span class="long">&nbsp;des bardes</span></a>
   </nav>
   <span class="grow"></span>
   <button class="btn" type="button" id="open-btn"><span class="long">Open a .bardic</span><span class="short">Open</span></button><input type="file" id="open-input" accept=".bardic,application/zip" hidden>
@@ -39,12 +39,12 @@
 
 <main class="bld" id="bld">
   <section class="bld-head">
-    <div class="fields">
+    <div class="fields one">
       <label class="field"><span>Story title</span><input class="title" id="f-title" maxlength="120" placeholder="The Drowned Abbey" autocomplete="off"></label>
-      <label class="field"><span>Bard name</span><input id="f-author" maxlength="60" placeholder="Your name or alias" autocomplete="off"></label>
       <label class="field wide"><span>A few words for the Recueil</span><textarea id="f-desc" rows="1" maxlength="400" placeholder="A flooded monastery, a choir of ghosts and a very angry abbot."></textarea></label>
     </div>
     <div class="bld-actions">
+      <button class="signed" type="button" id="bard-btn" title="Your bard name, set once for every story"></button>
       <span class="total" id="total"></span>
       <button class="btn primary" type="button" id="forge-btn">Forge .bardic</button>
     </div>

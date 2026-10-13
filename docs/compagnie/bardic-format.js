@@ -1,4 +1,4 @@
-/* Reads and writes .bardic files (version 1) in the browser. Spec: BARDIC_FORMAT.md at the repo root.
+/* Reads and writes .bardic files (format 2, reads 1 too) in the browser. Spec: BARDIC_FORMAT.md at the repo root.
  * A .bardic file is a ZIP archive with story.json and the audio files, written stored (no compression). */
 (function (global) {
   'use strict';
@@ -127,6 +127,17 @@
   }
 
   /* ---------- Story ---------- */
+  const FORMAT_VERSION = 2;
+  const KNOWN_STORY = ['format', 'version', 'id', 'revision', 'bard', 'author', 'title', 'description', 'created', 'forged', 'generator', 'chapters', 'soundbox'];
+  const KNOWN_SOUND = ['name', 'file', 'loop', 'volume', 'duration'];
+
+  function uuid() {
+    if (global.crypto && crypto.randomUUID) return crypto.randomUUID();
+    const b = crypto.getRandomValues(new Uint8Array(16));
+    b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+    const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+    return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+  }
   function slug(s, fallback) {
     const out = (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
       .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
@@ -139,11 +150,14 @@
   function isAudio(file) {
     return AUDIO_EXT.includes(ext(file.name)) || (file.type || '').startsWith('audio/');
   }
+  const now = () => new Date().toISOString().replace(/\.\d+Z$/, 'Z');
 
-  /** draft: { title, author, description, extra, chapters: [{ title, extra, music|ambience|events: [sound] }], soundbox: [sound] }
-   *  sound: { name, blob, fileName, loop, volume, duration, extra } */
-  function validate(draft) {
+  /** draft: { id, revision, created, title, description, extra, chapters: [{ title, extra, music|ambience|events: [sound] }], soundbox: [sound] }
+   *  sound: { name, blob, fileName, loop, volume, duration, extra }
+   *  id, revision and created are kept from an opened file and never edited by hand. */
+  function validate(draft, bard) {
     const errors = [];
+    if (!bard || !bard.trim()) errors.push('Set your bard name: it signs every file you forge.');
     if (!draft.title || !draft.title.trim()) errors.push('Give your story a title.');
     if (!draft.chapters.length) errors.push('Add at least one chapter.');
     draft.chapters.forEach((c, i) => { if (!c.title || !c.title.trim()) errors.push(`Chapter ${i + 1} needs a title.`); });
@@ -152,7 +166,8 @@
     return errors;
   }
 
-  async function pack(draft, onProgress) {
+  /** Forges the next revision of the draft, signed by `bard`. */
+  async function pack(draft, bard, onProgress) {
     const entries = [];
     const used = new Set();
     const place = (dir, index, s) => {
@@ -167,31 +182,37 @@
     };
     const story = Object.assign({}, draft.extra || {}, {
       format: 'bardic',
-      version: 1,
+      version: FORMAT_VERSION,
+      id: draft.id || uuid(),
+      revision: (draft.revision || 0) + 1,
+      bard: bard.trim(),
       title: draft.title.trim(),
-      created: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
-      generator: 'Bardic Story builder (web)',
-      chapters: draft.chapters.map((c, i) => {
-        const ch = Object.assign({}, c.extra || {}, { title: c.title.trim() });
-        ZONES.forEach((z) => { ch[z] = c[z].map((s, k) => place(`sounds/${i + 1}/${z}`, k, s)); });
-        return ch;
-      }),
-      soundbox: draft.soundbox.map((s, k) => place('sounds/soundbox', k, s)),
     });
-    if (draft.author && draft.author.trim()) story.author = draft.author.trim(); else delete story.author;
-    if (draft.description && draft.description.trim()) story.description = draft.description.trim(); else delete story.description;
+    if (draft.description && draft.description.trim()) story.description = draft.description.trim();
+    const stamp = now();
+    story.created = draft.created || stamp;
+    story.forged = stamp;
+    story.generator = 'Bardic Story builder (web)';
+    story.chapters = draft.chapters.map((c, i) => {
+      const ch = Object.assign({}, c.extra || {}, { title: c.title.trim() });
+      ZONES.forEach((z) => { ch[z] = c[z].map((s, k) => place(`sounds/${i + 1}/${z}`, k, s)); });
+      return ch;
+    });
+    story.soundbox = draft.soundbox.map((s, k) => place('sounds/soundbox', k, s));
     const json = new TextEncoder().encode(JSON.stringify(story, null, 2) + '\n');
     const blob = await writeZip([{ name: 'story.json', data: json }, ...entries], onProgress);
     return { blob, story, fileName: `${slug(story.title, 'story')}.bardic` };
   }
 
-  async function unpack(file) {
+  /** Reads a .bardic file (format 1 or 2). onProgress(done, total) is called as sounds are read. */
+  async function unpack(file, onProgress) {
     const files = await readZip(file);
     if (!files.has('story.json')) throw new Error('This .bardic file has no story.json.');
     const story = JSON.parse(await (await files.get('story.json')()).text());
     if (story.format !== 'bardic') throw new Error('story.json is not a Bardic story.');
-    if (story.version !== 1) throw new Error(`This file uses format version ${story.version}, which this builder does not know yet.`);
-    const KNOWN_SOUND = ['name', 'file', 'loop', 'volume', 'duration'];
+    if (story.version !== 1 && story.version !== 2) throw new Error(`This file uses format version ${story.version}, which this builder does not know yet.`);
+    const total = (story.chapters || []).reduce((a, c) => a + ZONES.reduce((b, z) => b + (c[z] || []).length, 0), 0) + (story.soundbox || []).length;
+    let done = 0;
     const sound = async (s) => {
       const get = files.get(s.file);
       if (!get) throw new Error(`Missing sound in the archive: ${s.file}`);
@@ -199,6 +220,8 @@
       const fileName = s.file.split('/').pop();
       const extra = {};
       Object.keys(s).forEach((k) => { if (!KNOWN_SOUND.includes(k)) extra[k] = s[k]; });
+      done += 1;
+      if (onProgress) onProgress(done, total);
       return {
         name: s.name || fileName,
         blob: new File([blob], fileName, { type: blob.type || 'audio/mpeg' }),
@@ -210,24 +233,43 @@
       };
     };
     const extra = {};
-    Object.keys(story).forEach((k) => {
-      if (!['format', 'version', 'title', 'author', 'description', 'created', 'generator', 'chapters', 'soundbox'].includes(k)) extra[k] = story[k];
-    });
+    Object.keys(story).forEach((k) => { if (!KNOWN_STORY.includes(k)) extra[k] = story[k]; });
     const chapters = [];
     for (const c of story.chapters || []) {
       const ch = { title: c.title || '', extra: {} };
       Object.keys(c).forEach((k) => { if (k !== 'title' && !ZONES.includes(k)) ch.extra[k] = c[k]; });
-      for (const z of ZONES) ch[z] = await Promise.all((c[z] || []).map(sound));
+      for (const z of ZONES) {
+        ch[z] = [];
+        for (const s of c[z] || []) ch[z].push(await sound(s));
+      }
       chapters.push(ch);
     }
+    const soundbox = [];
+    for (const s of story.soundbox || []) soundbox.push(await sound(s));
+    const v2 = story.version === 2;
     return {
+      id: (v2 && story.id) || uuid(),
+      revision: v2 && Number.isInteger(story.revision) && story.revision > 0 ? story.revision : 1,
+      bard: (v2 ? story.bard : story.author) || '',
+      created: story.created || null,
       title: story.title || '',
-      author: story.author || '',
       description: story.description || '',
       extra,
       chapters,
-      soundbox: await Promise.all((story.soundbox || []).map(sound)),
+      soundbox,
     };
+  }
+
+  /* The bard name lives in the shared settings (same as the player's Settings). */
+  function bardName() {
+    try { return (JSON.parse(localStorage.getItem('bardic.settings') || '{}').bardName || '').trim(); } catch (e) { return ''; }
+  }
+  function setBardName(name) {
+    try {
+      const s = JSON.parse(localStorage.getItem('bardic.settings') || '{}');
+      s.bardName = (name || '').trim().slice(0, 60);
+      localStorage.setItem('bardic.settings', JSON.stringify(s));
+    } catch (e) { /* private mode: the name only lasts for this page */ }
   }
 
   function round(v, d = 2) { const f = 10 ** d; return Math.round(v * f) / f; }
@@ -237,5 +279,5 @@
     return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`;
   }
 
-  global.Bardic = { ZONES, LOOPS, SHARE_LIMIT, pack, unpack, validate, isAudio, formatSize, slug };
+  global.Bardic = { ZONES, LOOPS, SHARE_LIMIT, FORMAT_VERSION, pack, unpack, validate, isAudio, formatSize, slug, bardName, setBardName };
 })(window);

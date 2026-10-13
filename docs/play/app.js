@@ -31,10 +31,10 @@
   };
 
   /* ---------------- Settings ---------------- */
-  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, awake: false, master: 0.8, sbVol: 0.8, sbOpen: null, pins: [] };
+  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, awake: false, master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], bardName: '' };
   const settings = Object.assign({}, DEFAULTS, readJSON('bardic.settings'));
   function readJSON(key) { try { return JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (e) { return {}; } }
-  function save() { try { localStorage.setItem('bardic.settings', JSON.stringify(settings)); } catch (e) { /* private mode */ } }
+  function save() { try { const cur = readJSON('bardic.settings'); localStorage.setItem('bardic.settings', JSON.stringify(Object.assign(cur, settings))); } catch (e) { /* private mode */ } }
 
   const lightQuery = matchMedia('(prefers-color-scheme: light)');
   function applyTheme() {
@@ -583,6 +583,7 @@
     segment('#mode-pick', 'mode', (v) => v);
     segment('#fade-pick', 'fade', Number);
     $('#opt-crossfade').addEventListener('change', (e) => { settings.crossfade = e.target.checked; save(); });
+    $('#opt-bard').addEventListener('input', (e) => { settings.bardName = e.target.value.trim().slice(0, 60); save(); });
     $('#opt-awake').addEventListener('change', (e) => { settings.awake = e.target.checked; save(); settings.awake ? acquireWake() : releaseWake(); });
     syncSettings();
   }
@@ -599,6 +600,7 @@
     document.querySelectorAll('#fade-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === settings.fade)));
     $('#opt-crossfade').checked = settings.crossfade;
     $('#opt-awake').checked = settings.awake;
+    if (document.activeElement !== $('#opt-bard')) $('#opt-bard').value = settings.bardName || '';
     applyTheme();
   }
 

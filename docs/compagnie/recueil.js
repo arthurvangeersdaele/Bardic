@@ -22,7 +22,7 @@
   function render(filter) {
     list.textContent = '';
     const q = (filter || '').trim().toLowerCase();
-    const shown = tales.filter((t) => !q || [t.title, t.author, t.description, ...(t.chapters || [])].join(' ').toLowerCase().includes(q));
+    const shown = tales.filter((t) => !q || [t.title, t.bard, t.description, ...(t.chapters || [])].join(' ').toLowerCase().includes(q));
     if (!tales.length) {
       list.append(el('li', 'empty-rec', 'The Recueil is still blank, waiting for its first tale. Will it be yours?'));
       return;
@@ -40,11 +40,10 @@
       head.append(el('span', 't', t.title), el('span', 'tc', `${n} chapter${n === 1 ? '' : 's'}`), el('span', 'ts', size(t.size)));
       head.insertAdjacentHTML('beforeend', chev);
       const inside = el('div', 'inside');
-      if (t.author || t.description) {
-        const by = el('p', 'by');
-        by.textContent = [t.author ? `by ${t.author}` : '', t.description || ''].filter(Boolean).join('. ');
-        inside.append(by);
-      }
+      const by = el('p', 'by');
+      const sign = [t.bard ? `by ${t.bard}` : '', t.revision > 1 ? `revision ${t.revision}` : ''].filter(Boolean).join(', ');
+      by.textContent = [sign, t.description || ''].filter(Boolean).join('. ');
+      if (by.textContent) inside.append(by);
       const ol = el('ol');
       (t.chapters || []).forEach((c) => ol.append(el('li', '', c)));
       const acts = el('div', 'acts');
