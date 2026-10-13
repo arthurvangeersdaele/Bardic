@@ -1,5 +1,7 @@
 # Web player sounds
 
+The current sounds come from Battle for Wesnoth, 0 A.D. and Flare (GPL / CC BY-SA): see [CREDITS.md](CREDITS.md). If you replace or add files, keep that list up to date.
+
 Drop MP3 files in these folders and push to `main`: the **Update sound library** action rebuilds `docs/play/library.json` and the web player shows them on the next page load.
 
 ```
