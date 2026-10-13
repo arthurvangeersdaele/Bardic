@@ -28,6 +28,9 @@ object NativeEngine {
 
     private var started = false
 
+    /** False when the audio output stream could not be opened: nothing can play. */
+    val isRunning: Boolean get() = started
+
     fun start(): Boolean {
         if (!started) started = nativeStart()
         return started

@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bardic.app.audio.DemoSounds
 import com.bardic.app.audio.NativeEngine
 import com.bardic.app.bardic.BardicArchive
 import com.bardic.app.bardic.LoopMode
@@ -171,10 +172,16 @@ fun EngineTestScreen() {
     }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+        if (uris.isEmpty()) {
+            status = "No file came back from the picker. Tap a file to select it (or long-press to select several), " +
+                "or use Demo sounds."
+            return@rememberLauncherForActivityResult
+        }
         loading = true
+        status = "Loading ${uris.size} file(s) into the 20 slots…"
         scope.launch {
             // The picked files are spread over the 20 slots (the same file can be used several times).
+            var loaded = 0
             for (slot in 0 until n) {
                 val uri = uris[slot % uris.size]
                 val loop = loops[slot]
@@ -182,10 +189,48 @@ fun EngineTestScreen() {
                 val name = withContext(Dispatchers.IO) {
                     val ok = runCatching { NativeEngine.load(context, slot, uri, loop) }.getOrDefault(false)
                     NativeEngine.setVolume(slot, volume)
-                    if (ok) displayName(context, uri) else "Unreadable file"
+                    if (ok) displayName(context, uri) else null
                 }
-                names[slot] = name
+                if (name != null) loaded++
+                names[slot] = name ?: "Unreadable file"
             }
+            status = if (loaded == n) {
+                "${uris.size} file(s) loaded into all 20 slots. Press Play all."
+            } else {
+                "$loaded of 20 slots loaded. The others could not be decoded: try MP3 files stored on the phone " +
+                    "(not in a cloud folder)."
+            }
+            loading = false
+        }
+    }
+
+    // Generated sounds: no file needed, useful to check that the engine plays at all.
+    fun loadDemo() {
+        loading = true
+        status = "Preparing demo sounds…"
+        scope.launch {
+            val demos = withContext(Dispatchers.IO) { runCatching { DemoSounds.ensure(context) } }
+            demos.onSuccess { files ->
+                var loaded = 0
+                for (slot in 0 until n) {
+                    val (name, file) = files[slot % files.size]
+                    val loop = loops[slot]
+                    val volume = volumes[slot]
+                    val ok = withContext(Dispatchers.IO) {
+                        val result = runCatching { NativeEngine.load(context, slot, Uri.fromFile(file), loop) }
+                            .getOrDefault(false)
+                        NativeEngine.setVolume(slot, volume)
+                        result
+                    }
+                    if (ok) loaded++
+                    names[slot] = if (ok) "$name ${slot + 1}" else "Unreadable file"
+                }
+                status = if (loaded == n) {
+                    "Demo sounds loaded into all 20 slots. Press Play all, or play cards one by one."
+                } else {
+                    "Only $loaded of 20 demo sounds could be loaded: the decoder failed on this phone."
+                }
+            }.onFailure { status = "Could not create the demo sounds: ${it.message}" }
             loading = false
         }
     }
@@ -221,7 +266,10 @@ fun EngineTestScreen() {
         ) {
             Text("Bardic", color = Obsidian.Text, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Text("engine test", color = Obsidian.Muted, fontSize = 13.sp)
-            BarButton(if (loading) "Loading…" else "Pick MP3s", filled = true) {
+            BarButton(if (loading) "Loading…" else "Demo sounds", filled = true) {
+                if (!loading) loadDemo()
+            }
+            BarButton("Pick MP3s") {
                 if (!loading) picker.launch(arrayOf("audio/*"))
             }
             BarButton("Play all") {
@@ -250,6 +298,17 @@ fun EngineTestScreen() {
 
         StatsRow(snapshot)
 
+        if (!NativeEngine.isRunning) {
+            Text(
+                "The audio output could not be opened on this device, so nothing can play. Restart the app; if it " +
+                    "persists, note the phone model and Android version.",
+                color = Obsidian.Events,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+            )
+        }
+
         status?.let {
             Text(
                 it,
@@ -261,7 +320,8 @@ fun EngineTestScreen() {
 
         if (names.all { it == null }) {
             Text(
-                "Pick one or more MP3 files: they are spread over the 20 slots. Then press Play all and watch the CPU and XRuns.",
+                "Tap Demo sounds to fill the 20 slots with generated sounds, or Pick MP3s to use your own files. " +
+                    "Then press Play all and watch the CPU and XRuns.",
                 color = Obsidian.Muted,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),

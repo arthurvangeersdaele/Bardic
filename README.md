@@ -14,7 +14,7 @@ Project page: https://arthurvangeersdaele.github.io/Bardic/
 
 1. Open the [latest dev build](https://github.com/arthurvangeersdaele/bardic/releases/tag/dev-latest) on your Android phone.
 2. Download the `.apk` and open it. Allow installs from your browser when Android asks.
-3. In the app, tap **Pick MP3s**, select one or more files, then **Play all**.
+3. In the app, tap **Demo sounds** (generated test sounds, no file needed) or **Pick MP3s** to use your own files, then **Play all**. The status line under the stats says what was loaded, or why not.
 
 Every push to `main` rebuilds the APK automatically (GitHub Actions). All builds share the same debug key, so a new build installs over the previous one.
 
