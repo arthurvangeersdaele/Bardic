@@ -76,21 +76,6 @@
           "title": "The Kraken is attacking us"
         }
       ]
-    },
-    {
-      "id": "werewolf",
-      "title": "Werewolf",
-      "blurb": "Run a game of Loup Garou. By day the village debates and votes, by night the werewolves hunt.",
-      "chapters": [
-        {
-          "id": "1-day",
-          "title": "Day: the village and the vote"
-        },
-        {
-          "id": "2-night",
-          "title": "Night"
-        }
-      ]
     }
   ]
 }

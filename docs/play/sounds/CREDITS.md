@@ -144,6 +144,8 @@ Every sound in the Bardic web edition comes from open-source games, used under t
 
 ## Werewolf
 
+This tale moved to the Recueil of the Compagnie des bardes (`docs/recueil/werewolf.bardic`). Its sounds are credited here.
+
 | File | From | Author | Licence |
 | --- | --- | --- | --- |
 | `1-day/ambience/01_village-square.mp3` *edited* | 0 A.D.: [amb_trade_12.ogg](https://github.com/0ad/0ad/blob/main/binaries/data/mods/public/audio/ambient/building/amb_trade_12.ogg) | Wildfire Games | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |

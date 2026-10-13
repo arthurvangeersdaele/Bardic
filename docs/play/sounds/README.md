@@ -16,7 +16,6 @@ sounds/
 │   └── 4-the-human-village/
 ├── big-war/                    The Big War (5 chapters)
 ├── underwater/                 Underwater Adventure (5 chapters)
-├── werewolf/                   Werewolf (1-day, 2-night)
 └── soundbox/                   quick effects, shared by every story
 ```
 

@@ -558,11 +558,13 @@
     k.root.classList.toggle('on', on);
     k.root.classList.toggle('loading', v.state === 'loading');
     k.root.classList.toggle('err', v.state === 'error');
-    k.play.innerHTML = v.state === 'playing' ? ICON.pause : ICON.play;
+    // Only swap the icon when it changes: replacing it on every tick swallowed clicks (the pause button seemed dead).
+    const icon = v.state === 'playing' ? 'pause' : 'play';
+    if (k.icon !== icon) { k.play.innerHTML = ICON[icon]; k.icon = icon; }
     k.play.setAttribute('aria-label', `${v.state === 'playing' ? 'Pause' : 'Play'} ${v.sound.name}`);
     k.play.disabled = !v.usable;
     k.end.disabled = !(on || v.state === 'paused');
-    k.loop.textContent = LOOP_LABELS[v.loop];
+    if (k.loop.textContent !== LOOP_LABELS[v.loop]) k.loop.textContent = LOOP_LABELS[v.loop];
     k.loop.classList.toggle('inf', v.loop === 2);
     const p = v.progress();
     if (p < 0) { k.fill.style.width = on || v.state === 'paused' ? '100%' : '0'; k.fill.style.background = 'var(--blue)'; }

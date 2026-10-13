@@ -4,7 +4,7 @@ Game Master Phone Sound Table: an Android app that lets tabletop RPG game master
 
 Project page: https://arthurvangeersdaele.github.io/Bardic/
 
-**Play it in your browser:** https://arthurvangeersdaele.github.io/Bardic/play/ with four ready-made stories (The Forest Adventure, The Big War, Underwater Adventure, Werewolf), the mixing table and the soundbox. No import and no story editing in the web edition; its sounds live in [`docs/play/sounds/`](docs/play/sounds/).
+**Play it in your browser:** https://arthurvangeersdaele.github.io/Bardic/play/ with three ready-made stories (The Forest Adventure, The Big War, Underwater Adventure), the mixing table and the soundbox. More tales, like Werewolf, are in the Compagnie des bardes. No import and no story editing in the web edition; its sounds live in [`docs/play/sounds/`](docs/play/sounds/).
 
 ## Status
 
@@ -39,7 +39,7 @@ Engine details (`app/src/main/cpp/audio_engine.cpp`):
 
 `docs/play/` is a static page served by GitHub Pages (no build step):
 
-- `stories.json`: the four stories and their chapters;
+- `stories.json`: the three stories and their chapters;
 - `sounds/<story>/<chapter>/{music,ambience,events}/*.mp3` and `sounds/soundbox/*.mp3`: the audio files;
 - `library.json`: the list of sound files, rebuilt automatically by the **Update sound library** action when MP3s are pushed (or by hand with `python3 .github/scripts/build_sound_library.py`).
 

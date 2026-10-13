@@ -361,6 +361,7 @@
   }
   $('#bard-btn').addEventListener('click', () => askBard(null));
   window.addEventListener('storage', (e) => { if (e.key === 'bardic.settings') paintBard(); });
+  window.addEventListener('bardic:settings', paintBard);
 
   /* ---------- forge ---------- */
   let lastForged = null;
