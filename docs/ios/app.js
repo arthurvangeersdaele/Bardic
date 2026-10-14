@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261014.4';
+  const VERSION = '261014.5';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -301,8 +301,8 @@
     const doors = el('div', 'lib-doors');
     doors.append(
       door('new', ICON.plus, 'New story', 'With your own sounds, from Files', () => newStory()),
-      door('recueil', ICON.book, 'The Recueil', 'Tales forged by other bards', () => openRecueil()),
       door('discovery', ICON.compass, 'Discovery', 'Three ready stories, sounds included', () => openDiscovery()),
+      door('recueil', ICON.book, 'The Recueil', 'Tales forged by other bards', () => openRecueil()),
       door('import', ICON.files, 'Import .bardic', 'From Files, iCloud Drive or AirDrop', () => pickBardic()),
     );
     grid.append(doors);
