@@ -40,7 +40,7 @@ jobs:
       - name: Name the APK
         id: apk
         run: |
-          NAME="$(date +%y%m%d)_bardic-engine-test.apk"
+          NAME="$(date +%y%m%d)_bardic.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "$NAME"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 

@@ -28,8 +28,8 @@ Java_com_bardic_app_audio_NativeEngine_nativeUnload(JNIEnv *, jobject, jint slot
 }
 
 JNIEXPORT void JNICALL
-Java_com_bardic_app_audio_NativeEngine_nativePlay(JNIEnv *, jobject, jint slot) {
-    AudioEngine::get().play(slot);
+Java_com_bardic_app_audio_NativeEngine_nativePlay(JNIEnv *, jobject, jint slot, jint fadeInMs) {
+    AudioEngine::get().play(slot, fadeInMs);
 }
 
 JNIEXPORT void JNICALL
@@ -57,6 +57,31 @@ Java_com_bardic_app_audio_NativeEngine_nativeSetMasterVolume(JNIEnv *, jobject, 
     AudioEngine::get().setMasterVolume(volume);
 }
 
+JNIEXPORT jfloat JNICALL
+Java_com_bardic_app_audio_NativeEngine_nativeLoadPad(JNIEnv *, jobject, jint index, jint fd) {
+    return AudioEngine::get().loadPad(index, fd);
+}
+
+JNIEXPORT void JNICALL
+Java_com_bardic_app_audio_NativeEngine_nativeFirePad(JNIEnv *, jobject, jint index, jfloat gain) {
+    AudioEngine::get().firePad(index, gain);
+}
+
+JNIEXPORT void JNICALL
+Java_com_bardic_app_audio_NativeEngine_nativeStopPads(JNIEnv *, jobject) {
+    AudioEngine::get().stopPads();
+}
+
+JNIEXPORT void JNICALL
+Java_com_bardic_app_audio_NativeEngine_nativeClearPads(JNIEnv *, jobject) {
+    AudioEngine::get().clearPads();
+}
+
+JNIEXPORT void JNICALL
+Java_com_bardic_app_audio_NativeEngine_nativeSetSoundboxVolume(JNIEnv *, jobject, jfloat volume) {
+    AudioEngine::get().setSoundboxVolume(volume);
+}
+
 JNIEXPORT void JNICALL
 Java_com_bardic_app_audio_NativeEngine_nativeGetStates(JNIEnv *env, jobject, jintArray out) {
     jint buffer[kMaxVoices];
@@ -69,6 +94,13 @@ Java_com_bardic_app_audio_NativeEngine_nativeGetProgress(JNIEnv *env, jobject, j
     jfloat buffer[kMaxVoices];
     AudioEngine::get().getProgress(buffer);
     env->SetFloatArrayRegion(out, 0, kMaxVoices, buffer);
+}
+
+JNIEXPORT void JNICALL
+Java_com_bardic_app_audio_NativeEngine_nativeGetTimes(JNIEnv *env, jobject, jfloatArray out) {
+    jfloat buffer[2 * kMaxVoices];
+    AudioEngine::get().getTimes(buffer);
+    env->SetFloatArrayRegion(out, 0, 2 * kMaxVoices, buffer);
 }
 
 JNIEXPORT void JNICALL
