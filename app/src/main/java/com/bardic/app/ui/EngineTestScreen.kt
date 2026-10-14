@@ -572,22 +572,6 @@ private fun SquareButton(
     }
 }
 
-private fun hsl(hue: Float, saturation: Float, lightness: Float): Color {
-    val c = (1f - abs(2f * lightness - 1f)) * saturation
-    val h = ((hue % 360f) + 360f) % 360f / 60f
-    val x = c * (1f - abs(h % 2f - 1f))
-    val (r, g, b) = when {
-        h < 1f -> Triple(c, x, 0f)
-        h < 2f -> Triple(x, c, 0f)
-        h < 3f -> Triple(0f, c, x)
-        h < 4f -> Triple(0f, x, c)
-        h < 5f -> Triple(x, 0f, c)
-        else -> Triple(c, 0f, x)
-    }
-    val m = lightness - c / 2f
-    return Color(r + m, g + m, b + m)
-}
-
 private fun displayName(context: Context, uri: Uri): String {
     val raw = runCatching {
         context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
