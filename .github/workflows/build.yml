@@ -35,7 +35,15 @@ jobs:
           gradle-version: "8.11.1"
 
       - name: Build debug APK
-        run: gradle assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          if ! gradle assembleDebug --stacktrace 2>&1 | tee build.log; then
+            # Report the compiler errors as one annotation, readable from the GitHub API.
+            msg=$(grep -E "^e: |error:|warning: unused|\* What went wrong|^> " build.log | grep -v "^> Task" | head -90 \
+              | sed -e 's/%/%25/g' -e 's#file:///home/runner/work/[^/]*/[^/]*/##' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Build errors::${msg}"
+            exit 1
+          fi
 
       - name: Name the APK
         id: apk
