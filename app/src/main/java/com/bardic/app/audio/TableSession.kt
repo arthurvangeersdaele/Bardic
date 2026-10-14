@@ -87,7 +87,11 @@ class TableSession(
                 NativeEngine.readProgress(progress)
                 NativeEngine.readTimes(times)
                 live = Live(states.copyOf(), progress.copyOf(), times.copyOf())
-                if (pausedByAll.isNotEmpty() && pausedByAll.none { stateOf(it) == NativeEngine.PAUSED }) pausedByAll = emptyList()
+                if (pausedByAll.isNotEmpty() && pausedByAll.none {
+                        val st = stateOf(it)
+                        st == NativeEngine.PAUSED || st == NativeEngine.PAUSING
+                    }
+                ) pausedByAll = emptyList()
                 PlaybackController.update(anyPlaying())
                 delay(66)
             }
@@ -95,13 +99,14 @@ class TableSession(
         loadPads()
     }
 
-    fun close() {
-        if (closed) return
+    /** Lets go of the voices and effects. The returned job ends once the engine is free for another table. */
+    fun close(): Job? {
+        if (closed) return null
         closed = true
         poll?.cancel()
         flushSave()
         PlaybackController.detach(this)
-        scope.launch(engine) {
+        return scope.launch(engine) {
             for (i in 0 until N) if (owner[i] != null) NativeEngine.end(i, 150)
             NativeEngine.stopPads()
             delay(200)

@@ -129,6 +129,8 @@ class AppModel(private val app: Context, private val host: Host, val scope: Coro
     private var saveJob: Job? = null
     private var sharedJob: Job? = null
     private var player: MediaPlayer? = null
+    /** The last table being closed: a new table waits for it, so they never share the engine. */
+    private var closing: Job? = null
 
     fun start() {
         scope.launch {
@@ -676,7 +678,8 @@ class AppModel(private val app: Context, private val host: Host, val scope: Coro
         val story = (if (ed?.story?.uid == storyUid) ed!!.story else Library.story(storyUid)) ?: return@launch
         val from = screen
         host.askNotifications()
-        table?.close()
+        table?.let { closing = it.close() }
+        closing?.join()
         val session = TableSession(app, story, settings, scope) { toast(it, 3200) }
         table = session
         session.open(chapter.coerceIn(0, story.chapters.lastIndex))
@@ -687,7 +690,7 @@ class AppModel(private val app: Context, private val host: Host, val scope: Coro
         val t = table ?: return
         val from = (screen as? Screen.Table)?.from ?: Screen.Library
         t.stopAll()
-        t.close()
+        closing = t.close()
         table = null
         if (from == Screen.Editor && ed != null) {
             // Loop and volume changes made at the table go back into the editor.
