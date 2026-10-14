@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -152,6 +153,36 @@ class MainActivity : ComponentActivity(), Host {
         intent.clipData = ClipData.newRawUri("", uris[0]).apply { uris.drop(1).forEach { addItem(ClipData.Item(it)) } }
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         startActivity(Intent.createChooser(intent, if (uris.size == 1) "Share the story" else "Share the stories"))
+    }
+
+    /** A downloaded update waiting for the "install unknown apps" permission. */
+    private var pendingApk: File? = null
+
+    override fun installApk(file: File) {
+        if (Build.VERSION.SDK_INT >= 26 && !packageManager.canRequestPackageInstalls()) {
+            // Android asks once whether Bardic may install apps; the installer opens as soon as it is allowed.
+            pendingApk = file
+            model.toast("Allow Bardic to install updates, then come back.", 4000)
+            startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+            return
+        }
+        pendingApk = null
+        val uri = FileProvider.getUriForFile(this, "$packageName.files", file)
+        try {
+            startActivity(
+                Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, "application/vnd.android.package-archive")
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        } catch (e: ActivityNotFoundException) {
+            model.toast("No installer found on this phone.")
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val apk = pendingApk ?: return
+        if (Build.VERSION.SDK_INT < 26 || packageManager.canRequestPackageInstalls()) installApk(apk)
     }
 
     override fun openLink(url: String) {

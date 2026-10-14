@@ -4,6 +4,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Each CI build carries its commit, so the app can tell when a newer build is published.
+val gitSha: String = System.getenv("GITHUB_SHA")?.take(7) ?: "dev"
+val buildNumber: Int = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 2
+
 android {
     namespace = "com.bardic.app"
     compileSdk = 35
@@ -13,8 +17,9 @@ android {
         minSdk = 26
         // Prototype targets API 35. Raise to 36 before publishing on Google Play.
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = buildNumber.coerceAtLeast(2)
+        versionName = "0.3.$buildNumber"
+        buildConfigField("String", "GIT_SHA", "\"$gitSha\"")
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
@@ -57,6 +62,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         compose = true
         prefab = true
     }

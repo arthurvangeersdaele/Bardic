@@ -16,6 +16,7 @@ import com.bardic.app.data.Chapter
 import com.bardic.app.data.Library
 import com.bardic.app.data.Sound
 import com.bardic.app.data.Story
+import com.bardic.app.data.Updater
 import com.bardic.app.data.Zone
 import com.bardic.app.data.formatSize
 import com.bardic.app.data.plural
@@ -38,6 +39,8 @@ interface Host {
     suspend fun pickFolder(): Uri?
     fun share(files: List<File>)
     fun openLink(url: String)
+    /** Hands a downloaded APK to the Android installer (after the "install unknown apps" permission). */
+    fun installApk(file: File)
 }
 
 sealed interface Screen {
@@ -134,6 +137,57 @@ class AppModel(private val app: Context, private val host: Host, val scope: Coro
     fun start() {
         scope.launch {
             withContext(Dispatchers.IO) { Library.reload() }
+            // A little after the opening, look for a newer build (never in the middle of a session).
+            delay(4000)
+            checkForUpdate(manual = false)
+        }
+    }
+
+    // ------------------------------------------------------------------ updates
+
+    /** Builds already offered this session and declined, so the question comes back only at the next launch. */
+    private var declined: String? = null
+
+    fun checkForUpdate(manual: Boolean) = scope.launch {
+        if (!Updater.canCheck) {
+            if (manual) toast("This build cannot check for updates (built outside GitHub).")
+            return@launch
+        }
+        if (manual) toast("Looking for a newer Bardic…")
+        val r = withContext(Dispatchers.IO) { runCatching { Updater.latest() }.getOrNull() }
+        if (r == null) {
+            if (manual) toast("No connection to GitHub. Try again once online.")
+            return@launch
+        }
+        if (!Updater.isNewer(r)) {
+            if (manual) toast("Bardic is up to date.")
+            return@launch
+        }
+        if (!manual && (declined == r.sha || table != null || busy != null || ask != null)) return@launch
+        val day = r.published.take(10)
+        val v = ask(
+            "A new Bardic is ready",
+            "A newer build was published${if (day.isNotBlank()) " on $day" else ""}. Download and install it now? " +
+                "Your stories and sounds stay on the phone.",
+            listOf(AskButton("Later", null), AskButton("Update", "go", BtnKind.PRIMARY)),
+        )
+        if (v == null) {
+            declined = r.sha
+            return@launch
+        }
+        try {
+            busy("Downloading the update", r.name, 0f)
+            val file = withContext(Dispatchers.IO) {
+                Updater.download(app, r) { got ->
+                    busy("Downloading the update", formatSize(got) + if (r.size > 0) " of ${formatSize(r.size)}" else "",
+                        if (r.size > 0) (got.toFloat() / r.size).coerceAtMost(1f) else null)
+                }
+            }
+            idle()
+            host.installApk(file)
+        } catch (e: Exception) {
+            idle()
+            tell("The update could not be downloaded", "Check your connection and try again. (${e.message ?: e})")
         }
     }
 

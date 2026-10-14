@@ -409,8 +409,9 @@ private fun SettingsPanel(m: AppModel) {
         val version = remember {
             runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
         }
-        Muted("Bardic for Android, version $version.", 14)
+        Muted("Bardic for Android, version ${com.bardic.app.data.Updater.current}.", 14)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Btn("Check for updates", kind = BtnKind.PRIMARY) { m.checkForUpdate(manual = true) }
             Btn("Bardic page") { m.openLink(BardicIO.SITE) }
             Btn("The Recueil") { m.openLink("${BardicIO.SITE}compagnie/recueil.html") }
             Btn("Engine test") { m.goEngineTest() }
