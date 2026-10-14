@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261014.2';
+  const VERSION = '261014.3';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -210,7 +210,11 @@
   let SIZES = new Map();      // blob key -> bytes
 
   async function refresh() {
-    [STORIES, SHARED, SIZES] = await Promise.all([DB.listStories(), DB.getKV('soundbox', []), DB.blobSizes()]);
+    // Sizes come from the sounds themselves: reading every stored blob just to measure it froze Safari.
+    [STORIES, SHARED] = await Promise.all([DB.listStories(), DB.getKV('soundbox', [])]);
+    SIZES = new Map();
+    STORIES.forEach((st) => DB.soundsOf(st).forEach((s) => { if (s.size && !SIZES.has(s.blob)) SIZES.set(s.blob, s.size); }));
+    SHARED.forEach((s) => { if (s.size && !SIZES.has(s.blob)) SIZES.set(s.blob, s.size); });
   }
   function storyBytes(story) {
     const seen = new Set();
@@ -226,9 +230,11 @@
   const cleanName = (fileName) => (fileName || 'Sound').replace(/\.[a-z0-9]+$/i, '').replace(/^\d+[\s._-]+/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/^./, (c) => c.toUpperCase()) || 'Sound';
 
   /** The story object on screen when there is one (so edits never race the database), else the stored one. */
+  let lastTableStory = null;
   async function liveStory(uid) {
     if (ed && ed.story.uid === uid) return ed.story;
     if (tbl && tbl.story.uid === uid) return tbl.story;
+    if (lastTableStory && lastTableStory.uid === uid) return lastTableStory;
     return DB.getStory(uid);
   }
 
@@ -249,7 +255,18 @@
       openTable(s, Math.max(0, parseInt(m[2] || '1', 10) - 1));
       return;
     }
-    closeTable();
+    const leaving = !!tbl;
+    if (leaving) {
+      // Leaving the table: show a short loading screen while the sounds are let go, instead of a frozen page.
+      busy('Closing the table', tbl.story.title);
+      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
+      closeTable();
+    }
+    try { await routeRest(h); } finally { if (leaving) setTimeout(idle, 150); }
+  }
+
+  async function routeRest(h) {
+    let m;
     if ((m = h.match(/^#\/edit\/([^/]+)(?:\/(\d+|soundbox))?/))) {
       const s = await liveStory(decodeURIComponent(m[1]));
       if (!s) { location.replace('#/'); return; }
@@ -349,6 +366,7 @@
     ]);
     if (v !== 'del') return;
     await DB.deleteStory(s.uid);
+    if (lastTableStory && lastTableStory.uid === s.uid) lastTableStory = null;
     settings.pins = settings.pins.filter((p) => !DB.soundsOf(s).some((x) => x.uid === p));
     save();
     await refresh();
@@ -1161,12 +1179,20 @@
     }
     set(state) { this.state = state; this.paint(); }
     paint() { if (this.card) paintCard(this); }
-    destroy() {
+    /** Silences the voice at once (cheap). */
+    silence() {
       clearTimeout(this.timer);
-      if (this.el) { this.el.pause(); this.el.removeAttribute('src'); this.el.load(); }
-      if (this.url) URL.revokeObjectURL(this.url);
-      if (this.env) this.env.disconnect();
+      if (this.el) this.el.pause();
+      if (this.env) { try { this.env.disconnect(); } catch (e) { /* already */ } }
+      this.card = null;
     }
+    /** Lets go of the audio data. Done a few voices at a time, after the screen has changed. */
+    release() {
+      if (this.el) this.el.removeAttribute('src');
+      if (this.url) URL.revokeObjectURL(this.url);
+      this.el = null; this.url = null;
+    }
+    destroy() { this.silence(); this.release(); }
   }
 
   /* ================= Mixing table ================= */
@@ -1217,11 +1243,23 @@
   function closeTable() {
     if (!tbl) return;
     tableSave.flush();
-    tbl.all.forEach((v) => v.destroy());
+    const voices = tbl.all;
+    lastTableStory = tbl.story;
+    voices.forEach((v) => v.silence());
     tbl = null;
     pausedByAll = [];
     stopSoundbox();
     sb.pads = [];
+    $('#zones').textContent = '';
+    $('#rail').textContent = '';
+    $('#pads').textContent = '';
+    let i = 0;
+    const step = () => {
+      const end = Math.min(voices.length, i + 6);
+      for (; i < end; i++) voices[i].release();
+      if (i < voices.length) setTimeout(step, 16);
+    };
+    setTimeout(step, 120);
     if ('mediaSession' in navigator) navigator.mediaSession.metadata = null;
   }
 
@@ -1626,6 +1664,7 @@
     closeTable();
     leaveEditor();
     await DB.wipe();
+    lastTableStory = null;
     settings.pins = [];
     save();
     location.hash = '#/';
@@ -1652,12 +1691,33 @@
     save();
   });
 
+  /* ================= Updates ================= */
+  let updateReady = false;
+  function reloadIfIdle() {
+    if (!updateReady || tbl || !$('#busy').hidden || document.querySelector('dialog[open]')) return;
+    if (ed) saveSoon.flush();
+    setTimeout(() => location.reload(), 300);
+  }
+  window.addEventListener('hashchange', () => setTimeout(reloadIfIdle, 600));
+
   /* ================= Boot ================= */
   async function boot() {
     renderStaticIcons();
     buildSettings();
     applyAudioSession();
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+    if ('serviceWorker' in navigator) {
+      // Updates: each time Bardic comes back to the screen it checks for a new version.
+      // When one has arrived, the app reloads by itself, never in the middle of a session at the table.
+      navigator.serviceWorker.register('sw.js').then((reg) => {
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+      }).catch(() => {});
+      const hadController = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!hadController) return;
+        updateReady = true;
+        reloadIfIdle();
+      });
+    }
     try {
       await DB.open();
       DB.persistence().catch(() => {});
