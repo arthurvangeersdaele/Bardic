@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261014.6';
+  const VERSION = '261014.7';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.

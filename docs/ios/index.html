@@ -108,12 +108,11 @@
 <!-- ============ The app ============ -->
 <div class="app" id="app">
 
-  <!-- Opening: a golden light rises from below the screen and lights the word Bardic, three dots race under it. -->
+  <!-- Opening: a golden light rises from below the screen and lights the word Bardic, then fades to a pure white Bardic. -->
   <div class="splash" id="splash" aria-hidden="true">
     <div class="sp-light"></div>
     <div class="sp-stage">
       <b class="sp-word" id="sp-word" data-text="Bardic">Bardic</b>
-      <div class="sp-dots"><i></i><i></i><i></i></div>
     </div>
   </div>
   <script>
@@ -138,7 +137,7 @@
         fit();
         sp.classList.add('sp-go');
         var quiet = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-        setTimeout(hide, quiet ? 800 : 2300);
+        setTimeout(hide, quiet ? 800 : 2800);
       }
       window.addEventListener('resize', fit);
       try {
@@ -148,7 +147,7 @@
         } else go();
       } catch (e) { go(); }
       sp.addEventListener('click', hide);
-      setTimeout(hide, 4000);
+      setTimeout(hide, 4500);
     })();
   </script>
 
