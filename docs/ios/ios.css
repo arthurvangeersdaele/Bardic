@@ -353,9 +353,9 @@ html.mode-app input[type="range"].dragging::-webkit-slider-thumb { transform: sc
 }
 
 /* Timeline: the word rises (0 to .8 s), the gold climbs the letters (.6 s), the glint sweeps (1.1 s);
-   from 1.95 s the relief melts away, leaving a flat, golden Bardic on obsidian. */
+   from 1.95 s the gold and the relief melt away, leaving a pure, bright white Bardic on obsidian. */
 .sp-go .sp-word { animation: sp-rise .8s cubic-bezier(.2, .8, .2, 1) forwards, sp-pure .85s ease-in-out 1.95s forwards; }
-.sp-go .sp-word::before { animation: sp-gold 1.35s ease-out .6s forwards; }
+.sp-go .sp-word::before { animation: sp-gold 1.35s ease-out .6s forwards, sp-ungild .75s ease-in-out 1.95s forwards; }
 .sp-go .sp-word::after { animation: sp-glint .8s ease-in-out 1.1s forwards; }
 
 @keyframes sp-rise {
@@ -383,12 +383,15 @@ html.mode-app input[type="range"].dragging::-webkit-slider-thumb { transform: sc
   25% { opacity: 1; background-position: 50% 70%; }
   100% { opacity: .9; background-position: 50% 45%; }
 }
+@keyframes sp-ungild {
+  0% { opacity: .9; background-position: 50% 45%; }
+  100% { opacity: 0; background-position: 50% 0%; }
+}
 @keyframes sp-glint {
   0% { opacity: 1; background-position: 130% 0; }
   100% { opacity: 1; background-position: -30% 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sp-go .sp-word { animation: none; opacity: 1; transform: none; color: #FFFFFF; text-shadow: 0 0 .06em rgba(255, 255, 255, .55), 0 0 .35em rgba(255, 255, 255, .22); }
-  .sp-go .sp-word::before { animation: none; opacity: .9; background-position: 50% 45%; }
-  .sp-go .sp-word::after { animation: none; opacity: 0; }
+  .sp-go .sp-word::before, .sp-go .sp-word::after { animation: none; opacity: 0; }
 }
