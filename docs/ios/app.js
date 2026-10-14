@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261014.3';
+  const VERSION = '261014.4';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -1690,6 +1690,52 @@
     if (sbGain) sbGain.gain.setTargetAtTime(curve(settings.sbVol), ctx.currentTime, 0.03);
     save();
   });
+
+  /* ================= Smooth volume sliders ================= */
+  // Safari's own range inputs only move when the small thumb is hit exactly, ignore taps on the bar,
+  // and lose the drag to the row that scrolls sideways. Here the whole bar is the handle:
+  // touch anywhere on it, the value jumps under the finger and follows it, and nothing else scrolls.
+  function rangeValue(input, clientX) {
+    const r = input.getBoundingClientRect();
+    const pad = 8; // half the thumb, so the ends are reachable
+    const f = Math.min(1, Math.max(0, (clientX - r.left - pad) / Math.max(1, r.width - 2 * pad)));
+    const min = +input.min || 0, max = input.max === '' ? 100 : +input.max, step = +input.step || 1;
+    return Math.round((min + f * (max - min)) / step) * step;
+  }
+  document.addEventListener('pointerdown', (e) => {
+    const input = e.target.closest && e.target.closest('input[type="range"]');
+    if (!input || input.disabled || e.button > 0) return;
+    e.preventDefault();
+    const id = e.pointerId;
+    try { input.setPointerCapture(id); } catch (err) { /* older iOS */ }
+    input.classList.add('dragging');
+    const set = (x) => {
+      const v = rangeValue(input, x);
+      if (+input.value === v) return;
+      input.value = v;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    set(e.clientX);
+    let frame = 0, lastX = e.clientX;
+    const move = (ev) => {
+      if (ev.pointerId !== id) return;
+      ev.preventDefault();
+      lastX = ev.clientX;
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; set(lastX); });
+    };
+    const up = (ev) => {
+      if (ev.pointerId !== id) return;
+      if (frame) { cancelAnimationFrame(frame); frame = 0; set(lastX); }
+      input.classList.remove('dragging');
+      input.removeEventListener('pointermove', move);
+      input.removeEventListener('pointerup', up);
+      input.removeEventListener('pointercancel', up);
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    input.addEventListener('pointermove', move);
+    input.addEventListener('pointerup', up);
+    input.addEventListener('pointercancel', up);
+  }, { passive: false });
 
   /* ================= Updates ================= */
   let updateReady = false;

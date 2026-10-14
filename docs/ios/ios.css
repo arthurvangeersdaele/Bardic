@@ -311,3 +311,9 @@ html.arrow-top .gate-install { padding-top: max(64px, env(safe-area-inset-top));
 @keyframes nudge-up { 50% { transform: translateY(-8px); } }
 @media (prefers-reduced-motion: reduce) { .to-share, .m-btn, .m-home img { animation: none !important; } }
 @media (max-width: 360px) { .isteps li { grid-template-columns: 104px minmax(0, 1fr); } }
+
+/* ---------- Volume sliders: a big touch area, no page scroll while dragging ---------- */
+html.mode-app input[type="range"] { touch-action: none; height: 36px; cursor: pointer; }
+html.mode-app input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; }
+html.mode-app input[type="range"]::-webkit-slider-thumb { width: 22px; height: 22px; margin-top: -8px; transition: transform .1s; }
+html.mode-app input[type="range"].dragging::-webkit-slider-thumb { transform: scale(1.15); }
