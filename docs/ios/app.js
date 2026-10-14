@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261014.9';
+  const VERSION = '261014.10';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -864,7 +864,9 @@
     const paintLoop = () => { loop.textContent = LOOP_LABELS[LOOP_INDEX[s.loop] ?? 0]; loop.classList.toggle('inf', s.loop === 'infinite'); };
     paintLoop();
     loop.onclick = () => { s.loop = LOOP_NAMES[((LOOP_INDEX[s.loop] ?? 0) + 1) % 3]; paintLoop(); dirty(); };
-    bottom.append(play, meta, mv, loop);
+    // Soundbox effects fire once per tap: no loop button for them.
+    bottom.append(play, meta, mv);
+    if (zone.id !== 'soundbox') bottom.append(loop);
     c.append(top, bottom);
     return c;
   }

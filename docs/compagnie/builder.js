@@ -239,7 +239,9 @@
     const paintLoop = () => { loop.textContent = LOOP_LABEL[s.loop]; loop.classList.toggle('inf', s.loop === 'infinite'); };
     paintLoop();
     loop.onclick = () => { s.loop = NEXT_LOOP[s.loop]; paintLoop(); };
-    bottom.append(play, meta, loop);
+    // Soundbox effects fire once per tap: no loop button for them.
+    bottom.append(play, meta);
+    if (zone !== 'soundbox') bottom.append(loop);
     c.append(top, bottom);
     c.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/x-bardic-sound', s.id);
