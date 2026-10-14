@@ -374,7 +374,7 @@ class AppModel(private val app: Context, private val host: Host, val scope: Coro
             AskInput(placeholder = "Your bard name", max = 60),
         ) ?: return null
         if (a.text.isBlank()) return null
-        settings.setBardName(a.text)
+        settings.changeBardName(a.text)
         return settings.bardName
     }
 

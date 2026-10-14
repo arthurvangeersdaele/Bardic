@@ -52,15 +52,15 @@ class AppSettings(context: Context) {
     var bardName by mutableStateOf(prefs.getString(BardSettings.KEY_BARD_NAME, "").orEmpty().trim())
         private set
 
-    fun setTheme(v: ThemeName) { theme = v; prefs.edit().putString("theme", v.id).apply() }
-    fun setAppearance(v: Appearance) { appearance = v; prefs.edit().putString("mode", v.id).apply() }
-    fun setFade(ms: Int) { fadeMs = ms; prefs.edit().putInt("fade", ms).apply() }
-    fun setCrossfade(v: Boolean) { crossfade = v; prefs.edit().putBoolean("crossfade", v).apply() }
-    fun setKeepAwake(v: Boolean) { keepAwake = v; prefs.edit().putBoolean("awake", v).apply() }
-    fun setMaster(v: Float) { master = v; prefs.edit().putFloat("master", v).apply() }
-    fun setSoundboxVolume(v: Float) { soundboxVolume = v; prefs.edit().putFloat("sbVol", v).apply() }
-    fun setSoundboxOpen(v: Boolean) { soundboxOpen = v; prefs.edit().putBoolean("sbOpen", v).apply() }
-    fun setBardName(v: String) {
+    fun changeTheme(v: ThemeName) { theme = v; prefs.edit().putString("theme", v.id).apply() }
+    fun changeAppearance(v: Appearance) { appearance = v; prefs.edit().putString("mode", v.id).apply() }
+    fun changeFade(ms: Int) { fadeMs = ms; prefs.edit().putInt("fade", ms).apply() }
+    fun changeCrossfade(v: Boolean) { crossfade = v; prefs.edit().putBoolean("crossfade", v).apply() }
+    fun changeKeepAwake(v: Boolean) { keepAwake = v; prefs.edit().putBoolean("awake", v).apply() }
+    fun changeMaster(v: Float) { master = v; prefs.edit().putFloat("master", v).apply() }
+    fun changeSoundboxVolume(v: Float) { soundboxVolume = v; prefs.edit().putFloat("sbVol", v).apply() }
+    fun changeSoundboxOpen(v: Boolean) { soundboxOpen = v; prefs.edit().putBoolean("sbOpen", v).apply() }
+    fun changeBardName(v: String) {
         bardName = v.trim().take(BardSettings.MAX_BARD_NAME)
         prefs.edit().putString(BardSettings.KEY_BARD_NAME, bardName).apply()
     }

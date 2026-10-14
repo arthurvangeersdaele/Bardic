@@ -335,7 +335,7 @@ private fun SettingsPanel(m: AppModel) {
                         .clip(RoundedCornerShape(12.dp))
                         .background(C.card)
                         .border(if (on) 2.dp else 1.dp, if (on) C.accent else C.line, RoundedCornerShape(12.dp))
-                        .clickable(role = Role.RadioButton) { st.setTheme(th) }
+                        .clickable(role = Role.RadioButton) { st.changeTheme(th) }
                         .padding(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
@@ -357,23 +357,23 @@ private fun SettingsPanel(m: AppModel) {
             }
         }
         SetSection("Appearance")
-        Segmented(Appearance.values().map { it to it.label }, st.appearance) { st.setAppearance(it) }
+        Segmented(Appearance.values().map { it to it.label }, st.appearance) { st.changeAppearance(it) }
 
         SetSection("Bard")
         var bard by remember { mutableStateOf(st.bardName) }
         SetRow("Bard name", "Signs every .bardic file you export") {
-            Field(bard, { bard = it; st.setBardName(it) }, Modifier.width(200.dp), placeholder = "Your bard name", max = 60)
+            Field(bard, { bard = it; st.changeBardName(it) }, Modifier.width(200.dp), placeholder = "Your bard name", max = 60)
         }
 
         SetSection("Playback")
         SetRow("Fade-out on stop", null) {
-            Segmented(listOf(500 to "0.5 s", 1000 to "1 s", 2000 to "2 s", 4000 to "4 s"), st.fadeMs) { st.setFade(it) }
+            Segmented(listOf(500 to "0.5 s", 1000 to "1 s", 2000 to "2 s", 4000 to "4 s"), st.fadeMs) { st.changeFade(it) }
         }
         SetRow("Crossfade music tracks", "Starting a track fades out the one playing") {
-            Toggle(st.crossfade) { st.setCrossfade(it) }
+            Toggle(st.crossfade) { st.changeCrossfade(it) }
         }
         SetRow("Keep screen awake", "While a story is open, so the screen stays on at the table") {
-            Toggle(st.keepAwake) { st.setKeepAwake(it) }
+            Toggle(st.keepAwake) { st.changeKeepAwake(it) }
         }
         Muted("The sounds keep playing with the screen off or Bardic in the background: a notification lets you pause or fade out everything.", 13)
 

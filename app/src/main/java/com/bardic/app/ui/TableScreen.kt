@@ -74,7 +74,7 @@ fun TableScreen(m: AppModel) {
                         .clip(RoundedCornerShape(10.dp))
                         .background(if (open) C.accent else C.card)
                         .border(1.dp, C.accent, RoundedCornerShape(10.dp))
-                        .clickable(role = Role.Button) { m.settings.setSoundboxOpen(!open) }
+                        .clickable(role = Role.Button) { m.settings.changeSoundboxOpen(!open) }
                         .padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -126,7 +126,7 @@ fun TableScreen(m: AppModel) {
                     .padding(top = 56.dp)
                     .background(Color.Black.copy(alpha = 0.35f))
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
-                        m.settings.setSoundboxOpen(false)
+                        m.settings.changeSoundboxOpen(false)
                     }
             )
             Box(Modifier.fillMaxSize().padding(top = 56.dp), contentAlignment = Alignment.CenterEnd) {
@@ -158,7 +158,7 @@ private fun MasterChip(m: AppModel, s: TableSession) {
         }
         T("Master", color = C.muted, size = 13.sp, modifier = Modifier.padding(start = 4.dp))
         BardSlider(
-            m.settings.master, { v -> m.settings.setMaster(v); s.applyMaster() }, C.text,
+            m.settings.master, { v -> m.settings.changeMaster(v); s.applyMaster() }, C.text,
             Modifier.width(112.dp), label = "Master volume",
         )
         T("${(m.settings.master * 100).toInt()}", weight = FontWeight.SemiBold, size = 14.sp, modifier = Modifier.width(28.dp))
@@ -259,12 +259,12 @@ private fun SoundboxDrawer(m: AppModel, s: TableSession) {
     ) {
         Row(Modifier.padding(start = 16.dp, end = 10.dp, top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Title("Soundbox", 22, color = C.accent, modifier = Modifier.weight(1f))
-            IconBtn(BIcons.close, "Close soundbox", size = 34.dp, iconSize = 15.dp) { m.settings.setSoundboxOpen(false) }
+            IconBtn(BIcons.close, "Close soundbox", size = 34.dp, iconSize = 15.dp) { m.settings.changeSoundboxOpen(false) }
         }
         Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             T("Volume", color = C.muted, size = 13.sp)
             BardSlider(
-                m.settings.soundboxVolume, { v -> m.settings.setSoundboxVolume(v); s.applySoundboxVolume() }, C.accent,
+                m.settings.soundboxVolume, { v -> m.settings.changeSoundboxVolume(v); s.applySoundboxVolume() }, C.accent,
                 Modifier.weight(1f), label = "Soundbox volume",
             )
         }
