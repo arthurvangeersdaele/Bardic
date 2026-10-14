@@ -142,28 +142,31 @@ private fun StoryCard(m: AppModel, s: Story, index: Int) {
             .border(1.dp, C.line, shape)
     ) {
         Box(Modifier.fillMaxWidth().height(4.dp).background(z))
-        Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Title(s.title.ifBlank { "Untitled story" }, 24, maxLines = 2, modifier = Modifier.heightIn(min = 50.dp))
+        // Every block has a fixed height, so all cards are identical and fit a phone held sideways.
+        Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(Modifier.fillMaxWidth().height(28.dp), contentAlignment = Alignment.CenterStart) {
+                Title(s.title.ifBlank { "Untitled story" }, 22, maxLines = 1)
+            }
             val by = listOfNotNull(
                 s.bard.takeIf { it.isNotBlank() }?.let { "by $it" },
                 s.revision.takeIf { it > 0 }?.let { "revision $it" },
             ).joinToString(", ").ifBlank { "Not exported yet" }
-            T(by, color = C.muted, size = 13.sp, maxLines = 1, modifier = Modifier.padding(top = 0.dp))
+            T(by, color = C.muted, size = 13.sp, maxLines = 1, modifier = Modifier.height(18.dp))
             // Three lines at most, so every card has the same height.
-            Column(Modifier.height(66.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.height(62.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 val shown = if (s.chapters.size > 3) 2 else 3
                 s.chapters.take(shown).forEachIndexed { i, c ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.height(20.dp), horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
                         Title("${i + 1}", 15, color = z, modifier = Modifier.width(10.dp))
                         T(c.title.ifBlank { "Untitled chapter" }, size = 14.sp, maxLines = 1)
                     }
                 }
-                if (s.chapters.size > shown) T("and ${s.chapters.size - shown} more", color = C.muted, size = 14.sp, modifier = Modifier.padding(start = 19.dp))
+                if (s.chapters.size > shown) T("and ${s.chapters.size - shown} more", color = C.muted, size = 14.sp, maxLines = 1, modifier = Modifier.height(20.dp).padding(start = 19.dp))
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(C.line))
             T(
                 "${plural(s.chapters.size, "chapter")}, ${plural(s.allSounds().size, "sound")}, ${formatSize(Library.bytesOf(s.allSounds()))}",
-                color = C.muted, size = 13.sp, maxLines = 1,
+                color = C.muted, size = 13.sp, maxLines = 1, modifier = Modifier.height(18.dp),
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Btn("Play", icon = BIcons.play, kind = BtnKind.PRIMARY, height = 38.dp, modifier = Modifier.weight(1f)) { m.openTable(s.uid, 0) }
