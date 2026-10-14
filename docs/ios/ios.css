@@ -218,3 +218,10 @@ html.mode-app input[type="text"], html.mode-app input[type="search"], html.mode-
 .fatal { position: fixed; inset: 0; display: grid; place-items: center; padding: 30px; text-align: center; color: var(--evt); background: var(--bg); margin: 0; z-index: 200; }
 
 @media (prefers-reduced-motion: reduce) { .phone-turn { animation: none; } }
+
+/* Install guide: an arrow pointing at the Safari toolbar, where Share lives. */
+.to-share { position: fixed; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--blue); font-weight: 600; font-size: 14px; animation: nudge 1.4s ease-in-out infinite; pointer-events: none; }
+.to-share i { width: 16px; height: 16px; border-right: 3px solid currentColor; border-bottom: 3px solid currentColor; transform: rotate(45deg); }
+.gate-install { padding-bottom: 90px; }
+@keyframes nudge { 50% { transform: translate(-50%, 8px); } }
+@media (prefers-reduced-motion: reduce) { .to-share { animation: none; } }
