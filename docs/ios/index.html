@@ -54,22 +54,55 @@
 
 <!-- ============ iPhone, in a browser: install guide ============ -->
 <main class="gate gate-install">
-  <div class="gate-card">
-    <img class="gate-icon" src="icons/261014_bardic_ios_180.png" alt="" width="84" height="84">
-    <p class="kicker">Bardic for iPhone</p>
-    <h1>Install Bardic</h1>
-    <p>Bardic runs from your Home Screen, as an app: your stories and sounds stay stored on your iPhone, ready for every session.</p>
-    <ol class="steps">
-      <li><span>Tap the <b>Share</b> button <i class="share-ico" aria-hidden="true"></i> at the bottom of Safari (on iOS 26, tap the <b>More</b> button first, the three dots).</span></li>
-      <li><span>Scroll down and tap <b>Add to Home Screen</b>.</span></li>
-      <li><span>Keep <b>Open as Web App</b> on, then tap <b>Add</b>.</span></li>
-      <li><span>Open <b>Bardic</b> from your Home Screen and turn your phone sideways.</span></li>
+  <div class="gate-card inst">
+    <div class="inst-hero">
+      <img class="gate-icon" src="icons/261014_bardic_ios_180.png" alt="" width="72" height="72">
+      <div>
+        <p class="kicker">Bardic for iPhone</p>
+        <h1>Add this page to your Home Screen</h1>
+      </div>
+    </div>
+    <p class="inst-key"><b>This page is the app.</b> Add it to your Home Screen: it becomes the Bardic icon, and you play from there.</p>
+
+    <!-- In-app browsers (Instagram, Facebook, Gmail...) cannot add to the Home Screen: open Safari first. -->
+    <div class="inst-inapp" id="inst-inapp" hidden>
+      <p><b>First, open this page in Safari.</b> The browser you are in cannot add apps to the Home Screen.</p>
+      <p class="muted small">Tap its menu and choose <b>Open in Safari</b> (or <b>Open in browser</b>), or copy the link and paste it in Safari.</p>
+      <button class="btn primary" type="button" id="inst-copy">Copy the link</button>
+    </div>
+
+    <ol class="isteps" id="isteps">
+      <li>
+        <div class="mock m-bar" id="m-bar" aria-hidden="true">
+          <i class="m-dot"></i><span class="m-url">arthurvangeersdaele.github.io</span><i class="m-btn" id="m-btn"></i>
+        </div>
+        <div class="itxt"><b id="step1-title">Tap Share</b><span id="step1-text"></span></div>
+      </li>
+      <li>
+        <div class="mock m-sheet" aria-hidden="true">
+          <span>Copy</span><span>Add to Reading List</span><span class="hl"><i class="m-plus"></i>Add to Home Screen</span>
+        </div>
+        <div class="itxt"><b>Tap Add to Home Screen</b><span>Scroll down the list if needed.</span></div>
+      </li>
+      <li>
+        <div class="mock m-add" aria-hidden="true">
+          <span class="m-top"><i>Cancel</i><em>Add</em></span>
+          <span class="m-name"><img src="icons/261014_bardic_ios_180.png" alt="">Bardic</span>
+          <span class="m-toggle">Open as Web App<i></i></span>
+        </div>
+        <div class="itxt"><b>Tap Add</b><span>If you see <b>Open as Web App</b>, keep it on.</span></div>
+      </li>
+      <li>
+        <div class="mock m-home" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><img src="icons/261014_bardic_ios_180.png" alt="">
+        </div>
+        <div class="itxt"><b>Play from the Bardic icon</b><span>Close the browser, open Bardic from your Home Screen and turn your phone sideways.</span></div>
+      </li>
     </ol>
-    <p class="muted small">iOS lets you install an app from a page only through the Share menu: it takes these three taps, once.</p>
-    <p class="muted small">Bardic does not open in a browser tab: only the installed app can keep your stories safe on the phone. Using Chrome? Its Share button sits next to the address bar.</p>
+    <p class="muted small">Only once: iOS lets an app be added from a page through these steps only.</p>
     <a class="back-link" href="../">Back to the Bardic page</a>
   </div>
-  <div class="to-share" aria-hidden="true"><span>Share</span><i></i></div>
+  <div class="to-share" id="to-share" aria-hidden="true"><span id="to-share-label">Share</span><i></i></div>
 </main>
 
 <!-- ============ The app ============ -->
@@ -256,6 +289,7 @@
 </div>
 
 <script src="../compagnie/bardic-format.js"></script>
+<script src="install.js"></script>
 <script src="db.js"></script>
 <script src="app.js"></script>
 </body>

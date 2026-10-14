@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261014.1';
+  const VERSION = '261014.2';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -273,11 +273,22 @@
       hello.append(el('h1', '', 'Your table awaits'), el('p', 'lead', 'Forge a story with your own sounds, import a .bardic file, or start from a tale of the Compagnie des bardes.'));
       grid.append(hello);
     }
-    STORIES.forEach((s, i) => grid.append(storyCard(s, i)));
-    grid.append(door('new', ICON.plus, 'New story', 'Name it, add chapters, then drop in music, ambience and events from your Files.', () => newStory()));
-    grid.append(door('recueil', ICON.book, 'The Recueil', 'Tales forged by other game masters, ready to add to your table.', () => openRecueil()));
-    grid.append(door('discover', ICON.compass, 'Discovery stories', 'The Forest Adventure, The Big War and Underwater Adventure, sounds included.', () => openDiscovery()));
-    grid.append(door('import', ICON.files, 'Import a .bardic', 'Open a story from Files, iCloud Drive or AirDrop.', () => pickBardic()));
+    // Two rows of same-size tiles: the stories on the phone, then the four ways to add one.
+    if (STORIES.length) {
+      grid.append(el('h3', 'lib-h', STORIES.length === 1 ? 'Your story' : `Your ${STORIES.length} stories`));
+      const list = el('div', 'lib-stories');
+      STORIES.forEach((s, i) => list.append(storyCard(s, i)));
+      grid.append(list);
+    }
+    grid.append(el('h3', 'lib-h', 'Add a story'));
+    const doors = el('div', 'lib-doors');
+    doors.append(
+      door('new', ICON.plus, 'New story', 'With your own sounds, from Files', () => newStory()),
+      door('recueil', ICON.book, 'The Recueil', 'Tales forged by other bards', () => openRecueil()),
+      door('discovery', ICON.compass, 'Discovery', 'Three ready stories, sounds included', () => openDiscovery()),
+      door('import', ICON.files, 'Import .bardic', 'From Files, iCloud Drive or AirDrop', () => pickBardic()),
+    );
+    grid.append(doors);
   }
 
   function storyCard(s, i) {
@@ -289,10 +300,12 @@
     const by = [];
     if (s.bard) by.push(`by ${s.bard}`);
     if (s.revision) by.push(`revision ${s.revision}`);
-    if (by.length) c.append(el('p', 'by', by.join(', ')));
+    c.append(el('p', 'by', by.join(', ') || 'Not exported yet'));
     const ol = el('ol');
-    s.chapters.slice(0, 4).forEach((ch) => ol.append(el('li', '', ch.title || 'Untitled chapter')));
-    if (s.chapters.length > 4) ol.append(el('li', 'more', `and ${s.chapters.length - 4} more`));
+    // Three lines at most, so every card has the same height.
+    const shown = s.chapters.length > 3 ? 2 : 3;
+    s.chapters.slice(0, shown).forEach((ch) => ol.append(el('li', '', ch.title || 'Untitled chapter')));
+    if (s.chapters.length > shown) ol.append(el('li', 'more', `and ${s.chapters.length - shown} more`));
     c.append(ol);
     const meta = el('div', 'meta');
     meta.append(el('span', '', `${plural(s.chapters.length, 'chapter')}, ${plural(soundCount(s), 'sound')}, ${size(storyBytes(s))}`));
@@ -308,7 +321,7 @@
   }
 
   function door(kind, icon, title, text, onClick) {
-    const d = el('button', `ldoor ${kind}`);
+    const d = el('button', `ldoor d-${kind}`);
     d.type = 'button';
     d.innerHTML = `<span class="di">${icon}</span>`;
     d.append(el('b', '', title), el('span', '', text));
