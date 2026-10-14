@@ -47,6 +47,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -62,10 +63,12 @@ fun T(
     weight: FontWeight = FontWeight.Normal,
     maxLines: Int = Int.MAX_VALUE,
     style: TextStyle? = null,
+    align: TextAlign? = null,
 ) {
     Text(
         text = text,
         modifier = modifier,
+        textAlign = align,
         color = color,
         fontSize = if (style == null) size else style.fontSize,
         fontWeight = if (style == null) weight else style.fontWeight,
@@ -77,8 +80,8 @@ fun T(
 }
 
 @Composable
-fun Title(text: String, size: Int, modifier: Modifier = Modifier, color: Color = C.text, maxLines: Int = 1) {
-    Text(text, modifier = modifier, color = color, style = titleStyle(size), maxLines = maxLines, overflow = TextOverflow.Ellipsis)
+fun Title(text: String, size: Int, modifier: Modifier = Modifier, color: Color = C.text, maxLines: Int = 1, align: TextAlign? = null) {
+    Text(text, modifier = modifier, color = color, style = titleStyle(size), maxLines = maxLines, overflow = TextOverflow.Ellipsis, textAlign = align)
 }
 
 /** Square icon button, 40 dp, as in the iPhone app. */

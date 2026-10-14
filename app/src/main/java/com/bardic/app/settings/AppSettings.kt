@@ -46,6 +46,9 @@ class AppSettings(context: Context) {
         private set
     var soundboxOpen by mutableStateOf(prefs.getBoolean("sbOpen", false))
         private set
+    /** Random events: longest pause before a sound plays again, in seconds (1 to 10). The shortest is 0.5 s. */
+    var randomMax by mutableIntStateOf(prefs.getInt("randomMax", 5).coerceIn(1, 10))
+        private set
     var pins by mutableStateOf(prefs.getString("pins", "").orEmpty().split(',').filter { it.isNotBlank() })
         private set
     /** Shared with BardSettings: signs every exported .bardic file. */
@@ -59,6 +62,7 @@ class AppSettings(context: Context) {
     fun changeKeepAwake(v: Boolean) { keepAwake = v; prefs.edit().putBoolean("awake", v).apply() }
     fun changeMaster(v: Float) { master = v; prefs.edit().putFloat("master", v).apply() }
     fun changeSoundboxVolume(v: Float) { soundboxVolume = v; prefs.edit().putFloat("sbVol", v).apply() }
+    fun changeRandomMax(v: Int) { randomMax = v.coerceIn(1, 10); prefs.edit().putInt("randomMax", randomMax).apply() }
     fun changeSoundboxOpen(v: Boolean) { soundboxOpen = v; prefs.edit().putBoolean("sbOpen", v).apply() }
     fun changeBardName(v: String) {
         bardName = v.trim().take(BardSettings.MAX_BARD_NAME)

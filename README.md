@@ -14,7 +14,7 @@ Project page: https://arthurvangeersdaele.github.io/Bardic/
 
 - **Library**: stories kept on the phone, with four ways to add one: New story, Discovery (the web edition's three stories), the Recueil, Import .bardic.
 - **Story editor**: chapters (add, rename, reorder, remove), Music / Ambience / Events and the story's own soundbox; sounds picked from the phone or a cloud folder, or reused from another story; listen, rename, reorder, loop mode.
-- **Mixing table**: the chapter on screen is loaded into the engine as soon as it opens, so its sounds start instantly. Up to 20 sounds held at once; a sound of another chapter takes the voice of an idle card. Music crossfades, green-to-red progress with a countdown, pause/resume all, fade out all, master volume.
+- **Mixing table**: the chapter on screen is loaded into the engine as soon as it opens, so its sounds start instantly. Up to 20 sounds held at once; a sound of another chapter takes the voice of an idle card. Music crossfades, green-to-red progress along the bottom edge of each card with a countdown, pause/resume all, fade out all, master volume. Events can also be set to random: they come back after a pause of 0.5 s to a maximum set in Settings (1 to 10 s).
 - **Soundbox**: the story's effects and the shared ones, decoded in memory and fired without taking any of the 20 voices; pins.
 - **Settings**: Obsidian, Parchment, Blood and Divination in dark, light or system mode, bard name, fade-out length, music crossfade, keep the screen awake, storage, export every story, erase everything.
 - **Playback with the screen off**: a media notification with Pause all and Fade out all; pauses on phone calls and when headphones are unplugged.

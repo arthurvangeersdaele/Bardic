@@ -47,6 +47,7 @@ import com.bardic.app.bardic.LoopMode
 import com.bardic.app.data.Library
 import com.bardic.app.data.Sound
 import com.bardic.app.data.Story
+import com.bardic.app.data.Zone
 import com.bardic.app.data.cleanName
 import com.bardic.app.data.formatSize
 import com.bardic.app.data.formatTime
@@ -279,33 +280,40 @@ fun EditCard(m: AppModel, t: Target, s: Sound, index: Int, count: Int, z: Color,
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             IconBtn(
-                if (playing) BIcons.pause else BIcons.play, "Listen to ${s.name}", size = 36.dp, iconSize = 14.dp,
+                if (playing) BIcons.pause else BIcons.play, "Listen to ${s.name}", size = 32.dp, iconSize = 13.dp,
                 background = if (playing) z else C.line, border = if (playing) z else C.line, tint = if (playing) C.onZ else C.text,
             ) { m.togglePreview(s, t) }
             T(
                 listOfNotNull(s.duration?.let { formatTime(it) }, formatSize(s.size)).joinToString("  "),
                 color = C.muted, size = 12.sp, maxLines = 1, modifier = Modifier.weight(1f),
             )
-            IconBtn(BIcons.left, "Move earlier", size = 30.dp, iconSize = 13.dp, enabled = index > 0) { m.moveSound(t, index, -1) }
-            IconBtn(BIcons.right, "Move later", size = 30.dp, iconSize = 13.dp, enabled = index < count - 1) { m.moveSound(t, index, 1) }
-            LoopChip(s.loop) { m.updateSound(t, s.uid) { x -> x.copy(loop = LoopMode.values()[(x.loop.ordinal + 1) % 3]) } }
+            IconBtn(BIcons.left, "Move earlier", size = 28.dp, iconSize = 12.dp, enabled = index > 0) { m.moveSound(t, index, -1) }
+            IconBtn(BIcons.right, "Move later", size = 28.dp, iconSize = 12.dp, enabled = index < count - 1) { m.moveSound(t, index, 1) }
+            LoopChip(s.loop, height = 24.dp) { m.updateSound(t, s.uid) { x -> x.copy(loop = x.loop.next(allowRandom = (t as? Target.ChapterZone)?.zone == Zone.EVENTS)) } }
         }
     }
 }
 
 @Composable
-fun LoopChip(loop: LoopMode, onClick: () -> Unit) {
+fun LoopChip(loop: LoopMode, height: androidx.compose.ui.unit.Dp = 26.dp, onClick: () -> Unit) {
     val inf = loop == LoopMode.INFINITE
+    val rnd = loop == LoopMode.RANDOM
+    val color = when {
+        inf -> C.blue
+        rnd -> C.evt
+        else -> C.text
+    }
     Box(
         Modifier
-            .height(26.dp)
+            .height(height)
             .width(38.dp)
             .clip(RoundedCornerShape(6.dp))
-            .border(1.dp, if (inf) C.blue.copy(alpha = 0.6f) else C.line, RoundedCornerShape(6.dp))
-            .clickable(role = Role.Button, onClickLabel = "Loop: once, twice, forever", onClick = onClick),
+            .border(1.dp, if (inf || rnd) color.copy(alpha = 0.6f) else C.line, RoundedCornerShape(6.dp))
+            .clickable(role = Role.Button, onClickLabel = "Loop: once, twice, forever, random", onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        T(listOf("1×", "2×", "∞")[loop.ordinal], color = if (inf) C.blue else C.text, size = 13.sp, weight = FontWeight.SemiBold)
+        if (rnd) Icon(BIcons.random, "Random", tint = color, modifier = Modifier.size(15.dp))
+        else T(listOf("1×", "2×", "∞")[loop.ordinal], color = color, size = 13.sp, weight = FontWeight.SemiBold)
     }
 }
 

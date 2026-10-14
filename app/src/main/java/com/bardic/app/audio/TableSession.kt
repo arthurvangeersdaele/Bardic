@@ -1,8 +1,10 @@
 package com.bardic.app.audio
 
 import android.content.Context
+import android.os.SystemClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.bardic.app.bardic.LoopMode
@@ -29,6 +31,14 @@ class Card(val chapterIndex: Int, val zone: Zone, sound: Sound) {
     var sound by mutableStateOf(sound)
     @Volatile var slot: Int? = null
     var failed by mutableStateOf(false)
+    /** Random events: true while the sound keeps coming back. */
+    var randomOn by mutableStateOf(false)
+    /** Random events: when it plays again (uptime ms), 0 while it plays. */
+    var nextAt by mutableLongStateOf(0L)
+    @Volatile var startedAt = 0L
+
+    /** A random event between two plays. */
+    val waiting: Boolean get() = randomOn && nextAt > 0L
 }
 
 class Pad(val sound: Sound, val own: Boolean, val index: Int) {
@@ -67,6 +77,8 @@ class TableSession(
     private val engine = Executors.newSingleThreadExecutor { r -> Thread(r, "bardic-table").apply { priority = Thread.NORM_PRIORITY + 1 } }
         .asCoroutineDispatcher()
     private var poll: Job? = null
+    /** Random events that were waiting when everything was paused, started again on resume. */
+    private var heldRandom by mutableStateOf<List<Card>>(emptyList())
     private var saveJob: Job? = null
     private var closed = false
 
@@ -92,6 +104,7 @@ class TableSession(
                         st == NativeEngine.PAUSED || st == NativeEngine.PAUSING
                     }
                 ) pausedByAll = emptyList()
+                runRandom()
                 PlaybackController.update(anyPlaying())
                 delay(66)
             }
@@ -149,7 +162,7 @@ class TableSession(
 
     fun anyPlaying(l: Live = live) = cards.any { stateOf(it, l) == NativeEngine.PLAYING }
 
-    fun chapterPlaying(chapter: Int, l: Live = live) = cards.any { it.chapterIndex == chapter && isActive(it, l) }
+    fun chapterPlaying(chapter: Int, l: Live = live) = cards.any { it.chapterIndex == chapter && (isActive(it, l) || it.waiting) }
 
     // ------------------------------------------------------------------ actions
 
@@ -169,6 +182,12 @@ class TableSession(
 
     fun toggle(card: Card) {
         val st = stateOf(card)
+        if (card.waiting) {
+            // Between two plays: tapping stops the random event.
+            card.randomOn = false
+            card.nextAt = 0L
+            return
+        }
         if (st == NativeEngine.PLAYING) {
             pause(card)
             return
@@ -181,8 +200,39 @@ class TableSession(
             others.forEach { end(it, if (settings.crossfade) fade else 150) }
             if (crossing && settings.crossfade && st != NativeEngine.PAUSED) fadeIn = fade
         }
+        if (card.sound.loop == LoopMode.RANDOM) {
+            card.randomOn = true
+            card.nextAt = 0L
+        }
+        card.startedAt = SystemClock.uptimeMillis()
         play(card, fadeIn)
         pausedByAll = pausedByAll.filter { it !== card }
+    }
+
+    /** Plays the random events again, after a pause of 0.5 s to the maximum set in the settings. */
+    private fun runRandom() {
+        val now = SystemClock.uptimeMillis()
+        for (c in cards) {
+            if (!c.randomOn) continue
+            val st = stateOf(c)
+            val sounding = st == NativeEngine.PLAYING || st == NativeEngine.PAUSING || st == NativeEngine.PAUSED || st == NativeEngine.ENDING
+            if (sounding) {
+                if (c.nextAt != 0L) c.nextAt = 0L
+            } else if (now - c.startedAt > 400) {
+                if (c.nextAt == 0L) {
+                    c.nextAt = now + randomPause()
+                } else if (now >= c.nextAt) {
+                    c.nextAt = 0L
+                    c.startedAt = now
+                    play(c, 30)
+                }
+            }
+        }
+    }
+
+    private fun randomPause(): Long {
+        val max = settings.randomMax * 1000L
+        return 500L + kotlin.random.Random.nextLong((max - 500L).coerceAtLeast(1L))
     }
 
     private fun play(card: Card, fadeInMs: Int) {
@@ -209,13 +259,21 @@ class TableSession(
     }
 
     fun end(card: Card, ms: Int = settings.fadeMs) {
+        card.randomOn = false
+        card.nextAt = 0L
         val s = card.slot ?: return
         if (owner[s] === card) NativeEngine.end(s, ms)
     }
 
     fun setLoop(card: Card, loop: LoopMode) {
         card.sound = card.sound.copy(loop = loop)
-        card.slot?.let { if (owner[it] === card) NativeEngine.setLoop(it, loop.ordinal) }
+        if (loop == LoopMode.RANDOM) {
+            card.randomOn = isActive(card) || stateOf(card) == NativeEngine.PAUSED
+        } else {
+            card.randomOn = false
+            card.nextAt = 0L
+        }
+        card.slot?.let { if (owner[it] === card) NativeEngine.setLoop(it, loop.engine) }
         saveSoon()
     }
 
@@ -226,24 +284,35 @@ class TableSession(
     }
 
     fun pauseAll() {
-        if (pausedByAll.isNotEmpty()) {
+        if (pausedByAll.isNotEmpty() || heldRandom.isNotEmpty()) {
             pausedByAll.forEach { if (stateOf(it) == NativeEngine.PAUSED) play(it, 30) }
             pausedByAll = emptyList()
+            val now = SystemClock.uptimeMillis()
+            heldRandom.forEach { it.randomOn = true; it.nextAt = now + randomPause() }
+            heldRandom = emptyList()
         } else {
             val playing = cards.filter { stateOf(it) == NativeEngine.PLAYING }
             playing.forEach { pause(it) }
+            // Random events waiting for their next play hold still too.
+            val waiting = cards.filter { it.waiting }
+            waiting.forEach { it.randomOn = false; it.nextAt = 0L }
+            heldRandom = waiting
             pausedByAll = playing
         }
     }
 
+    /** True while "Resume all" is offered. */
+    val holding: Boolean get() = pausedByAll.isNotEmpty() || heldRandom.isNotEmpty()
+
     /** Pauses what plays (calls, unplugged headphones). Does nothing when all is already quiet. */
     fun pauseForInterruption() {
-        if (pausedByAll.isEmpty() && anyPlaying()) pauseAll()
+        if (!holding && (anyPlaying() || cards.any { it.waiting })) pauseAll()
     }
 
     fun stopAll() {
         cards.forEach { end(it) }
         pausedByAll = emptyList()
+        heldRandom = emptyList()
         NativeEngine.stopPads()
     }
 
@@ -291,7 +360,7 @@ class TableSession(
         owner[slot] = card
         card.slot = slot
         val ok = runCatching {
-            NativeEngine.load(Library.blobFile(card.sound.blob), slot, card.sound.loop.ordinal)
+            NativeEngine.load(Library.blobFile(card.sound.blob), slot, card.sound.loop.engine)
         }.getOrDefault(false)
         if (!ok) {
             owner[slot] = null

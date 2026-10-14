@@ -38,7 +38,6 @@ interface Host {
     suspend fun pickFolder(): Uri?
     fun share(files: List<File>)
     fun openLink(url: String)
-    suspend fun askNotifications()
 }
 
 sealed interface Screen {
@@ -677,7 +676,6 @@ class AppModel(private val app: Context, private val host: Host, val scope: Coro
         stopPreview()
         val story = (if (ed?.story?.uid == storyUid) ed!!.story else Library.story(storyUid)) ?: return@launch
         val from = screen
-        host.askNotifications()
         table?.let { closing = it.close() }
         closing?.join()
         val session = TableSession(app, story, settings, scope) { toast(it, 3200) }

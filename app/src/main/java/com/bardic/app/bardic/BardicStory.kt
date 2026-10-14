@@ -9,7 +9,20 @@ import java.util.UUID
 /** Model of story.json inside a .bardic file. Spec: BARDIC_FORMAT.md at the repo root. */
 
 enum class LoopMode(val json: String) {
-    ONCE("once"), TWICE("twice"), INFINITE("infinite");
+    ONCE("once"), TWICE("twice"), INFINITE("infinite"),
+    /** Events only: plays once, then again and again after a random pause (0.5 s to the maximum set in the settings). */
+    RANDOM("random");
+
+    /** Loop mode handed to the audio engine: a random event is played once at a time. */
+    val engine: Int get() = if (this == RANDOM) 0 else ordinal
+
+    /** The next mode of the loop button: 1×, 2×, ∞, then the random mode where it is allowed (events). */
+    fun next(allowRandom: Boolean): LoopMode = when (this) {
+        ONCE -> TWICE
+        TWICE -> INFINITE
+        INFINITE -> if (allowRandom) RANDOM else ONCE
+        RANDOM -> ONCE
+    }
 
     companion object {
         fun from(value: String?): LoopMode = values().firstOrNull { it.json == value } ?: ONCE

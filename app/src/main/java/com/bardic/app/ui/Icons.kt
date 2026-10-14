@@ -60,5 +60,6 @@ object BIcons {
     val files = stroke("M4 6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z")
     val check = stroke("M5 12.5l4.5 4.5L19 7.5")
     val save = stroke("M12 4v10M7.5 9.5L12 14l4.5-4.5M5 18v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1")
+    val random = stroke("M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5")
     val volume = stroke("M11 5L6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7")
 }

@@ -74,7 +74,7 @@ A **sound**:
 | --- | --- | --- | --- |
 | `name` | string | yes | Card title. |
 | `file` | string | yes | Path of the audio entry inside the archive. MP3 recommended; OGG, M4A and WAV are accepted. |
-| `loop` | string | yes | `"once"`, `"twice"` or `"infinite"` (the 1×, 2× and ∞ of the app). |
+| `loop` | string | yes | `"once"`, `"twice"` or `"infinite"` (the 1×, 2× and ∞ of the app). Events may also use `"random"`: the sound plays again and again, after a random pause of 0.5 s up to a maximum set in the player's settings (1 to 10 s). A reader that does not know `"random"` plays the sound once, and keeps the value when it re-saves the file. |
 | `volume` | number | no | 0 to 1, default 0.75. |
 | `duration` | number | no | Seconds, informative only. |
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -148,7 +149,7 @@ private fun MasterChip(m: AppModel, s: TableSession) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        val resume = s.pausedByAll.isNotEmpty()
+        val resume = s.holding
         IconBtn(
             if (resume) BIcons.play else BIcons.pause, if (resume) "Resume all" else "Pause all",
             size = 32.dp, iconSize = 15.dp, background = Color.Transparent, border = Color.Transparent,
@@ -194,53 +195,76 @@ private fun TableRail(s: TableSession) {
     }
 }
 
+/**
+ * A sound card at the table: name, time left and loop on top, play, fade out and volume below.
+ * The progress is the card's bottom edge, so the controls keep their room on short screens.
+ */
 @Composable
 private fun PlayCard(m: AppModel, s: TableSession, c: Card, z: Color) {
     val live = s.live
     val st = s.stateOf(c, live)
-    val on = st == NativeEngine.PLAYING || st == NativeEngine.ENDING || st == NativeEngine.PAUSING
+    val waiting = c.waiting
+    val on = st == NativeEngine.PLAYING || st == NativeEngine.ENDING || st == NativeEngine.PAUSING || waiting
     val paused = st == NativeEngine.PAUSED
-    val p = s.progressOf(c, live)
+    val p = if (waiting) 0f else s.progressOf(c, live)
     val shape = RoundedCornerShape(12.dp)
     val loop = c.sound.loop
-    Column(
+    BoxWithConstraints(
         Modifier
-            .width(228.dp)
+            .width(220.dp)
             .fillMaxHeight()
             .clip(shape)
             .background(C.card)
             .border(1.dp, if (on) z else C.line, shape)
-            .padding(start = 10.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-        verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            T(c.sound.name, weight = FontWeight.SemiBold, size = 14.sp, maxLines = 1, modifier = Modifier.weight(1f))
-            var info = ""
-            var warn = false
-            when {
-                c.failed -> info = "unavailable"
-                on || paused -> if (loop == LoopMode.INFINITE) info = "∞ loop" else {
-                    s.remainingOf(c, live)?.let { r -> info = formatTime(r); warn = r <= 10.0 }
+        // Control size follows the card height: 24 to 38 dp, never more than the room left.
+        val btn = (maxHeight - 40.dp).coerceIn(24.dp, 38.dp)
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(start = 10.dp, end = 6.dp, top = 6.dp, bottom = 9.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(Modifier.height(24.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                T(c.sound.name, weight = FontWeight.SemiBold, size = 14.sp, maxLines = 1, modifier = Modifier.weight(1f))
+                var info = ""
+                var warn = false
+                when {
+                    c.failed -> info = "unavailable"
+                    waiting -> info = "next ${formatTime(((c.nextAt - android.os.SystemClock.uptimeMillis()) / 1000.0).coerceAtLeast(0.0))}"
+                    on || paused -> if (loop == LoopMode.INFINITE) info = "∞ loop" else {
+                        s.remainingOf(c, live)?.let { r -> info = formatTime(r); warn = r <= 10.0 }
+                    }
+                    st == NativeEngine.LOADING -> info = "loading…"
                 }
-                st == NativeEngine.LOADING -> info = "loading…"
+                if (info.isNotEmpty()) T(info, color = if (warn) C.evt else C.muted, size = 12.sp, weight = if (warn) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1)
+                LoopChip(loop, height = 22.dp) { s.setLoop(c, loop.next(allowRandom = c.zone == Zone.EVENTS)) }
             }
-            if (info.isNotEmpty()) T(info, color = if (warn) C.evt else C.muted, size = 12.sp, weight = if (warn) FontWeight.SemiBold else FontWeight.Normal)
-            LoopChip(loop) { s.setLoop(c, LoopMode.values()[(loop.ordinal + 1) % 3]) }
-        }
-        ProgressTrack(if (on || paused) p else 0f, on || paused)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            val playing = st == NativeEngine.PLAYING
-            IconBtn(
-                if (playing) BIcons.pause else BIcons.play, if (playing) "Pause ${c.sound.name}" else "Play ${c.sound.name}",
-                size = 38.dp, iconSize = 15.dp,
-                background = if (on) z else C.line, border = if (on) z else C.line, tint = if (on) C.onZ else C.text,
-                enabled = !c.failed,
-            ) { s.toggle(c) }
-            IconBtn(BIcons.stop, "Fade out ${c.sound.name}", size = 38.dp, iconSize = 13.dp, background = Color.Transparent, enabled = on || paused) {
-                s.end(c)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                val playing = st == NativeEngine.PLAYING || waiting
+                IconBtn(
+                    if (playing) BIcons.pause else BIcons.play, if (playing) "Pause ${c.sound.name}" else "Play ${c.sound.name}",
+                    size = btn, iconSize = 14.dp,
+                    background = if (on) z else C.line, border = if (on) z else C.line, tint = if (on) C.onZ else C.text,
+                    enabled = !c.failed,
+                ) { s.toggle(c) }
+                IconBtn(
+                    BIcons.stop, "Fade out ${c.sound.name}", size = btn, iconSize = 12.dp,
+                    background = Color.Transparent, enabled = on || paused,
+                ) { s.end(c) }
+                BardSlider(c.sound.volume, { v -> s.setVolume(c, v) }, z, Modifier.weight(1f).height(btn), label = "${c.sound.name} volume")
             }
-            BardSlider(c.sound.volume, { v -> s.setVolume(c, v) }, z, Modifier.weight(1f), label = "${c.sound.name} volume")
         }
+        // Progress as the bottom edge: green to red near the end, electric blue for an infinite loop.
+        val shown = on || paused
+        val fraction = when {
+            !shown -> 0f
+            p < 0f -> 1f
+            else -> p.coerceIn(0f, 1f)
+        }
+        val color = if (p < 0f) C.blue else hsl(130f * (1f - fraction), 0.72f, 0.5f)
+        Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(4.dp).background(C.line.copy(alpha = 0.6f)))
+        Box(Modifier.align(Alignment.BottomStart).fillMaxWidth(fraction).height(4.dp).background(color))
     }
 }
 

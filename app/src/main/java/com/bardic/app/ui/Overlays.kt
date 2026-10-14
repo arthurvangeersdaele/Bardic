@@ -382,7 +382,14 @@ private fun SettingsPanel(m: AppModel) {
         SetRow("Keep screen awake", "While a story is open, so the screen stays on at the table") {
             Toggle(st.keepAwake) { st.changeKeepAwake(it) }
         }
-        Muted("The sounds keep playing with the screen off or Bardic in the background: a notification lets you pause or fade out everything.", 13)
+        SetRow("Random events", "An event set to random plays again after a pause of 0.5 s to ${st.randomMax} s") {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconBtn(BIcons.left, "Shorter", size = 34.dp, iconSize = 13.dp, enabled = st.randomMax > 1) { st.changeRandomMax(st.randomMax - 1) }
+                T("${st.randomMax} s", weight = FontWeight.SemiBold, size = 16.sp, align = TextAlign.Center, modifier = Modifier.width(40.dp))
+                IconBtn(BIcons.right, "Longer", size = 34.dp, iconSize = 13.dp, enabled = st.randomMax < 10) { st.changeRandomMax(st.randomMax + 1) }
+            }
+        }
+        Muted("The sounds keep playing with the screen off or Bardic in the background.", 13)
 
         SetSection("Storage")
         var bytes by remember { mutableLongStateOf(-1L) }
@@ -485,8 +492,8 @@ private fun BusyVeil(b: Busy) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Eq(height = 26.dp)
-            Title(b.title, 24, maxLines = 2)
-            if (b.step.isNotBlank()) T(b.step, color = C.muted, size = 14.sp, maxLines = 2)
+            Title(b.title, 24, maxLines = 2, align = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            if (b.step.isNotBlank()) T(b.step, color = C.muted, size = 14.sp, maxLines = 2, align = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             b.fraction?.let { f ->
                 Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(C.line)) {
                     Box(Modifier.fillMaxWidth(f.coerceIn(0f, 1f)).height(6.dp).background(C.accent))

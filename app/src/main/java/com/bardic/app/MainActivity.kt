@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
@@ -50,13 +51,11 @@ class MainActivity : ComponentActivity(), Host {
     // File pickers and permission requests, awaited by the app model.
     private var pendingUri: CompletableDeferred<Uri?>? = null
     private var pendingUris: CompletableDeferred<List<Uri>>? = null
-    private var pendingPermission: CompletableDeferred<Boolean>? = null
 
     private val openDocument = registerForActivityResult(ActivityResultContracts.OpenDocument()) { pendingUri?.complete(it) }
     private val openDocuments = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { pendingUris?.complete(it) }
     private val createDocument = registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { pendingUri?.complete(it) }
     private val openTree = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { pendingUri?.complete(it) }
-    private val notifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { pendingPermission?.complete(it) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,10 +75,14 @@ class MainActivity : ComponentActivity(), Host {
     private fun App(m: AppModel) {
         BackHandler { if (!m.back()) finish() }
         val screen = m.screen
-        val awake = m.settings.keepAwake && (screen is Screen.Table || screen == Screen.Editor)
-        LaunchedEffect(awake) {
+        // Keep the screen on while a story is open (table or editor), as on iPhone.
+        val awake = m.settings.keepAwake && (m.table != null || screen is Screen.Table || screen == Screen.Editor)
+        val view = LocalView.current
+        DisposableEffect(awake) {
+            view.keepScreenOn = awake
             if (awake) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            onDispose { }
         }
         Box(Modifier.fillMaxSize().background(C.bg).safeDrawingPadding()) {
             when (screen) {
@@ -157,17 +160,5 @@ class MainActivity : ComponentActivity(), Host {
         } catch (e: ActivityNotFoundException) {
             model.toast("No browser to open the link.")
         }
-    }
-
-    override suspend fun askNotifications() {
-        if (Build.VERSION.SDK_INT < 33) return
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
-        val prefs = getSharedPreferences("bardic.settings", MODE_PRIVATE)
-        if (prefs.getBoolean("askedNotifications", false)) return
-        prefs.edit().putBoolean("askedNotifications", true).apply()
-        val d = CompletableDeferred<Boolean>()
-        pendingPermission = d
-        notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
-        d.await()
     }
 }
