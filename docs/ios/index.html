@@ -108,39 +108,47 @@
 <!-- ============ The app ============ -->
 <div class="app" id="app">
 
-  <!-- Opening: the word Bardic lit from below by a golden flash, three dots racing under it. -->
+  <!-- Opening: a golden light rises from below the screen and lights the word Bardic, three dots race under it. -->
   <div class="splash" id="splash" aria-hidden="true">
+    <div class="sp-light"></div>
     <div class="sp-stage">
-      <div class="sp-glow"></div>
-      <b class="sp-word">Bardic</b>
+      <b class="sp-word" id="sp-word" data-text="Bardic">Bardic</b>
       <div class="sp-dots"><i></i><i></i><i></i></div>
     </div>
   </div>
   <script>
     (function () {
-      var root = document.documentElement, sp = document.getElementById('splash');
+      var root = document.documentElement, sp = document.getElementById('splash'), word = document.getElementById('sp-word');
       if (!root.classList.contains('mode-app')) { sp.remove(); return; }
       var started = false, gone = false;
+      // The word takes the middle three fifths of the screen width, whatever the orientation.
+      function fit() {
+        word.style.fontSize = '100px';
+        var w = word.getBoundingClientRect().width || 1;
+        var size = 100 * (window.innerWidth * 0.6) / w;
+        word.style.fontSize = Math.min(size, window.innerHeight * 0.42) + 'px';
+      }
       function hide() {
         if (gone) return; gone = true;
         sp.classList.add('sp-out');
-        setTimeout(function () { sp.remove(); }, 420);
+        setTimeout(function () { sp.remove(); window.removeEventListener('resize', fit); }, 520);
       }
       function go() {
         if (started) return; started = true;
+        fit();
         sp.classList.add('sp-go');
         var quiet = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-        setTimeout(hide, quiet ? 700 : 1750);
+        setTimeout(hide, quiet ? 800 : 2300);
       }
-      // Wait (briefly) for the title font, so the word appears in its own letters.
+      window.addEventListener('resize', fit);
       try {
         if (document.fonts && document.fonts.load) {
-          document.fonts.load('700 64px "Cormorant SC"').then(go, go);
-          setTimeout(go, 700);
+          document.fonts.load('700 100px "Cormorant SC"').then(go, go);
+          setTimeout(go, 800);
         } else go();
       } catch (e) { go(); }
       sp.addEventListener('click', hide);
-      setTimeout(hide, 3200);
+      setTimeout(hide, 4000);
     })();
   </script>
 

@@ -321,56 +321,88 @@ html.mode-app input[type="range"].dragging::-webkit-slider-thumb { transform: sc
 /* ---------- Opening animation ---------- */
 .splash {
   position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; overflow: hidden;
-  background: #0F0F13; transition: opacity .4s ease;
+  background: #0F0F13; transition: opacity .5s ease;
 }
 .splash.sp-out { opacity: 0; pointer-events: none; }
-.sp-stage { position: relative; display: grid; place-items: center; }
+
+/* The light source sits below the bottom edge of the screen: only its glow rises into view. */
+.sp-light {
+  position: absolute; left: 50%; bottom: 0; width: 220vmax; height: 140vmax; transform: translate(-50%, 62%) scale(.55);
+  background: radial-gradient(closest-side, rgba(255, 222, 150, .95) 0%, rgba(232, 176, 80, .6) 22%, rgba(224, 168, 75, .22) 45%, rgba(224, 168, 75, 0) 70%);
+  opacity: 0; pointer-events: none;
+}
+
+.sp-stage { position: relative; perspective: 900px; display: grid; place-items: center; }
+
+/* The word: white, raised in relief (a carved golden edge under each letter), keeping its own font. */
 .sp-word {
-  position: relative; z-index: 2; font-family: 'Cormorant SC', serif; font-weight: 700;
-  font-size: clamp(64px, 17vh, 120px); line-height: 1; letter-spacing: .04em; color: #F7F3EA;
-  opacity: 0; transform: translateY(8px); filter: blur(4px);
+  position: relative; display: block; font-family: 'Cormorant SC', serif; font-weight: 700; font-size: 100px;
+  line-height: 1; letter-spacing: .03em; white-space: nowrap; color: #F7F3EA;
+  transform-origin: 50% 80%; opacity: 0; transform: rotateX(28deg) translateY(.12em);
+  text-shadow:
+    0 .010em 0 #E9DEC4, 0 .020em 0 #DCC79A, 0 .030em 0 #CCAE72, 0 .040em 0 #B8954F,
+    0 .050em 0 #9E7B3A, 0 .060em 0 #81622C, 0 .070em 0 #634A20,
+    0 .12em .10em rgba(0, 0, 0, .55), 0 .22em .30em rgba(0, 0, 0, .35);
 }
-/* The golden light, under the word, flaring up then settling into a soft glow. */
-.sp-glow {
-  position: absolute; z-index: 1; left: 50%; top: 58%; width: 230%; height: 190%; transform: translate(-50%, -20%) scale(.3, .2);
-  background: radial-gradient(ellipse at 50% 30%, rgba(255, 214, 140, .95) 0%, rgba(224, 168, 75, .55) 28%, rgba(224, 168, 75, 0) 66%);
-  opacity: 0; filter: blur(6px); pointer-events: none;
+/* Gold rising from below over the white face of the letters. */
+.sp-word::before, .sp-word::after {
+  content: attr(data-text); position: absolute; inset: 0; text-shadow: none; pointer-events: none;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.sp-dots { position: absolute; z-index: 3; left: 0; right: 0; top: calc(100% + 6px); height: 12px; }
-.sp-dots i {
-  position: absolute; top: 0; left: 0; width: 10px; height: 10px; border-radius: 50%;
-  transform: translateX(-60vw); opacity: 0;
+.sp-word::before {
+  background-image: linear-gradient(0deg, #F2C66A 0%, #E7B355 22%, rgba(247, 230, 190, .85) 48%, rgba(247, 243, 234, 0) 72%);
+  background-size: 100% 220%; background-position: 50% 0%; opacity: 0;
 }
-/* Each dot leaves a short light trail behind it. */
-.sp-dots i::before { content: ""; position: absolute; right: 5px; top: 2px; width: 90px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, transparent, currentColor); opacity: .55; }
-.sp-dots i:nth-child(1) { background: #E0A84B; color: #E0A84B; box-shadow: 0 0 12px #E0A84B; }
-.sp-dots i:nth-child(2) { background: #4FB3A5; color: #4FB3A5; box-shadow: 0 0 12px #4FB3A5; }
-.sp-dots i:nth-child(3) { background: #E06A63; color: #E06A63; box-shadow: 0 0 12px #E06A63; }
+/* The golden glint that sweeps across the word. */
+.sp-word::after {
+  background-image: linear-gradient(105deg, rgba(255, 255, 255, 0) 38%, rgba(255, 236, 180, .95) 47%, #FFFFFF 50%, rgba(255, 220, 140, .9) 53%, rgba(255, 255, 255, 0) 62%);
+  background-size: 260% 100%; background-position: 130% 0; opacity: 0;
+}
 
-.sp-go .sp-word { animation: sp-word 1.2s cubic-bezier(.2, .7, .2, 1) forwards; }
-.sp-go .sp-glow { animation: sp-glow 1.5s ease-out .38s forwards; }
-.sp-go .sp-dots i { animation: sp-dot .5s cubic-bezier(.55, .05, .35, 1) forwards; }
-.sp-go .sp-dots i:nth-child(1) { animation-delay: .62s; }
-.sp-go .sp-dots i:nth-child(2) { animation-delay: .69s; }
-.sp-go .sp-dots i:nth-child(3) { animation-delay: .76s; }
+/* Three dots racing across the whole screen, just under the word. */
+.sp-dots { position: absolute; left: 50%; width: 100vw; transform: translateX(-50%); top: calc(100% + .1em); height: 12px; }
+.sp-dots i { position: absolute; top: 0; left: 0; width: 9px; height: 9px; border-radius: 50%; transform: translateX(-20vw); opacity: 0; }
+.sp-dots i::before { content: ""; position: absolute; right: 4px; top: 2px; width: 22vw; height: 5px; border-radius: 3px; background: linear-gradient(90deg, transparent, currentColor); opacity: .5; }
+.sp-dots i:nth-child(1) { top: 0; background: #E0A84B; color: #E0A84B; box-shadow: 0 0 10px #E0A84B; }
+.sp-dots i:nth-child(2) { top: 4px; background: #4FB3A5; color: #4FB3A5; box-shadow: 0 0 10px #4FB3A5; }
+.sp-dots i:nth-child(3) { top: 8px; background: #E06A63; color: #E06A63; box-shadow: 0 0 10px #E06A63; }
 
-@keyframes sp-word {
-  0% { opacity: 0; transform: translateY(8px); filter: blur(4px); text-shadow: none; }
-  35% { opacity: 1; transform: none; filter: none; text-shadow: none; }
-  52% { text-shadow: 0 10px 28px rgba(255, 210, 130, .95), 0 2px 6px rgba(255, 220, 160, .7); color: #FFFDF6; }
-  100% { opacity: 1; transform: none; filter: none; text-shadow: 0 8px 26px rgba(224, 168, 75, .35); color: #F7F3EA; }
+/* Timeline: the word rises (0 to .7 s), the light flashes from below (.55 s), the gold climbs the letters,
+   the dots race under it (.85 s), the glint sweeps (1.15 s), then the light settles. */
+.sp-go .sp-word { animation: sp-rise .8s cubic-bezier(.2, .8, .2, 1) forwards; }
+.sp-go .sp-light { animation: sp-flash 1.8s cubic-bezier(.2, .7, .3, 1) .5s forwards; }
+.sp-go .sp-word::before { animation: sp-gold 1.4s ease-out .6s forwards; }
+.sp-go .sp-word::after { animation: sp-glint .9s ease-in-out 1.15s forwards; }
+.sp-go .sp-dots i { animation: sp-dot .45s cubic-bezier(.5, 0, .4, 1) forwards; }
+.sp-go .sp-dots i:nth-child(1) { animation-delay: .85s; }
+.sp-go .sp-dots i:nth-child(2) { animation-delay: .91s; }
+.sp-go .sp-dots i:nth-child(3) { animation-delay: .97s; }
+
+@keyframes sp-rise {
+  0% { opacity: 0; transform: rotateX(28deg) translateY(.12em); }
+  100% { opacity: 1; transform: rotateX(12deg) translateY(0); }
 }
-@keyframes sp-glow {
-  0% { opacity: 0; transform: translate(-50%, -20%) scale(.3, .2); }
-  16% { opacity: 1; transform: translate(-50%, -20%) scale(1, 1); }
-  100% { opacity: .28; transform: translate(-50%, -20%) scale(1.1, .8); }
+@keyframes sp-flash {
+  0% { opacity: 0; transform: translate(-50%, 62%) scale(.55); }
+  14% { opacity: 1; transform: translate(-50%, 52%) scale(1); }
+  100% { opacity: .5; transform: translate(-50%, 58%) scale(.95); }
+}
+@keyframes sp-gold {
+  0% { opacity: 0; background-position: 50% 0%; }
+  25% { opacity: 1; background-position: 50% 70%; }
+  100% { opacity: .9; background-position: 50% 45%; }
+}
+@keyframes sp-glint {
+  0% { opacity: 1; background-position: 130% 0; }
+  100% { opacity: 1; background-position: -30% 0; }
 }
 @keyframes sp-dot {
-  0% { opacity: 1; transform: translateX(-60vw); }
-  100% { opacity: 1; transform: translateX(160vw); }
+  0% { opacity: 1; transform: translateX(-25vw); }
+  100% { opacity: 1; transform: translateX(125vw); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sp-go .sp-word { animation: none; opacity: 1; transform: none; filter: none; }
-  .sp-go .sp-glow { animation: none; opacity: .3; transform: translate(-50%, -20%) scale(1, .8); }
-  .sp-go .sp-dots i { animation: none; }
+  .sp-go .sp-word { animation: none; opacity: 1; transform: rotateX(12deg); }
+  .sp-go .sp-light { animation: none; opacity: .5; transform: translate(-50%, 58%) scale(.95); }
+  .sp-go .sp-word::before { animation: none; opacity: .9; background-position: 50% 45%; }
+  .sp-go .sp-word::after, .sp-go .sp-dots i { animation: none; }
 }
