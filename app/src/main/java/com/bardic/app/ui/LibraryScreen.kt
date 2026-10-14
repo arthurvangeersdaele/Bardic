@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -90,12 +92,12 @@ fun LibraryScreen(m: AppModel) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (stories.isEmpty()) item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Eq(height = 30.dp)
-                    Title("Your table awaits", 34)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Eq(height = 18.dp, bar = 5.dp, modifier = Modifier.padding(bottom = 4.dp))
+                    Title("Your table awaits", 32)
                     T(
                         "Forge a story with your own sounds, import a .bardic file, or start from a tale of the Compagnie des bardes.",
-                        color = C.muted, size = 17.sp,
+                        color = C.muted, size = 16.sp,
                     )
                 }
             } else {
@@ -108,11 +110,11 @@ fun LibraryScreen(m: AppModel) {
             }
             item { SectionLabel("Add a story") }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Door(BIcons.plus, "New story", "With your own sounds, from your files", Modifier.weight(1f)) { m.newStory() }
-                    Door(BIcons.compass, "Discovery", "Three ready stories, sounds included", Modifier.weight(1f)) { m.openDiscovery() }
-                    Door(BIcons.book, "The Recueil", "Tales forged by other bards", Modifier.weight(1f)) { m.openRecueil() }
-                    Door(BIcons.files, "Import .bardic", "From your files or a download", Modifier.weight(1f)) { m.importBardic() }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Door(BIcons.plus, "New story", "With your own sounds, from your files", DoorKind.NEW, Modifier.weight(1f)) { m.newStory() }
+                    Door(BIcons.compass, "Discovery", "Three ready stories, sounds included", DoorKind.DISCOVERY, Modifier.weight(1f)) { m.openDiscovery() }
+                    Door(BIcons.book, "The Recueil", "Tales forged by other bards", DoorKind.RECUEIL, Modifier.weight(1f)) { m.openRecueil() }
+                    Door(BIcons.files, "Import .bardic", "From your files, a cloud drive or a download", DoorKind.IMPORT, Modifier.weight(1f)) { m.importBardic() }
                 }
             }
         }
@@ -121,7 +123,10 @@ fun LibraryScreen(m: AppModel) {
 
 @Composable
 fun SectionLabel(text: String) {
-    T(text.uppercase(), color = C.muted, size = 13.sp, weight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+    Text(
+        text.uppercase(), color = C.muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, fontFamily = Barlow,
+        letterSpacing = 2.sp, modifier = Modifier.padding(top = 6.dp, start = 2.dp),
+    )
 }
 
 @Composable
@@ -130,28 +135,29 @@ private fun StoryCard(m: AppModel, s: Story, index: Int) {
     val shape = RoundedCornerShape(16.dp)
     Column(
         Modifier
-            .width(290.dp)
+            .width(280.dp)
             .clip(shape)
             .background(C.card)
             .border(1.dp, C.line, shape)
     ) {
         Box(Modifier.fillMaxWidth().height(4.dp).background(z))
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Title(s.title.ifBlank { "Untitled story" }, 26)
+        Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Title(s.title.ifBlank { "Untitled story" }, 24, maxLines = 2, modifier = Modifier.heightIn(min = 50.dp))
             val by = listOfNotNull(
                 s.bard.takeIf { it.isNotBlank() }?.let { "by $it" },
                 s.revision.takeIf { it > 0 }?.let { "revision $it" },
             ).joinToString(", ").ifBlank { "Not exported yet" }
-            T(by, color = C.muted, size = 14.sp, maxLines = 1)
-            Column(Modifier.heightIn(min = 60.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            T(by, color = C.muted, size = 13.sp, maxLines = 1, modifier = Modifier.padding(top = 0.dp))
+            // Three lines at most, so every card has the same height.
+            Column(Modifier.height(66.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 val shown = if (s.chapters.size > 3) 2 else 3
                 s.chapters.take(shown).forEachIndexed { i, c ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        T("${i + 1}.", color = C.accent, size = 14.sp, weight = FontWeight.SemiBold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Title("${i + 1}", 15, color = z, modifier = Modifier.width(10.dp))
                         T(c.title.ifBlank { "Untitled chapter" }, size = 14.sp, maxLines = 1)
                     }
                 }
-                if (s.chapters.size > shown) T("and ${s.chapters.size - shown} more", color = C.muted, size = 14.sp)
+                if (s.chapters.size > shown) T("and ${s.chapters.size - shown} more", color = C.muted, size = 14.sp, modifier = Modifier.padding(start = 19.dp))
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(C.line))
             T(
@@ -159,33 +165,42 @@ private fun StoryCard(m: AppModel, s: Story, index: Int) {
                 color = C.muted, size = 13.sp, maxLines = 1,
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Btn("Play", icon = BIcons.play, kind = BtnKind.PRIMARY, modifier = Modifier.weight(1f)) { m.openTable(s.uid, 0) }
-                IconBtn(BIcons.edit, "Edit ${s.title}", size = 38.dp, iconSize = 16.dp) { m.openEditor(s.uid, 0) }
-                IconBtn(BIcons.share, "Export ${s.title}", size = 38.dp, iconSize = 16.dp) { m.exportStories(listOf(s)) }
-                IconBtn(BIcons.trash, "Delete ${s.title}", size = 38.dp, iconSize = 16.dp, tint = C.evt) { m.deleteStory(s) }
+                Btn("Play", icon = BIcons.play, kind = BtnKind.PRIMARY, height = 38.dp, modifier = Modifier.weight(1f)) { m.openTable(s.uid, 0) }
+                IconBtn(BIcons.edit, "Edit ${s.title}", size = 38.dp, iconSize = 16.dp, tint = C.muted) { m.openEditor(s.uid, 0) }
+                IconBtn(BIcons.share, "Export ${s.title}", size = 38.dp, iconSize = 16.dp, tint = C.muted) { m.exportStories(listOf(s)) }
+                IconBtn(BIcons.trash, "Delete ${s.title}", size = 38.dp, iconSize = 16.dp, tint = C.muted) { m.deleteStory(s) }
             }
         }
     }
 }
 
+private enum class DoorKind { NEW, DISCOVERY, RECUEIL, IMPORT }
+
+/** One of the four ways to add a story: identical tiles, content at the top left (as in the iPhone app). */
 @Composable
-private fun Door(icon: ImageVector, title: String, text: String, modifier: Modifier, onClick: () -> Unit) {
+private fun Door(icon: ImageVector, title: String, text: String, kind: DoorKind, modifier: Modifier, onClick: () -> Unit) {
     val shape = RoundedCornerShape(14.dp)
+    val isNew = kind == DoorKind.NEW
+    val iconColor = when (kind) {
+        DoorKind.DISCOVERY -> C.amb
+        DoorKind.IMPORT -> C.blue
+        else -> C.accent
+    }
     Column(
         modifier
-            .heightIn(min = 118.dp)
+            .height(104.dp)
             .clip(shape)
-            .background(C.card)
-            .border(1.dp, C.line, shape)
+            .background(if (isNew) lerp(C.card, C.accent, 0.09f) else C.card)
+            .border(1.dp, if (isNew) lerp(C.line, C.accent, 0.6f) else C.line, shape)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Box(
-            Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(C.accent.copy(alpha = 0.16f)),
-            contentAlignment = Alignment.Center,
-        ) { Icon(icon, null, tint = C.accent, modifier = Modifier.size(22.dp)) }
-        T(title, weight = FontWeight.SemiBold, size = 16.sp, maxLines = 1)
+        Box(Modifier.height(22.dp), contentAlignment = Alignment.CenterStart) {
+            Icon(icon, null, tint = iconColor, modifier = Modifier.size(20.dp))
+        }
+        Title(title, 20, color = if (kind == DoorKind.RECUEIL) C.accent else C.text)
         T(text, color = C.muted, size = 13.sp, maxLines = 2)
     }
 }

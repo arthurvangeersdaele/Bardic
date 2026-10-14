@@ -1,6 +1,13 @@
 package com.bardic.app.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -492,7 +499,6 @@ private fun BusyVeil(b: Busy) {
 // ---------------------------------------------------------------------- opening
 
 /** Opening: gold climbs the letters of Bardic and a glint sweeps them, then the word settles in the theme's ink. */
-@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
 @Composable
 fun Splash(onDone: () -> Unit) {
     val t = remember { Animatable(0f) }
@@ -512,24 +518,30 @@ fun Splash(onDone: () -> Unit) {
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onDone() },
         contentAlignment = Alignment.Center,
     ) {
-        val size = (maxWidth.value * 0.6f / 3.3f).coerceAtMost(maxHeight.value * 0.4f)
+        // The word takes three fifths of the width, without overflowing a short screen.
+        val wordWidth = minOf(maxWidth * 0.6f, maxHeight * 0.36f * (BardicWord.WIDTH / BardicWord.HEIGHT))
         val p = t.value
         val settle = ((p - 0.6f) / 0.4f).coerceIn(0f, 1f)
         val sweep = p * 2.2f - 0.6f
-        val w = maxWidth.value * 0.6f
+        val word = remember { PathParser().parsePathString(BardicWord.PATH).toPath() }
+        // Brush in the coordinates of the outlines (font units).
         val brush = Brush.linearGradient(
             colors = gold.map { lerp(it, ink, settle) },
-            start = androidx.compose.ui.geometry.Offset(w * (sweep - 0.5f), 0f),
-            end = androidx.compose.ui.geometry.Offset(w * (sweep + 0.5f), size),
+            start = Offset(BardicWord.WIDTH * (sweep - 0.5f), 0f),
+            end = Offset(BardicWord.WIDTH * (sweep + 0.5f), BardicWord.HEIGHT),
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            androidx.compose.material3.Text(
-                "Bardic",
-                style = titleStyle(size.toInt()).copy(brush = brush, letterSpacing = 2.sp),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.alpha((p * 4f).coerceAtMost(1f)),
-            )
-            Spacer(Modifier.height(6.dp))
+            Canvas(
+                Modifier
+                    .width(wordWidth)
+                    .aspectRatio(BardicWord.WIDTH / BardicWord.HEIGHT)
+                    .alpha((p * 4f).coerceAtMost(1f))
+                    .semantics { contentDescription = "Bardic" }
+            ) {
+                val k = size.width / BardicWord.WIDTH
+                withTransform({ scale(k, k, pivot = Offset.Zero) }) { drawPath(word, brush) }
+            }
+            Spacer(Modifier.height(14.dp))
             Eq(Modifier.alpha(settle), height = 22.dp)
         }
     }

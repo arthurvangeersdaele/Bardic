@@ -122,20 +122,18 @@ fun Btn(
     enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
+    // Same as the web and iPhone editions: a primary button is the accent colour with dark ink.
     val bg = when (kind) {
-        BtnKind.PRIMARY -> C.text
-        BtnKind.ACCENT -> C.accent
+        BtnKind.PRIMARY, BtnKind.ACCENT -> C.accent
         else -> C.card
     }
     val fg = when (kind) {
-        BtnKind.PRIMARY -> C.bg
-        BtnKind.ACCENT -> C.onZ
+        BtnKind.PRIMARY, BtnKind.ACCENT -> C.onZ
         BtnKind.DANGER -> C.evt
         BtnKind.NORMAL -> C.text
     }
     val border = when (kind) {
-        BtnKind.PRIMARY -> C.text
-        BtnKind.ACCENT -> C.accent
+        BtnKind.PRIMARY, BtnKind.ACCENT -> C.accent
         BtnKind.DANGER -> C.evt.copy(alpha = 0.5f)
         BtnKind.NORMAL -> C.line
     }
@@ -366,10 +364,10 @@ fun hsl(hue: Float, saturation: Float, lightness: Float): Color {
 
 /** The three bars of the Bardic logo. */
 @Composable
-fun Eq(modifier: Modifier = Modifier, height: Dp = 28.dp) {
-    Row(modifier.height(height), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.Bottom) {
+fun Eq(modifier: Modifier = Modifier, height: Dp = 28.dp, bar: Dp = 6.dp) {
+    Row(modifier.height(height), horizontalArrangement = Arrangement.spacedBy(bar * 0.66f), verticalAlignment = Alignment.Bottom) {
         listOf(C.music to 0.6f, C.amb to 1f, C.evt to 0.75f).forEach { (c, f) ->
-            Box(Modifier.width(6.dp).height(height * f).clip(RoundedCornerShape(3.dp)).background(c))
+            Box(Modifier.width(bar).height(height * f).clip(RoundedCornerShape(bar / 2)).background(c))
         }
     }
 }
