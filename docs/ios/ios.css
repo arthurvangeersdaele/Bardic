@@ -325,13 +325,6 @@ html.mode-app input[type="range"].dragging::-webkit-slider-thumb { transform: sc
 }
 .splash.sp-out { opacity: 0; pointer-events: none; }
 
-/* The light source sits below the bottom edge of the screen: only its glow rises into view. */
-.sp-light {
-  position: absolute; left: 50%; bottom: 0; width: 220vmax; height: 140vmax; transform: translate(-50%, 62%) scale(.55);
-  background: radial-gradient(closest-side, rgba(255, 222, 150, .95) 0%, rgba(232, 176, 80, .6) 22%, rgba(224, 168, 75, .22) 45%, rgba(224, 168, 75, 0) 70%);
-  opacity: 0; pointer-events: none;
-}
-
 .sp-stage { position: relative; perspective: 900px; display: grid; place-items: center; }
 
 /* The word: white, raised in relief (a carved golden edge under each letter), keeping its own font. */
@@ -359,12 +352,10 @@ html.mode-app input[type="range"].dragging::-webkit-slider-thumb { transform: sc
   background-size: 260% 100%; background-position: 130% 0; opacity: 0;
 }
 
-/* Timeline: the word rises (0 to .8 s), the light flashes from below (.5 s), the gold climbs the letters,
-   the glint sweeps (1.15 s); from 1.95 s the light dies out and the relief melts away,
-   leaving a pure, bright white Bardic on obsidian. */
+/* Timeline: the word rises (0 to .8 s), the gold climbs the letters (.6 s), the glint sweeps (1.1 s);
+   from 1.95 s the relief melts away, leaving a flat, golden Bardic on obsidian. */
 .sp-go .sp-word { animation: sp-rise .8s cubic-bezier(.2, .8, .2, 1) forwards, sp-pure .85s ease-in-out 1.95s forwards; }
-.sp-go .sp-light { animation: sp-flash 1.45s cubic-bezier(.2, .7, .3, 1) .5s forwards, sp-off .85s ease-in-out 1.95s forwards; }
-.sp-go .sp-word::before { animation: sp-gold 1.35s ease-out .6s forwards, sp-ungild .75s ease-in-out 1.95s forwards; }
+.sp-go .sp-word::before { animation: sp-gold 1.35s ease-out .6s forwards; }
 .sp-go .sp-word::after { animation: sp-glint .8s ease-in-out 1.1s forwards; }
 
 @keyframes sp-rise {
@@ -387,23 +378,10 @@ html.mode-app input[type="range"].dragging::-webkit-slider-thumb { transform: sc
       0 0 .06em rgba(255, 255, 255, .55), 0 0 .35em rgba(255, 255, 255, .22);
   }
 }
-@keyframes sp-flash {
-  0% { opacity: 0; transform: translate(-50%, 62%) scale(.55); }
-  18% { opacity: 1; transform: translate(-50%, 52%) scale(1); }
-  100% { opacity: .55; transform: translate(-50%, 57%) scale(.96); }
-}
-@keyframes sp-off {
-  0% { opacity: .55; transform: translate(-50%, 57%) scale(.96); }
-  100% { opacity: 0; transform: translate(-50%, 66%) scale(.9); }
-}
 @keyframes sp-gold {
   0% { opacity: 0; background-position: 50% 0%; }
   25% { opacity: 1; background-position: 50% 70%; }
   100% { opacity: .9; background-position: 50% 45%; }
-}
-@keyframes sp-ungild {
-  0% { opacity: .9; background-position: 50% 45%; }
-  100% { opacity: 0; background-position: 50% 0%; }
 }
 @keyframes sp-glint {
   0% { opacity: 1; background-position: 130% 0; }
@@ -411,5 +389,6 @@ html.mode-app input[type="range"].dragging::-webkit-slider-thumb { transform: sc
 }
 @media (prefers-reduced-motion: reduce) {
   .sp-go .sp-word { animation: none; opacity: 1; transform: none; color: #FFFFFF; text-shadow: 0 0 .06em rgba(255, 255, 255, .55), 0 0 .35em rgba(255, 255, 255, .22); }
-  .sp-go .sp-light, .sp-go .sp-word::before, .sp-go .sp-word::after { animation: none; opacity: 0; }
+  .sp-go .sp-word::before { animation: none; opacity: .9; background-position: 50% 45%; }
+  .sp-go .sp-word::after { animation: none; opacity: 0; }
 }
