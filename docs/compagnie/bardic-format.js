@@ -166,8 +166,8 @@
     return errors;
   }
 
-  /** Forges the next revision of the draft, signed by `bard`. */
-  async function pack(draft, bard, onProgress) {
+  /** Forges the next revision of the draft, signed by `bard`. options.generator names the tool (default: the web Story builder). */
+  async function pack(draft, bard, onProgress, options) {
     const entries = [];
     const used = new Set();
     const place = (dir, index, s) => {
@@ -192,7 +192,7 @@
     const stamp = now();
     story.created = draft.created || stamp;
     story.forged = stamp;
-    story.generator = 'Bardic Story builder (web)';
+    story.generator = (options && options.generator) || 'Bardic Story builder (web)';
     story.chapters = draft.chapters.map((c, i) => {
       const ch = Object.assign({}, c.extra || {}, { title: c.title.trim() });
       ZONES.forEach((z) => { ch[z] = c[z].map((s, k) => place(`sounds/${i + 1}/${z}`, k, s)); });

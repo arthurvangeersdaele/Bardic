@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en" data-theme="obsidian" data-mode="dark" class="ios">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bardic</title>
+<meta name="description" content="Bardic for iPhone: run music, ambience and sound effects at your tabletop RPG table. Installs on the Home Screen and keeps your stories on the phone.">
+<meta name="theme-color" content="#15151B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bardic">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="261014_bardic_ios.webmanifest">
+<link rel="icon" type="image/svg+xml" href="../icons/261013_bardic_icon.svg">
+<link rel="apple-touch-icon" href="icons/261014_bardic_ios_180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../play/style.css">
+<link rel="stylesheet" href="../compagnie/compagnie.css">
+<link rel="stylesheet" href="ios.css">
+<script>
+  // Theme before first paint, then which face of the page to show:
+  // the app (iPhone, opened from the Home Screen), the install guide (iPhone, in a browser) or the iPhone-only notice.
+  (function () {
+    var root = document.documentElement;
+    try {
+      var s = JSON.parse(localStorage.getItem('bardic.settings') || '{}');
+      var mode = s.mode || 'dark';
+      if (mode === 'system') mode = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      root.dataset.theme = s.theme || 'obsidian';
+      root.dataset.mode = mode;
+    } catch (e) {}
+    var iphone = /iPhone|iPod/.test(navigator.userAgent);
+    var standalone = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    root.classList.add(iphone ? (standalone ? 'mode-app' : 'mode-install') : 'mode-other');
+  })();
+</script>
+</head>
+<body>
+
+<!-- ============ Not an iPhone ============ -->
+<main class="gate gate-other">
+  <div class="gate-card">
+    <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+    <p class="kicker">Bardic for iPhone</p>
+    <h1>Made for iPhone</h1>
+    <p>This edition of Bardic installs on an iPhone, from Safari, as an app on the Home Screen. Open this page on your iPhone to install it.</p>
+    <p class="muted">On Android, the Bardic app is on its way. On a computer, the web edition and the Compagnie des bardes are waiting for you.</p>
+    <a class="btn primary" href="../">Back to Bardic</a>
+  </div>
+</main>
+
+<!-- ============ iPhone, in a browser: install guide ============ -->
+<main class="gate gate-install">
+  <div class="gate-card">
+    <img class="gate-icon" src="icons/261014_bardic_ios_180.png" alt="" width="84" height="84">
+    <p class="kicker">Bardic for iPhone</p>
+    <h1>Install Bardic</h1>
+    <p>Bardic runs from your Home Screen, as an app: your stories and sounds stay stored on your iPhone, ready for every session.</p>
+    <ol class="steps">
+      <li><span>Tap the <b>Share</b> button <i class="share-ico" aria-hidden="true"></i> in the Safari toolbar.</span></li>
+      <li><span>Scroll down and tap <b>Add to Home Screen</b>.</span></li>
+      <li><span>Keep <b>Open as Web App</b> on, then tap <b>Add</b>.</span></li>
+      <li><span>Open <b>Bardic</b> from your Home Screen and turn your phone sideways.</span></li>
+    </ol>
+    <p class="muted small">Bardic does not open in a browser tab: only the installed app can keep your stories safe on the phone. Using Chrome? Its Share button sits next to the address bar.</p>
+    <a class="back-link" href="../">Back to the Bardic page</a>
+  </div>
+</main>
+
+<!-- ============ The app ============ -->
+<div class="app" id="app">
+
+  <div class="rotate" aria-hidden="true">
+    <div class="phone-turn"><i></i></div>
+    <b>Turn your phone sideways</b>
+    <span>Bardic plays in landscape.</span>
+  </div>
+
+  <!-- Library -->
+  <main id="library" class="screen stories" hidden>
+    <header class="sbar">
+      <span class="logo">Bardic</span>
+      <nav class="tabs" aria-label="Sections">
+        <a href="#/" aria-current="page">Stories</a>
+        <a href="#/soundbox">Soundbox</a>
+      </nav>
+      <span class="grow"></span>
+      <button class="btn slim" data-action="import" type="button"><span class="i-import"></span><span class="long">Import</span></button>
+      <button class="btn slim primary" data-action="new-story" type="button"><span class="i-plus"></span><span class="long">New story</span></button>
+      <button class="ico" data-action="settings" aria-label="Settings" title="Settings"></button>
+    </header>
+    <div class="lib-wrap">
+      <div id="story-grid" class="lib-grid"></div>
+    </div>
+  </main>
+
+  <!-- Shared soundbox -->
+  <main id="sbx" class="screen stories" hidden>
+    <header class="sbar">
+      <span class="logo">Bardic</span>
+      <nav class="tabs" aria-label="Sections">
+        <a href="#/">Stories</a>
+        <a href="#/soundbox" aria-current="page">Soundbox</a>
+      </nav>
+      <span class="grow"></span>
+      <button class="btn slim primary" data-action="add-shared" type="button"><span class="i-plus"></span><span class="long">Add effects</span></button>
+      <button class="ico" data-action="settings" aria-label="Settings" title="Settings"></button>
+    </header>
+    <div class="lib-wrap">
+      <p class="lead small">Your shared soundbox: quick effects ready on every table, next to each story's own effects.</p>
+      <div id="shared-list" class="sc-grid"></div>
+    </div>
+  </main>
+
+  <!-- Story editor -->
+  <main id="editor" class="screen ed" hidden>
+    <header class="tbar">
+      <button class="ico" data-action="home" aria-label="Back to stories" title="Back to stories"></button>
+      <input class="ed-title" id="ed-title" maxlength="120" placeholder="Story title" aria-label="Story title" autocomplete="off" enterkeyhint="done">
+      <span class="saved" id="ed-saved" aria-live="polite"></span>
+      <button class="ico" data-action="story-info" aria-label="Story details" title="Story details"></button>
+      <button class="ico" data-action="export-current" aria-label="Export as .bardic" title="Export as .bardic"></button>
+      <button class="btn slim primary" data-action="play-current" type="button"><span class="i-play"></span><span>Play</span></button>
+    </header>
+    <div class="ed-body">
+      <nav class="rail" id="ed-rail" aria-label="Chapters"></nav>
+      <section class="editor" id="ed-main" aria-label="Chapter"></section>
+    </div>
+  </main>
+
+  <!-- Mixing table (same as the web player) -->
+  <main id="table" class="screen table" hidden>
+    <header class="tbar">
+      <button class="ico" data-action="leave-table" aria-label="Back" title="Back"></button>
+      <div class="ttl"><b id="t-story"></b><span id="t-chapter"></span></div>
+      <div class="chip master">
+        <button class="mini" data-action="pause-all" id="pause-all" aria-label="Pause all" title="Pause all"></button>
+        <button class="mini" data-action="stop-all" aria-label="Fade out everything" title="Fade out everything"></button>
+        <label class="mlabel" for="master">Master</label>
+        <input type="range" id="master" min="0" max="1" step="0.01" value="0.8" aria-label="Master volume">
+        <b id="master-val">80</b>
+      </div>
+      <button class="chip sb-toggle" data-action="soundbox" aria-pressed="false" id="sb-toggle"><span class="star"></span><span class="sb-label">Soundbox</span></button>
+      <button class="ico" data-action="settings" aria-label="Settings" title="Settings"></button>
+    </header>
+    <div class="body">
+      <nav class="rail" id="rail" aria-label="Chapters"></nav>
+      <section class="zones" id="zones" aria-live="off"></section>
+      <aside class="soundbox" id="soundbox" aria-label="Soundbox" hidden>
+        <div class="sb-head">
+          <h2>Soundbox</h2>
+          <button class="ico small" data-action="soundbox" aria-label="Close soundbox" title="Close"></button>
+        </div>
+        <div class="sb-vol"><label for="sb-volume">Volume</label><input type="range" id="sb-volume" min="0" max="1" step="0.01" value="0.8"></div>
+        <div class="pads" id="pads"></div>
+        <p class="sb-hint">Tap to fire. ☆ pins an effect to the top.</p>
+      </aside>
+      <div class="scrim" id="scrim" hidden></div>
+    </div>
+  </main>
+
+  <!-- Settings -->
+  <dialog id="settings" class="settings" aria-labelledby="settings-title">
+    <form method="dialog" class="set-head">
+      <h2 id="settings-title">Settings</h2>
+      <button class="ico small" value="close" aria-label="Close settings"></button>
+    </form>
+
+    <section>
+      <h3>Theme</h3>
+      <div class="themes" id="theme-pick" role="radiogroup" aria-label="Theme"></div>
+    </section>
+
+    <section>
+      <h3>Appearance</h3>
+      <div class="seg" id="mode-pick" role="radiogroup" aria-label="Appearance">
+        <button type="button" role="radio" data-v="dark">Dark</button>
+        <button type="button" role="radio" data-v="light">Light</button>
+        <button type="button" role="radio" data-v="system">System</button>
+      </div>
+    </section>
+
+    <section>
+      <h3>Bard</h3>
+      <label class="row-set bard"><span>Bard name<small>Signs every .bardic file you export</small></span><input type="text" id="opt-bard" maxlength="60" placeholder="Your bard name" autocomplete="nickname" enterkeyhint="done"></label>
+    </section>
+
+    <section>
+      <h3>Playback</h3>
+      <div class="row-set">
+        <span>Fade-out on stop</span>
+        <div class="seg small" id="fade-pick" role="radiogroup" aria-label="Fade-out duration">
+          <button type="button" role="radio" data-v="500">0.5 s</button>
+          <button type="button" role="radio" data-v="1000">1 s</button>
+          <button type="button" role="radio" data-v="2000">2 s</button>
+          <button type="button" role="radio" data-v="4000">4 s</button>
+        </div>
+      </div>
+      <label class="row-set toggle"><span>Crossfade music tracks<small>Starting a track fades out the one playing</small></span><input type="checkbox" id="opt-crossfade"><i></i></label>
+      <label class="row-set toggle"><span>Keep screen awake<small>While a story is open, so the music never stops with the screen</small></span><input type="checkbox" id="opt-awake"><i></i></label>
+      <label class="row-set toggle"><span>Play with the silent switch on<small>Sounds still play when your iPhone is set to silent</small></span><input type="checkbox" id="opt-silent"><i></i></label>
+    </section>
+
+    <section>
+      <h3>Storage</h3>
+      <div class="store-info" id="store-info">Checking…</div>
+      <div class="set-acts">
+        <button class="btn" type="button" data-action="export-all">Export every story</button>
+        <button class="btn danger" type="button" data-action="wipe">Erase everything</button>
+      </div>
+      <p class="muted small">Your stories live on this iPhone only. Export them now and then as .bardic files (to Files, iCloud Drive or AirDrop): it is your backup, and the way to share a story with another bard.</p>
+    </section>
+
+    <section class="about">
+      <h3>About</h3>
+      <p class="muted">Bardic for iPhone, <span id="app-version"></span>. <a href="../" target="_blank" rel="noopener">Bardic page</a>, <a href="../compagnie/recueil.html" target="_blank" rel="noopener">the Recueil</a></p>
+    </section>
+  </dialog>
+
+  <!-- Generic sheet (Recueil, discovery stories, sound picker, story details) -->
+  <dialog id="sheet" class="settings sheet" aria-labelledby="sheet-title">
+    <div class="set-head">
+      <h2 id="sheet-title"></h2>
+      <button class="ico small" type="button" data-action="close-sheet" aria-label="Close"></button>
+    </div>
+    <div id="sheet-body"></div>
+  </dialog>
+
+  <!-- Questions -->
+  <dialog id="ask" class="settings ask" aria-labelledby="ask-title">
+    <h2 id="ask-title"></h2>
+    <p id="ask-text"></p>
+    <div class="ask-acts" id="ask-acts"></div>
+  </dialog>
+
+  <!-- Work in progress -->
+  <div class="veil" id="busy" hidden>
+    <div class="forge loading">
+      <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+      <h2 id="busy-title"></h2>
+      <p class="step" id="busy-step"></p>
+      <div class="bar"><i id="busy-bar"></i></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <input type="file" id="pick-bardic" hidden>
+  <input type="file" id="pick-audio" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac" multiple hidden>
+  <video id="awake-video" playsinline muted loop hidden></video>
+</div>
+
+<script src="../compagnie/bardic-format.js"></script>
+<script src="db.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

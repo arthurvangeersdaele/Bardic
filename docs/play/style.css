@@ -23,6 +23,9 @@
 /* .pc is set on <html> for a mouse and a screen of at least 900 px: the Story builder and playing your own files live there. */
 html:not(.pc) .pc-only { display: none !important; }
 html.pc .phone-only { display: none !important; }
+/* .iphone is set on <html> by the pages that offer Bardic for iPhone (docs/ios/), only on an iPhone. */
+html:not(.iphone) .iphone-only { display: none !important; }
+html.iphone .not-iphone { display: none !important; }
 
 /* ---------- Base ---------- */
 * { box-sizing: border-box; }

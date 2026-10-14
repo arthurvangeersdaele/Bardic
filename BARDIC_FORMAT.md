@@ -1,6 +1,6 @@
 # The `.bardic` file format (version 2)
 
-A `.bardic` file is one story, sounds included, that can be shared between game masters. The web Story builder writes it, the Recueil lists it, and the Android app imports and exports it.
+A `.bardic` file is one story, sounds included, that can be shared between game masters. The web Story builder writes it, the Recueil lists it, and the Android app and Bardic for iPhone import and export it.
 
 ## Container
 
@@ -84,7 +84,7 @@ Unknown fields must be kept when a tool re-saves a file, so later versions can a
 
 ## Versioning a story
 
-Every tool that writes a `.bardic` file (web Story builder, Android app) does the same thing when it forges:
+Every tool that writes a `.bardic` file (web Story builder, Android app, Bardic for iPhone) does the same thing when it forges:
 
 1. keep `id` and `created` from the opened file, or create them for a new story;
 2. set `revision` to the opened revision + 1 (1 for a new story);

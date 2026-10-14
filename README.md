@@ -6,6 +6,8 @@ Project page: https://arthurvangeersdaele.github.io/Bardic/
 
 **Play it in your browser:** https://arthurvangeersdaele.github.io/Bardic/play/ with three ready-made stories (The Forest Adventure, The Big War, Underwater Adventure), the mixing table and the soundbox. More tales, like Werewolf, are in the Compagnie des bardes. No import and no story editing in the web edition; its sounds live in [`docs/play/sounds/`](docs/play/sounds/).
 
+**On iPhone:** [Bardic for iPhone](https://arthurvangeersdaele.github.io/Bardic/ios/) installs from Safari on the Home Screen (Share, then Add to Home Screen). It only runs from there: opened in a browser tab it shows the install steps, and on other devices it says it is made for iPhone. The Bardic page shows its install button only on an iPhone.
+
 ## Status
 
 **Step 1: audio engine prototype** (in progress). The app currently opens on an engine test screen: 20 sound slots mixed by a native engine, with live CPU load, xruns and latency, to validate that 20 simultaneous MP3s play without glitches.
@@ -45,6 +47,21 @@ Engine details (`app/src/main/cpp/audio_engine.cpp`):
 
 Opening a story downloads every MP3 of every chapter into memory, so each sound starts instantly. Themes (Obsidian, Parchment, Blood, Divination, each dark or light), fade-out length, music crossfade and screen wake lock are in Settings.
 
+## Bardic for iPhone
+
+`docs/ios/` is a Home Screen web app that follows the Android plan, served by GitHub Pages (no build step):
+
+- **Stories kept on the phone**: stories, chapters and sounds live in IndexedDB (`db.js`), sounds as blobs shared between stories, and the app asks iOS for persistent storage (Settings shows whether it is granted and how much room is left).
+- **Library**: new story, import a `.bardic` from Files, add a tale of the Recueil, or add one of the three discovery stories (downloaded once from `docs/play/`).
+- **Story editor**: chapters (add, rename, reorder, remove), Music, Ambience and Events with loop mode, order and preview per sound, the story's own soundbox, a description. Sounds come from Files or are reused from any story already on the phone.
+- **Mixing table**: the same table as the web player (cards, loops, fades, crossfade, master), plus a soundbox drawer with the story's effects and the shared ones. Loop and volume changes made at the table are kept.
+- **Shared soundbox**: quick effects available on every table.
+- **Export**: forges the next revision of a story (`.bardic` format 2, signed with the bard name) and opens the iOS share sheet: Files, iCloud Drive, AirDrop. Files are named `YYMMDD_story-title.bardic`. Settings can export every story at once, as a backup.
+- **Settings**: theme (Obsidian, Parchment, Blood, Divination), dark, light or system, bard name, fade-out, music crossfade, keep the screen awake (on by default), play with the silent switch on (on by default).
+- Landscape only (portrait shows a turn-your-phone screen). `sw.js` keeps the app itself offline; bump its `VERSION` (and `VERSION` in `app.js`) when shipping a change.
+
+iOS limits to know: audio stops when the screen locks in a Home Screen app, hence the screen kept awake; storage can only be cleared by iOS when it is not marked persistent, so exporting stories now and then is the backup.
+
 ## Compagnie des bardes
 
 `docs/compagnie/` is the community corner of the site:
@@ -74,6 +91,7 @@ gradle assembleDebug
 ## Roadmap
 
 - Web edition (available): play in the browser on a computer, with the Compagnie des bardes (Story builder, Recueil, playing your own `.bardic` files). On a phone, the web offers the discovery stories and the Recueil.
+- Bardic for iPhone (available): Home Screen web app with stories kept on the phone, editor, mixing table, soundboxes and `.bardic` import and export.
 
 1. Audio engine prototype (in progress)
 2. Stories, chapters and local database (Room)

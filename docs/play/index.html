@@ -25,6 +25,7 @@
     try {
       document.documentElement.classList.toggle('pc', matchMedia('(hover: hover) and (pointer: fine) and (min-width: 900px)').matches);
     } catch (e) {}
+    try { document.documentElement.classList.toggle('iphone', /iPhone|iPod/.test(navigator.userAgent)); } catch (e) {}
   })();
 </script>
 </head>
@@ -46,7 +47,8 @@
     <p class="lead">Three ready-made stories to run at your table. Opening a story loads every chapter, so each sound starts the moment you tap it.</p>
     <div class="discover">
       <p><b>This is a discovery edition.</b> Try Bardic with three fixed stories, straight from your browser. It needs a connection, loads a whole story before playing, and stops if the page closes.</p>
-      <p>The <a href="../">Android app</a> is made for real sessions: your own sounds and stories, a low-latency engine, playback with the screen off, and everything stays on your phone.</p>
+      <p class="not-iphone">The <a href="../">Android app</a> is made for real sessions: your own sounds and stories, a low-latency engine, playback with the screen off, and everything stays on your phone.</p>
+      <p class="iphone-only"><a href="../ios/">Bardic for iPhone</a> is made for real sessions: your own sounds and stories, kept on your iPhone, ready offline.</p>
     </div>
     <div id="story-list" class="story-list"></div>
     <a class="more-tales" href="../compagnie/">
