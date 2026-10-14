@@ -10,21 +10,32 @@ Project page: https://arthurvangeersdaele.github.io/Bardic/
 
 ## Status
 
-**Step 1: audio engine prototype** (in progress). The app currently opens on an engine test screen: 20 sound slots mixed by a native engine, with live CPU load, xruns and latency, to validate that 20 simultaneous MP3s play without glitches.
+**Android beta.** The app follows Bardic for iPhone, natively:
+
+- **Library**: stories kept on the phone, with four ways to add one: New story, Discovery (the web edition's three stories), the Recueil, Import .bardic.
+- **Story editor**: chapters (add, rename, reorder, remove), Music / Ambience / Events and the story's own soundbox; sounds picked from the phone or a cloud folder, or reused from another story; listen, rename, reorder, loop mode.
+- **Mixing table**: the chapter on screen is loaded into the engine as soon as it opens, so its sounds start instantly. Up to 20 sounds held at once; a sound of another chapter takes the voice of an idle card. Music crossfades, green-to-red progress with a countdown, pause/resume all, fade out all, master volume.
+- **Soundbox**: the story's effects and the shared ones, decoded in memory and fired without taking any of the 20 voices; pins.
+- **Settings**: Obsidian, Parchment, Blood and Divination in dark, light or system mode, bard name, fade-out length, music crossfade, keep the screen awake, storage, export every story, erase everything.
+- **Playback with the screen off**: a media notification with Pause all and Fade out all; pauses on phone calls and when headphones are unplugged.
+- `.bardic` import and export (format 2), with the revision counter and the bard name.
+
+The engine test screen of step 1 is still there, under Settings, About, Engine test.
 
 ## Try it on your phone
 
-1. Open the [latest dev build](https://github.com/arthurvangeersdaele/bardic/releases/tag/dev-latest) on your Android phone.
+1. Open the [latest dev build](https://github.com/arthurvangeersdaele/Bardic/releases/tag/dev-latest) on your Android phone.
 2. Download the `.apk` and open it. Allow installs from your browser when Android asks.
-3. In the app, tap **Demo sounds** (generated test sounds, no file needed) or **Pick MP3s** to use your own files, then **Play all**. The status line under the stats says what was loaded, or why not.
+3. Tap **Discovery** to add a ready-made story, or **New story** to build one with your own sounds, then **Play**.
 
-Every push to `main` rebuilds the APK automatically (GitHub Actions). All builds share the same debug key, so a new build installs over the previous one.
+Every push to `main` rebuilds the APK automatically (GitHub Actions). All builds share the same debug key, so a new build installs over the previous one. When the build fails, the compiler errors are reported as an annotation on the run.
 
 ## Architecture
 
 | Layer | Tech |
 | --- | --- |
-| UI | Kotlin, Jetpack Compose (Material 3), landscape only |
+| UI | Kotlin, Jetpack Compose, landscape only; fonts Cormorant SC and Barlow Semi Condensed (SIL OFL, `app/src/main/assets/licenses/`) |
+| Storage | `filesDir/library/`: one JSON file per story, the shared soundbox, and the audio files they point to (`data/Library.kt`) |
 | Audio | C++ mixer on [Oboe](https://github.com/google/oboe) (AAudio / OpenSL ES), one low-latency output stream |
 | Decoding | Android NDK `AMediaExtractor` + `AMediaCodec`, streamed per voice into lock-free ring buffers |
 | Target | minSdk 26 (Android 8.0), targetSdk 35 (raise to 36 before publishing on Google Play) |
@@ -35,6 +46,8 @@ Engine details (`app/src/main/cpp/audio_engine.cpp`):
 - one decoder thread fills a 2-second ring buffer per voice, so every loaded sound is pre-decoded and starts instantly;
 - loop once / twice / infinite handled at decode time for gapless loops;
 - fade-out on End, smoothed volume changes (no clicks), linear resampling to the device rate;
+- fade envelope per voice: fade-in for crossfades, 40 ms fade on pause (no click), resume from a fade-out;
+- soundbox effects decoded fully in memory and mixed as one-shots (up to 24 at once) with their own volume;
 - automatic stream reopen when the output device changes (headphones, Bluetooth).
 
 ## Web edition
@@ -93,8 +106,7 @@ gradle assembleDebug
 - Web edition (available): play in the browser on a computer, with the Compagnie des bardes (Story builder, Recueil, playing your own `.bardic` files). On a phone, the web offers the discovery stories and the Recueil.
 - Bardic for iPhone (available): Home Screen web app with stories kept on the phone, editor, mixing table, soundboxes and `.bardic` import and export.
 
-1. Audio engine prototype (in progress)
-2. Stories, chapters and local database (Room)
-3. Live mixing table
-4. Chapter editor and sound picker
-5. Soundbox, settings, themes (Parchment, Obsidian, Blood, Divination), `.bardic` export
+1. Audio engine: 20 voices, gapless loops, fades (done, tested on a phone)
+2. Android app beta: library, editor, mixing table, soundbox, settings and themes, `.bardic` import and export, Discovery and Recueil (available)
+3. Field tests at the table, fixes and polish (in progress)
+4. Release on Google Play: target API 36, store listing (planned)
