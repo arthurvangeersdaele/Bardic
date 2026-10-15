@@ -237,6 +237,10 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .seg.small button { padding: 0 10px; height: 28px; font-size: 14px; }
 .row-set { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; }
 .row-set small { display: block; color: var(--muted); font-size: 13px; }
+.stepper { display: inline-flex; align-items: center; gap: 4px; flex: none; border: 1px solid var(--line); border-radius: 10px; padding: 3px; background: var(--card); }
+.stepper button { width: 34px; height: 30px; border: 0; border-radius: 7px; background: transparent; color: var(--text); font-size: 20px; line-height: 1; font-weight: 600; }
+.stepper button:disabled { opacity: .35; }
+.stepper b { min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .toggle { cursor: pointer; }
 .bard input { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 6px 10px; width: 180px; min-width: 0; }
 .bard input:focus { outline: none; border-color: var(--accent); }

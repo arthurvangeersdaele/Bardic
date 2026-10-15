@@ -210,6 +210,7 @@
       closed = true;
       stop();
       stopRecording(true);
+      dropCapture();
       clearInterval(ytTimer);
       if (yt && yt.destroy) { try { yt.destroy(); } catch (e) { /* gone */ } }
       v.remove();
@@ -303,17 +304,32 @@
       }
       clearInterval(ytTimer);
       ytTimer = setInterval(() => {
-        if (!recording || !yt || !yt.getCurrentTime) return;
+        // Only once the recorder runs and the player sits on the chosen part: before that the player
+        // can still report where the video was before the jump (the 100% at once of the first try).
+        if (!recording || !recording.started || !yt || !yt.getCurrentTime) return;
+        const len = recording.b - recording.a;
+        const elapsed = Math.max(0, (Date.now() - recording.t0) / 1000 - recording.lead);
+        status(`Recording… ${fmt(Math.min(elapsed, len))} of ${fmt(len)}`);
+        $('.cr-rec span', box).textContent = `Recording ${Math.min(100, Math.round((elapsed / Math.max(0.1, len)) * 100))}%`;
         const t = yt.getCurrentTime();
-        const p = Math.min(1, (t - recording.a) / Math.max(0.1, recording.b - recording.a));
-        status(`Recording… ${fmt(Math.max(0, t - recording.a))} of ${fmt(recording.b - recording.a)}`);
-        $('.cr-rec span', box).textContent = `Recording ${Math.round(p * 100)}%`;
-        if (t >= recording.b + 0.25) stopRecording(false);
+        const st = yt.getPlayerState ? yt.getPlayerState() : -1;
+        const reached = t >= recording.b + 0.25 && t >= recording.a - 1;
+        if (reached || st === 0 || elapsed > len + 3) stopRecording(false);
       }, 80);
     }
     const now = () => (yt && yt.getCurrentTime ? yt.getCurrentTime() : 0);
     $('.cr-ys-set', box).onclick = () => { $('.cr-ys', box).value = fmt(now()); };
     $('.cr-ye-set', box).onclick = () => { $('.cr-ye', box).value = fmt(now()); };
+
+    // The shared tab is kept for the next recordings of this dialog, so the browser asks only once.
+    let capture = null;
+    const live = (st) => st && st.getAudioTracks().some((t) => t.readyState === 'live');
+    function dropCapture() { if (capture) { capture.getTracks().forEach((t) => t.stop()); capture = null; } }
+    function recUi(on) {
+      if (on) { v.dataset.busy = '1'; box.classList.add('recording'); }
+      else { delete v.dataset.busy; box.classList.remove('recording'); $('.cr-rec span', box).textContent = 'Record this part'; }
+    }
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     async function record() {
       if (recording) { stopRecording(false); return; }
@@ -321,65 +337,83 @@
       const a = parseTime($('.cr-ys', box).value), b = parseTime($('.cr-ye', box).value);
       if (!isFinite(a) || !isFinite(b) || b <= a) { status('Set a start time before the end time.', true); return; }
       if (b - a > 600) { status('Record 10 minutes at most at once.', true); return; }
+      const total = yt.getDuration ? yt.getDuration() : 0;
+      if (total && a >= total) { status(`The video is only ${fmt(total)} long.`, true); return; }
       if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia || !window.MediaRecorder) { status('Recording a YouTube video needs Chrome or Edge on a computer.', true); return; }
-      let stream;
-      try {
-        stream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, suppressLocalAudioPlayback: false },
-          preferCurrentTab: true, selfBrowserSurface: 'include', surfaceSwitching: 'exclude', systemAudio: 'include',
-        });
-      } catch (e) {
-        status('Recording was not allowed. Try again and share this tab with its audio.', true);
-        return;
+      if (!live(capture)) {
+        dropCapture();
+        try {
+          capture = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, suppressLocalAudioPlayback: false },
+            preferCurrentTab: true, selfBrowserSurface: 'include', surfaceSwitching: 'exclude', systemAudio: 'include',
+          });
+        } catch (e) {
+          status('Recording was not allowed. Try again and share this tab with its audio.', true);
+          return;
+        }
+        if (!capture.getAudioTracks().length) {
+          dropCapture();
+          status('No sound was shared. Try again: choose This tab and keep Share tab audio on.', true);
+          return;
+        }
+        capture.getAudioTracks()[0].addEventListener('ended', () => { if (recording) stopRecording(false); capture = null; });
       }
-      const tracks = stream.getAudioTracks();
-      if (!tracks.length) {
-        stream.getTracks().forEach((t) => t.stop());
-        status('No sound was shared. Try again: choose This tab and keep Share tab audio on.', true);
-        return;
-      }
-      const type = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find((t) => MediaRecorder.isTypeSupported(t)) || '';
-      const rec = new MediaRecorder(new MediaStream(tracks), type ? { mimeType: type, audioBitsPerSecond: 256000 } : undefined);
-      const chunks = [];
-      rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
-      recording = { a, b, rec, stream, chunks, cancelled: false };
-      v.dataset.busy = '1';
-      box.classList.add('recording');
+      if (closed) { dropCapture(); return; }
+      const end = total ? Math.min(b, total) : b;
+      const lead = Math.min(0.3, a);
+      recording = { a, b: end, lead, rec: null, chunks: [], cancelled: false, started: false, t0: 0 };
+      const r = recording;
+      recUi(true);
+      status('Getting the video ready…');
+      $('.cr-rec span', box).textContent = 'Preparing…';
+      // Jump to the start and wait until the player really is there before recording anything.
       yt.pauseVideo();
-      yt.seekTo(Math.max(0, a - 0.3), true);
-      await new Promise((r) => setTimeout(r, 700));
-      if (!recording) return;
+      yt.seekTo(a - lead, true);
+      for (let i = 0; i < 40; i++) {
+        await sleep(100);
+        if (recording !== r) return;
+        if (Math.abs(yt.getCurrentTime() - (a - lead)) < 0.6) break;
+      }
+      await sleep(250);
+      if (recording !== r) return;
+      const type = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find((t) => MediaRecorder.isTypeSupported(t)) || '';
+      const rec = new MediaRecorder(new MediaStream(capture.getAudioTracks()), type ? { mimeType: type, audioBitsPerSecond: 256000 } : undefined);
+      r.rec = rec;
+      rec.ondataavailable = (e) => { if (e.data && e.data.size) r.chunks.push(e.data); };
       rec.onstop = async () => {
-        const r = recording;
-        recording = null;
-        delete v.dataset.busy;
-        box.classList.remove('recording');
-        $('.cr-rec span', box).textContent = 'Record this part';
-        stream.getTracks().forEach((t) => t.stop());
-        if (!r || r.cancelled || closed) return;
-        const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+        if (recording === r) recording = null;
+        recUi(false);
+        if (r.cancelled || closed) return;
+        const blob = new Blob(r.chunks, { type: rec.mimeType || 'audio/webm' });
+        if (!blob.size) { status('Nothing was recorded. Check that the tab was shared with its audio, then try again.', true); return; }
         let title = '';
         try { title = (yt.getVideoData && yt.getVideoData().title) || ''; } catch (e) { /* no title */ }
         if (!$('.cr-n', box).value) $('.cr-n', box).value = nameFrom(title || 'YouTube sound');
         await useBlob(blob, title || 'YouTube sound', false);
         if (buf) {
           // The recording starts a little before the chosen part: place the selection on it.
-          selA = Math.min(buf.duration, 0.3);
-          selB = Math.min(buf.duration, selA + (b - a));
+          selA = Math.min(buf.duration, r.lead);
+          selB = Math.min(buf.duration, selA + (r.b - r.a));
           paintTimes(); drawWave();
           status('Recorded. Fine-tune the selection, listen, then add it.');
         }
       };
       rec.start(250);
+      r.t0 = Date.now();
+      r.started = true;
       yt.playVideo();
     }
     function stopRecording(cancel) {
-      if (!recording) return;
-      recording.cancelled = cancel;
+      const r = recording;
+      if (!r) return;
+      r.cancelled = cancel;
       try { if (yt && yt.pauseVideo) yt.pauseVideo(); } catch (e) { /* gone */ }
-      if (recording.rec.state !== 'inactive') recording.rec.stop();
-      else { recording.stream.getTracks().forEach((t) => t.stop()); recording = null; }
+      if (r.rec && r.rec.state !== 'inactive') { r.rec.stop(); return; }
+      // Stopped before the recorder started: nothing to keep.
+      recording = null;
+      recUi(false);
+      if (!cancel) status('Recording stopped.');
     }
     $('.cr-rec', box).onclick = record;
 

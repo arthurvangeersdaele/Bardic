@@ -277,13 +277,9 @@
         </div>
       </div>
       <div class="row-set">
-        <span>Random events<small>An event set to random plays again after a pause of 0.5 s up to</small></span>
-        <div class="seg small" id="random-pick" role="radiogroup" aria-label="Longest pause of random events">
-          <button type="button" role="radio" data-v="2">2 s</button>
-          <button type="button" role="radio" data-v="3">3 s</button>
-          <button type="button" role="radio" data-v="5">5 s</button>
-          <button type="button" role="radio" data-v="8">8 s</button>
-          <button type="button" role="radio" data-v="10">10 s</button>
+        <span>Random events<small id="random-note">Plays again after a pause of 0.5&nbsp;s to 5&nbsp;s</small></span>
+        <div class="stepper" role="group" aria-label="Longest pause of random events">
+          <button type="button" id="random-less" aria-label="Shorter">‹</button><b id="random-val">5 s</b><button type="button" id="random-more" aria-label="Longer">›</button>
         </div>
       </div>
       <label class="row-set toggle"><span>Crossfade music tracks<small>Starting a track fades out the one playing</small></span><input type="checkbox" id="opt-crossfade"><i></i></label>

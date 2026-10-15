@@ -52,7 +52,8 @@
   /* ---------------- Audio graph ---------------- */
   let ctx = null, masterGain = null, sbGain = null;
   const curve = (v) => v * v;
-  const randomPause = () => 500 + Math.random() * Math.max(1, (Math.min(10, Math.max(1, +settings.randomMax || 5))) * 1000 - 500); // perceptual volume
+  const randomMax = () => Math.min(10, Math.max(1, Math.round(+settings.randomMax || 5)));
+  const randomPause = () => 500 + Math.floor(Math.random() * Math.max(1, randomMax() * 1000 - 500)); // perceptual volume
   function audio() {
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -81,7 +82,8 @@
       this.loop = zone.loop; this.vol = 0.75;
       this.state = 'loading'; // loading | ready | playing | paused | ending | error
       this.plays = 0; this.el = null; this.url = null; this.env = null; this.vg = null; this.timer = 0; this.card = null;
-      this.next = 0; this.rtimer = 0; // random events: when the next play comes (ms), and its timer
+      // Random events, as in the Android app: rnd while the sound keeps coming back, next = when it plays again (0 while it plays).
+      this.rnd = false; this.next = 0; this.startedAt = 0;
     }
     attach(blob) {
       this.url = URL.createObjectURL(blob);
@@ -111,9 +113,9 @@
       if (!this.usable) return;
       this.graph();
       clearTimeout(this.timer);
-      clearTimeout(this.rtimer); this.next = 0;
+      if (this.loop === 3) { this.rnd = true; this.next = 0; this.startedAt = Date.now(); }
       if (this.state === 'ending') { ramp(this.env.gain, 1, 0.15); this.set('playing'); return; }
-      if (this.state === 'ready' || this.state === 'waiting' || this.state === 'held') { this.el.currentTime = 0; this.plays = 0; }
+      if (this.state === 'ready') { this.el.currentTime = 0; this.plays = 0; }
       this.env.gain.cancelScheduledValues(ctx.currentTime);
       this.env.gain.setValueAtTime(0, ctx.currentTime);
       ramp(this.env.gain, 1, fadeIn);
@@ -129,7 +131,9 @@
       this.set('paused');
     }
     end(ms) {
-      if (this.state === 'paused' || this.state === 'waiting' || this.state === 'held') { this.reset(); return; }
+      this.rnd = false; this.next = 0;
+      if (this.state === 'paused') { this.reset(); return; }
+      if (!this.active) { this.paint(); return; }
       if (!this.active) return;
       clearTimeout(this.timer);
       ramp(this.env.gain, 0, ms / 1000);
@@ -138,34 +142,21 @@
     }
     reset() {
       clearTimeout(this.timer);
-      clearTimeout(this.rtimer); this.next = 0;
       if (this.el) { this.el.pause(); try { this.el.currentTime = 0; } catch (e) {} }
       this.plays = 0;
       this.set('ready');
     }
     ended() {
       this.plays += 1;
-      if (this.loop === 3 && this.state === 'playing') { this.wait(); return; }
       if (this.loop === 1 && this.plays < 2 && this.active) { this.el.currentTime = 0; this.el.play().catch(() => {}); return; }
       this.reset();
     }
-    /** Random event: silent for 0.5 s up to the longest pause set in Settings, then plays again. */
-    wait() {
-      clearTimeout(this.rtimer);
-      if (this.el) { this.el.pause(); try { this.el.currentTime = 0; } catch (e) { /* not loaded */ } }
-      const d = randomPause();
-      this.next = Date.now() + d;
-      this.set('waiting');
-      this.rtimer = setTimeout(() => { if (this.state === 'waiting') this.play(); }, d);
-    }
-    /** Pause all: a random event between two plays holds still until Resume all. */
-    hold() {
-      clearTimeout(this.rtimer); this.next = 0;
-      this.set('held');
-    }
+    /** Random event between two plays (Android: randomOn && nextAt > 0). */
+    get waiting() { return this.rnd && this.next > 0; }
     setLoop(l) {
-      if (l !== 3 && (this.state === 'waiting' || this.state === 'held')) this.reset();
       this.loop = l;
+      if (l === 3) this.rnd = this.active || this.state === 'paused';
+      else { this.rnd = false; this.next = 0; }
       if (this.el) this.el.loop = l === 2;
       if (l === 0 && this.plays > 0) this.plays = 0;
       this.paint();
@@ -176,7 +167,7 @@
     }
     /** Absolute progress 0..1 including loops, or -1 for an infinite loop that is running. */
     progress() {
-      if (this.state === 'ready' || this.state === 'loading' || this.state === 'error' || this.state === 'waiting' || this.state === 'held') return 0;
+      if (this.state === 'ready' || this.state === 'loading' || this.state === 'error') return 0;
       if (this.loop === 2) return -1;
       const d = this.el.duration;
       if (!d || !isFinite(d)) return 0;
@@ -204,6 +195,7 @@
   let story = null;          // { meta, chapters: [{ meta, key, voices: {music:[],...} }], all: [] }
   let chapterIdx = 0;
   let pausedByAll = [];
+  let heldRandom = [];   // random events that were waiting when everything was paused
   let loader = null;
   const sb = { sounds: [], loaded: false, sources: new Set(), shared: null };
   // A .bardic file opened from this computer: { meta, chapters: [{ music|ambience|events: [sound] }], soundbox: [sound] }.
@@ -561,7 +553,7 @@
   function toggleVoice(v) {
     audio();
     // Between two plays, a tap stops the random event.
-    if (v.state === 'waiting' || v.state === 'held') { v.reset(); pausedByAll = pausedByAll.filter((o) => o !== v); paintMaster(); return; }
+    if (v.waiting) { v.rnd = false; v.next = 0; v.paint(); return; }
     if (v.state === 'playing') { v.pause(); return; }
     if (v.zone.id === 'music' && v.state !== 'ending') {
       const others = story.all.filter((o) => o !== v && o.zone.id === 'music' && (o.active || o.state === 'paused'));
@@ -577,15 +569,15 @@
 
   function paintCard(v) {
     const k = v.card; if (!k) return;
-    const waiting = v.state === 'waiting' || v.state === 'held';
+    const waiting = v.waiting;
     const on = v.active || waiting;
     k.root.classList.toggle('on', on);
     k.root.classList.toggle('loading', v.state === 'loading');
     k.root.classList.toggle('err', v.state === 'error');
     // Only swap the icon when it changes: replacing it on every tick swallowed clicks (the pause button seemed dead).
-    const icon = v.state === 'playing' || v.state === 'waiting' ? 'pause' : 'play';
+    const icon = v.state === 'playing' || waiting ? 'pause' : 'play';
     if (k.icon !== icon) { k.play.innerHTML = ICON[icon]; k.icon = icon; }
-    k.play.setAttribute('aria-label', `${v.state === 'playing' ? 'Pause' : v.state === 'waiting' ? 'Stop' : 'Play'} ${v.sound.name}`);
+    k.play.setAttribute('aria-label', `${v.state === 'playing' ? 'Pause' : waiting ? 'Stop' : 'Play'} ${v.sound.name}`);
     k.play.disabled = !v.usable;
     k.end.disabled = !(on || v.state === 'paused');
     if (k.loopShown !== v.loop) {
@@ -601,8 +593,8 @@
     let txt = '', warn = false;
     if (v.state === 'loading') txt = 'loading…';
     else if (v.state === 'error') txt = 'unavailable';
-    else if (v.state === 'waiting') txt = `next ${fmt(Math.max(0, (v.next - Date.now()) / 1000))}`;
-    else if (v.state === 'held') txt = 'held';
+    else if (waiting) txt = `next ${fmt(Math.max(0, (v.next - Date.now()) / 1000))}`;
+    else if (heldRandom.includes(v)) txt = 'held';
     else if (on || v.state === 'paused') {
       if (v.loop === 2) txt = '∞ loop';
       else { const r = v.remaining(); if (r != null) { txt = fmt(r); warn = r <= 10; } }
@@ -615,12 +607,18 @@
   function pauseAll() {
     if (!story) return;
     audio();
-    if (pausedByAll.length) {
-      pausedByAll.forEach((v) => { if (v.state === 'paused') v.play(); else if (v.state === 'held') v.wait(); });
+    if (pausedByAll.length || heldRandom.length) {
+      pausedByAll.forEach((v) => v.state === 'paused' && v.play());
       pausedByAll = [];
+      const now = Date.now();
+      heldRandom.forEach((v) => { v.rnd = true; v.next = now + randomPause(); v.paint(); });
+      heldRandom = [];
     } else {
-      pausedByAll = story.all.filter((v) => v.state === 'playing' || v.state === 'waiting');
-      pausedByAll.forEach((v) => (v.state === 'waiting' ? v.hold() : v.pause()));
+      pausedByAll = story.all.filter((v) => v.state === 'playing');
+      pausedByAll.forEach((v) => v.pause());
+      // Random events waiting for their next play hold still too.
+      heldRandom = story.all.filter((v) => v.waiting);
+      heldRandom.forEach((v) => { v.rnd = false; v.next = 0; v.paint(); });
     }
     paintMaster();
   }
@@ -628,12 +626,13 @@
     if (!story) return;
     story.all.forEach((v) => v.end(settings.fade));
     pausedByAll = [];
+    heldRandom = [];
     stopSoundbox();
     paintMaster();
   }
   function paintMaster() {
     const b = $('#pause-all');
-    const resume = pausedByAll.length > 0;
+    const resume = pausedByAll.length > 0 || heldRandom.length > 0;
     b.innerHTML = resume ? ICON.play : ICON.pause;
     b.setAttribute('aria-label', resume ? 'Resume all' : 'Pause all');
     b.title = resume ? 'Resume all (Space)' : 'Pause all (Space)';
@@ -715,7 +714,9 @@
     });
     segment('#mode-pick', 'mode', (v) => v);
     segment('#fade-pick', 'fade', Number);
-    segment('#random-pick', 'randomMax', Number);
+    const stepRandom = (d) => { settings.randomMax = Math.min(10, Math.max(1, randomMax() + d)); save(); syncSettings(); };
+    $('#random-less').addEventListener('click', () => stepRandom(-1));
+    $('#random-more').addEventListener('click', () => stepRandom(1));
     $('#opt-crossfade').addEventListener('change', (e) => { settings.crossfade = e.target.checked; save(); });
     $('#opt-bard').addEventListener('input', (e) => { settings.bardName = e.target.value.trim().slice(0, 60); save(); });
     $('#opt-awake').addEventListener('change', (e) => { settings.awake = e.target.checked; save(); settings.awake ? acquireWake() : releaseWake(); });
@@ -732,7 +733,10 @@
     document.querySelectorAll('#theme-pick .theme').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.theme)));
     document.querySelectorAll('#mode-pick button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.mode)));
     document.querySelectorAll('#fade-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === settings.fade)));
-    document.querySelectorAll('#random-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === settings.randomMax)));
+    $('#random-val').textContent = `${randomMax()} s`;
+    $('#random-note').textContent = `Plays again after a pause of 0.5\u00a0s to ${randomMax()}\u00a0s`;
+    $('#random-less').disabled = randomMax() <= 1;
+    $('#random-more').disabled = randomMax() >= 10;
     $('#opt-crossfade').checked = settings.crossfade;
     $('#opt-awake').checked = settings.awake;
     if (document.activeElement !== $('#opt-bard')) $('#opt-bard').value = settings.bardName || '';
@@ -804,10 +808,25 @@
   setInterval(() => {
     if (!story || document.hidden) return;
     const ch = story.chapters[chapterIdx];
-    ZONES.forEach((z) => ch.voices[z.id].forEach((v) => (v.active || v.state === 'paused' || v.state === 'waiting' || v.state === 'held') && paintCard(v)));
-    story.chapters.forEach((c) => c.railBtn.classList.toggle('playing', ZONES.some((z) => c.voices[z.id].some((v) => v.active || v.state === 'waiting'))));
-    if (pausedByAll.length && !pausedByAll.some((v) => v.state === 'paused' || v.state === 'held')) { pausedByAll = []; paintMaster(); }
+    ZONES.forEach((z) => ch.voices[z.id].forEach((v) => (v.active || v.state === 'paused' || v.waiting || heldRandom.includes(v)) && paintCard(v)));
+    story.chapters.forEach((c) => c.railBtn.classList.toggle('playing', ZONES.some((z) => c.voices[z.id].some((v) => v.active || v.waiting))));
+    if (pausedByAll.length && !pausedByAll.some((v) => v.state === 'paused')) { pausedByAll = []; paintMaster(); }
   }, 66);
+
+  // Random events (TableSession.runRandom on Android): once a random event has stopped sounding,
+  // it gets a next play time 0.5 s to the longest pause later, and plays again when that time comes.
+  setInterval(() => {
+    if (!story) return;
+    const now = Date.now();
+    story.all.forEach((v) => {
+      if (!v.rnd) return;
+      const sounding = v.state === 'playing' || v.state === 'paused' || v.state === 'ending';
+      if (sounding) { if (v.next) v.next = 0; return; }
+      if (now - v.startedAt <= 400) return;
+      if (!v.next) { v.next = now + randomPause(); v.paint(); }
+      else if (now >= v.next) { v.next = 0; v.play(); }
+    });
+  }, 50);
 
   /* ---------------- Helpers ---------------- */
   function el(tag, cls, text) {
