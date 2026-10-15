@@ -26,8 +26,9 @@ from pathlib import Path
 RECUEIL = Path(__file__).resolve().parents[2] / "docs" / "recueil"
 ZONES = ("music", "ambience", "events")
 LOOPS = ("once", "twice", "infinite", "random")
-# Rows of the builder's sound library: soundbox effects are listed with the events.
-LIBRARY_ROW = {"music": "music", "ambience": "ambience", "events": "events", "soundbox": "events"}
+# Rows of the builder's sound library, in the order of its tabs.
+LIBRARY_ROW = {"music": "music", "ambience": "ambience", "events": "events", "soundbox": "soundbox"}
+LIBRARY_ORDER = list(LIBRARY_ROW)
 LIMIT = 100 * 1024 * 1024
 FORGOTTEN = "Forgotten Barde"
 # Names kept for Bardic itself (same list as auth-worker/src/index.js); only the maintainer signs with them.
@@ -226,14 +227,12 @@ def library(entries):
             }
             if isinstance(s.get("duration"), (int, float)) and s["duration"] > 0:
                 item["duration"] = round(float(s["duration"]), 1)
-            if zone == "soundbox":
-                item["effect"] = True
             seen[key] = item
     sounds = list(seen.values())
     for item in sounds:
         if len(item["tales"]) == 1:
             del item["tales"]
-    sounds.sort(key=lambda x: (x["row"], x["name"].lower(), x["tale"].lower()))
+    sounds.sort(key=lambda x: (LIBRARY_ORDER.index(x["row"]), x["name"].lower(), x["tale"].lower()))
     return sounds
 
 

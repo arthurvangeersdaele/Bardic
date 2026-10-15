@@ -86,6 +86,7 @@ html.pc .doors { grid-template-columns: repeat(3, minmax(0, 290px)); }
   .cpage.fixed { height: 100dvh; }
   .cpage.fixed .bld { grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
   .cpage.fixed .bld > .rail, .cpage.fixed .bld > .editor, .cpage.fixed .bld > .soundbox { overflow: auto; min-height: 0; }
+  .cpage.fixed .bld > .lib { min-height: 0; }
 }
 .dz {
   flex: 1; min-width: 0; border: 1px dashed var(--line); border-radius: 12px; padding: 8px; display: grid;
@@ -265,19 +266,18 @@ html:not(.pc) .tale .dl { background: var(--accent); border-color: var(--accent)
 .ru-list li.added .btn { border-color: var(--z); }
 .reuse .acts { justify-content: flex-end; }
 
-/* sounds of the Recueil (library.js): a panel over the soundbox column, the story stays in reach to drop into */
+/* sounds of the Recueil (library.js): a column between the chapter and the soundbox, both stay in reach to drop into */
 .lib-btn { gap: 8px; }
 .lib-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
-.lib { position: fixed; right: 0; top: 64px; bottom: 0; width: min(360px, 100vw); z-index: 15; display: flex; flex-direction: column; gap: 10px;
-  padding: 14px 14px 12px; background: var(--bar); border-left: 1px solid var(--line); box-shadow: -18px 0 40px var(--shadow); }
+.lib { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 14px 14px 12px; background: var(--bar); border-left: 1px solid var(--line); }
 .lib-head { display: flex; align-items: center; gap: 10px; }
 .lib-head h2 { flex: 1; margin: 0; font-size: 24px; color: var(--accent); }
 .lib-close { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line); background: var(--card); color: var(--text); display: grid; place-items: center; padding: 0; }
 .lib-lead, .lib-note { margin: 0; font-size: 13px; color: var(--muted); }
 .lib-find { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 8px 12px; }
 .lib-find:focus { outline: none; border-color: var(--accent); }
-.lib-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
-.lib-tab { border: 0; border-radius: 7px; background: transparent; color: var(--muted); font: inherit; font-weight: 600; font-size: 14px; padding: 6px 4px; display: flex; gap: 6px; align-items: baseline; justify-content: center; border-bottom: 2px solid transparent; }
+.lib-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.lib-tab { border: 0; border-radius: 7px; background: transparent; color: var(--muted); font: inherit; font-weight: 600; font-size: 13px; padding: 5px 2px; display: flex; flex-direction: column; gap: 0; align-items: center; justify-content: center; min-width: 0; border-bottom: 2px solid transparent; }
 .lib-tab small { font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .lib-tab[aria-selected="true"] { color: var(--text); background: color-mix(in srgb, var(--z) 14%, transparent); border-bottom-color: var(--z); }
 .lib-list { list-style: none; margin: 0; padding: 0; overflow: auto; min-height: 0; flex: 1; display: flex; flex-direction: column; gap: 6px; }
@@ -292,6 +292,11 @@ html:not(.pc) .tale .dl { background: var(--accent); border-color: var(--accent)
 .lib-item .t small { display: block; font-size: 12px; color: var(--muted); white-space: pre; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .lib-item .btn { flex: none; }
 .lib-empty { color: var(--muted); font-size: 14px; border: 1px dashed var(--line); border-radius: 12px; padding: 14px; }
-/* While the panel is open, it takes the place of the soundbox column: the chapter keeps its whole width. */
-@media (min-width: 1101px) { body.lib-open .bld { grid-template-columns: 240px minmax(0, 1fr) 360px; } }
-@media (max-width: 1100px) { body.lib-open .bld { margin-right: 360px; } }
+/* While the panel is open: chapters, chapter, sounds of the Recueil, soundbox. The side columns narrow a little. */
+@media (min-width: 1101px) { body.lib-open .bld { grid-template-columns: 200px minmax(0, 1fr) 320px 260px; } }
+/* Narrower screens: the soundbox already runs under the chapter, the panel takes the right side of both. */
+@media (max-width: 1100px) {
+  body.lib-open .bld { grid-template-columns: 200px minmax(0, 1fr) 320px; }
+  body.lib-open .bld > .lib { grid-column: 3; grid-row: 2 / span 2; position: sticky; top: 56px; height: calc(100dvh - 56px); align-self: start; }
+  body.lib-open .bld .soundbox { grid-column: 1 / 3; }
+}

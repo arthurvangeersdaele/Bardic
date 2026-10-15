@@ -1,6 +1,7 @@
 /* Bardic Story builder: the sound library of the Recueil.
  * Every sound of every tale in the Recueil (docs/recueil/sounds.json, built by the Recueil action),
- * searchable, with Music, Ambiances and Events kept apart. Drag one onto a row of the story, or tap Add.
+ * searchable, with Music, Ambiances, Events and Soundbox kept apart. Drag one onto a row of the story or the
+ * soundbox, or tap Add.
  * Only the sound's own bytes are downloaded: the tales store their sounds uncompressed, so each one is
  * a plain byte range of its .bardic file. When the server ignores the range, the tale is fetched once
  * and the sound is cut out of it.
@@ -12,6 +13,7 @@
     { id: 'music', label: 'Music', color: 'var(--music)' },
     { id: 'ambience', label: 'Ambiances', color: 'var(--amb)' },
     { id: 'events', label: 'Events', color: 'var(--evt)' },
+    { id: 'soundbox', label: 'Soundbox', color: 'var(--accent)' },
   ];
   const BASE = '../recueil/';
   const svg = (d, size = 16, fill = false) =>
@@ -103,14 +105,15 @@
     panel = el('aside', 'lib');
     panel.setAttribute('aria-label', 'Sounds of the Recueil');
     panel.innerHTML = `<div class="lib-head"><h2>Sounds of the Recueil</h2><button class="lib-close" type="button" aria-label="Close">${ICON.x}</button></div>
-      <p class="lib-lead">Every sound of the tales in the Recueil. Drag one onto a row of your story, or tap Add.</p>
+      <p class="lib-lead">Every sound of the tales in the Recueil. Drag one onto a row of your story or the soundbox, or tap Add.</p>
       <input class="lib-find" type="search" placeholder="Search a sound, a tale or a bard" aria-label="Search the sounds of the Recueil" autocomplete="off" spellcheck="false">
       <div class="lib-tabs" role="tablist"></div>
       <ul class="lib-list" role="tabpanel"></ul>
       <p class="lib-note">A sound keeps the licence of its tale: credit the tale in your story's description when you share it.</p>`;
-    document.body.append(panel);
+    const bld = $('#bld');
+    const sb = bld && bld.querySelector('.soundbox');
+    if (sb) bld.insertBefore(panel, sb); else document.body.append(panel);
     document.body.classList.add('lib-open');
-    place();
     $('#lib-btn')?.setAttribute('aria-pressed', 'true');
     panel.querySelector('.lib-close').onclick = close;
     const find = panel.querySelector('.lib-find');
@@ -120,14 +123,6 @@
     render();
     load().then(render, () => render(true));
   }
-  // Under the story's title and the Forge button, over the soundbox column: every row of the chapter stays in reach.
-  function place() {
-    if (!panel) return;
-    const head = $('.bld-head') || $('.sbar');
-    if (head) panel.style.top = `${Math.max(0, Math.round(head.getBoundingClientRect().bottom))}px`;
-  }
-  window.addEventListener('resize', place);
-
   function close() {
     stop();
     panel?.remove();
@@ -138,7 +133,7 @@
 
   function matches() {
     const words = fold(query).split(/\s+/).filter(Boolean);
-    const out = { music: [], ambience: [], events: [] };
+    const out = { music: [], ambience: [], events: [], soundbox: [] };
     (sounds || []).forEach((x) => { if (words.every((w) => x.key.includes(w))) (out[x.row] || out.events).push(x); });
     return out;
   }
@@ -193,11 +188,11 @@
     li.paint = paint;
     const t = el('div', 't');
     const from = (x.tales || [x.tale]).join(', ');
-    t.append(el('b', '', x.name), el('small', '', [x.duration ? fmtTime(x.duration) : null, x.effect ? 'effect' : null, `${from}, by ${x.bard}`].filter(Boolean).join('   ')));
+    t.append(el('b', '', x.name), el('small', '', [x.duration ? fmtTime(x.duration) : null, `${from}, by ${x.bard}`].filter(Boolean).join('   ')));
     const add = el('button', 'btn small', 'Add');
     add.type = 'button';
-    add.title = `Add to ${row.label} in the chapter on screen`;
-    add.onclick = () => window.BardicBuilder && window.BardicBuilder.addFromLibrary(x.id, x.row === 'events' || x.row === 'ambience' || x.row === 'music' ? x.row : 'events');
+    add.title = x.row === 'soundbox' ? 'Add to the Soundbox of the story' : `Add to ${row.label} in the chapter on screen`;
+    add.onclick = () => window.BardicBuilder && window.BardicBuilder.addFromLibrary(x.id, ROWS.some((r) => r.id === x.row) ? x.row : 'events');
     li.append(grip, play, t, add);
     li.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/x-bardic-library', x.id);
