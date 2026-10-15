@@ -7,7 +7,7 @@ from credits import LIC_URL
 REPO = '/home/claude/bardic'
 REC = os.path.join(REPO, 'docs', 'recueil')
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out')
-PREFIX = '261015_'
+PREFIX = os.environ.get('BARDIC_PREFIX', '261015_')  # YYMMDD_ of the day the tales are forged
 
 
 def fname(slug):
@@ -46,12 +46,21 @@ The tales below were forged by Bardic for the Recueil of the Compagnie des barde
 """
 
 if __name__ == '__main__':
-    md = open(os.path.join(OUT, 'credits.md')).read()
+    # Merge: keep every tale section already in CREDITS.md, replace or add the sections forged this time.
+    import re
+    path = os.path.join(REC, 'CREDITS.md')
+    new_md = open(os.path.join(OUT, 'credits.md')).read()
     for s in STORIES:
-        md = md.replace(f"Tale `{s['slug']}.bardic`", f"Tale `{fname(s['slug'])}`")
-    open(os.path.join(REC, 'CREDITS.md'), 'w').write(HEADER + md)
+        new_md = new_md.replace(f"Tale `{s['slug']}.bardic`", f"Tale `{fname(s['slug'])}`")
+    def sections(md):
+        parts = re.split(r'(?m)^(?=## )', md)
+        return {p.splitlines()[0][3:].strip(): p.rstrip() + '\n' for p in parts if p.startswith('## ')}
+    old = sections(open(path).read()) if os.path.exists(path) else {}
+    old.update(sections(new_md))
+    open(path, 'w').write(HEADER + '\n'.join(old.values()))
+    forged = set(sections(new_md))
     for s in STORIES:
         src = os.path.join(OUT, s['slug'] + '.bardic')
-        if os.path.exists(src):
+        if s['title'] in forged and os.path.exists(src):
             shutil.copyfile(src, os.path.join(REC, fname(s['slug'])))
             print('copied', fname(s['slug']))
