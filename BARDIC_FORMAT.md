@@ -19,7 +19,7 @@ sounds/2/music/01-final-duel.mp3
 sounds/soundbox/01-critical-hit.mp3
 ```
 
-The folder layout above is what the builder writes, but readers find sounds **only through the `file` paths in `story.json`**, never by guessing paths.
+The folder layout above is what the builder writes, but readers find sounds **only through the `file` paths in `story.json`**, never by guessing paths. Several sounds may point to the same `file` (a sound reused in another chapter or zone): writers store it once, and readers must not assume one file per sound.
 
 ## `story.json`
 

@@ -247,3 +247,20 @@ html:not(.pc) .tale .dl { background: var(--accent); border-color: var(--accent)
 .cr-name { flex: 1; min-width: 220px; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
 .cr-name input { flex: 1; height: 44px; padding: 0 12px; font-weight: 600; }
 @media (max-width: 760px) { .cr-yt-row { grid-template-columns: minmax(0, 1fr); } }
+
+/* reuse a sound already in the story */
+.forge.reuse { width: min(560px, 100%); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; }
+.reuse .ru-lead { margin-top: 6px; }
+.reuse .ru-find { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin: 0 0 10px; }
+.reuse .ru-find:focus { outline: none; border-color: var(--accent); }
+.ru-list { list-style: none; margin: 0; padding: 0; overflow: auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.ru-list li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--z); }
+.ru-list li[hidden] { display: none; }
+.ru-list .pb { width: 32px; height: 32px; border-radius: 9px; flex: none; }
+.ru-list li.playing .pb { background: var(--z); border-color: var(--z); color: var(--on-z); }
+.ru-list .t { flex: 1; min-width: 0; }
+.ru-list .t b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ru-list .t small { display: block; font-size: 12px; color: var(--muted); white-space: pre; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.ru-list .btn { flex: none; }
+.ru-list li.added .btn { border-color: var(--z); }
+.reuse .acts { justify-content: flex-end; }

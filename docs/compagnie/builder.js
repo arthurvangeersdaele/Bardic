@@ -28,6 +28,7 @@
     link: svg('<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>', 15),
     cut: svg('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/>', 14),
     random: svg('<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>', 14),
+    reuse: svg('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>', 15),
   };
 
   let uid = 0;
@@ -102,6 +103,74 @@
       },
     });
   }
+  /* ---------- reusing a sound already in the story ---------- */
+  // Every distinct sound file of the story once, with the places it is used. A reused sound keeps the
+  // same file (crop included), so it costs nothing more in the .bardic: the forge stores it once.
+  function storySounds() {
+    const map = new Map();
+    const note = (s, zone, where) => {
+      let e = map.get(s.blob);
+      if (!e) { e = { s, zone, where: [] }; map.set(s.blob, e); }
+      e.where.push(where);
+    };
+    state.chapters.forEach((c, i) => ZONES.forEach((z) => c[z].forEach((s) => note(s, z, `${c.title.trim() || `Chapter ${i + 1}`}, ${ZONE_INFO[z].label}`))));
+    state.soundbox.forEach((s) => note(s, 'soundbox', 'Soundbox'));
+    return [...map.values()];
+  }
+  let ruPaint = null;
+  function reuseSounds(zone) {
+    stopPreview();
+    const target = listOf(zone);
+    const into = zone === 'soundbox' ? 'the Soundbox' : `${ZONE_INFO[zone].label} in ${state.chapters[current].title.trim() || `Chapter ${current + 1}`}`;
+    const found = storySounds();
+    const box = veil(`<div class="cr-head"><h2>Sounds of this story</h2><button class="cr-close" type="button" aria-label="Close">${ICON.x}</button></div>
+      <p class="ru-lead"></p>
+      ${found.length > 6 ? '<input class="ru-find" type="search" placeholder="Find a sound" aria-label="Find a sound" autocomplete="off" spellcheck="false">' : ''}
+      <ul class="ru-list"></ul>
+      <div class="acts"><button class="btn primary" type="button" data-close>Done</button></div>`);
+    box.classList.add('reuse');
+    box.querySelector('.ru-lead').textContent = `Add a sound you already have to ${into}. It comes as it is, crop included.`;
+    const ul = box.querySelector('.ru-list');
+    const rows = found.map((e) => {
+      const li = el('li');
+      li.style.setProperty('--z', ZONE_INFO[e.zone].color);
+      const play = el('button', 'pb play');
+      play.type = 'button';
+      play.onclick = () => togglePreview(e.s);
+      const t = el('div', 't');
+      const here = target.some((x) => x.blob === e.s.blob);
+      const info = [e.s.duration ? fmtTime(e.s.duration) : null, formatSize(e.s.blob.size), e.where.join(', ')].filter(Boolean).join('   ');
+      t.append(el('b', '', e.s.name || 'Sound'), el('small', '', info));
+      const add = el('button', 'btn small', here ? 'Add again' : 'Add');
+      add.type = 'button';
+      add.onclick = () => {
+        // Same kind of zone: keep its loop mode. Otherwise take the default of the new zone.
+        const loop = zone === 'soundbox' ? 'once' : e.zone === zone ? e.s.loop : ZONE_INFO[zone].loop;
+        target.push({ id: id(), name: e.s.name, blob: e.s.blob, fileName: e.s.fileName, loop, volume: e.s.volume ?? 0.75, duration: e.s.duration, extra: JSON.parse(JSON.stringify(e.s.extra || {})) });
+        renderAll();
+        li.classList.add('added');
+        add.textContent = 'Added, add again';
+      };
+      li.append(play, t, add);
+      ul.append(li);
+      return { li, play, s: e.s, key: (e.s.name || '').toLowerCase() };
+    });
+    ruPaint = () => rows.forEach((r) => {
+      const on = playingId === r.s.id;
+      r.li.classList.toggle('playing', on);
+      r.play.innerHTML = on ? ICON.stop : ICON.play;
+      r.play.setAttribute('aria-label', `${on ? 'Stop' : 'Listen to'} ${r.s.name}`);
+    });
+    ruPaint();
+    const find = box.querySelector('.ru-find');
+    if (find) {
+      find.oninput = () => { const q = find.value.trim().toLowerCase(); rows.forEach((r) => { r.li.hidden = !!q && !r.key.includes(q); }); };
+      find.focus();
+    }
+    box.querySelector('.cr-close').onclick = closeVeil;
+    box.querySelector('[data-close]').onclick = closeVeil;
+  }
+
   function probe(s) {
     if (s.duration) return;
     const url = URL.createObjectURL(s.blob);
@@ -131,6 +200,7 @@
     paintPlaying();
   }
   function paintPlaying() {
+    if (ruPaint) ruPaint();
     cards.forEach((c, sid) => {
       const on = sid === playingId;
       c.root.classList.toggle('playing', on);
@@ -243,6 +313,14 @@
     link.onclick = () => addFromLink(zone);
     const adds = el('div', 'adds');
     adds.append(hint, link);
+    // Sounds already elsewhere in the story can come here again, crop included.
+    if (allSounds().some((s) => !listOf(zone).includes(s))) {
+      const reuse = el('button', 'link-btn');
+      reuse.type = 'button';
+      reuse.innerHTML = `${ICON.reuse}<span>From this story</span>`;
+      reuse.onclick = () => reuseSounds(zone);
+      adds.append(reuse);
+    }
     dz.append(adds);
   }
 
@@ -378,7 +456,10 @@
     document.body.append(v);
     return box;
   }
-  function closeVeil() { $('#veil')?.remove(); }
+  function closeVeil() {
+    if (ruPaint) { ruPaint = null; stopPreview(); }
+    $('#veil')?.remove();
+  }
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#veil') && !$('#veil').dataset.busy) closeVeil(); });
 
   /* ---------- bard name (Settings: GitHub account, else Forgotten Barde) ---------- */

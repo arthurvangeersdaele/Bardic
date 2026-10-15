@@ -170,12 +170,18 @@
   async function pack(draft, bard, onProgress, options) {
     const entries = [];
     const used = new Set();
+    // A sound used in several places (reused in another chapter) is stored once: they all point to its path.
+    const stored = new Map();
     const place = (dir, index, s) => {
-      let path = `${dir}/${String(index + 1).padStart(2, '0')}-${slug(s.name, 'sound')}.${ext(s.fileName)}`;
-      let n = 2;
-      while (used.has(path)) path = path.replace(/(\.[a-z0-9]+)$/, `-${n++}$1`);
-      used.add(path);
-      entries.push({ name: path, data: s.blob });
+      let path = stored.get(s.blob);
+      if (!path) {
+        path = `${dir}/${String(index + 1).padStart(2, '0')}-${slug(s.name, 'sound')}.${ext(s.fileName)}`;
+        let n = 2;
+        while (used.has(path)) path = path.replace(/(\.[a-z0-9]+)$/, `-${n++}$1`);
+        used.add(path);
+        stored.set(s.blob, path);
+        entries.push({ name: path, data: s.blob });
+      }
       const out = Object.assign({}, s.extra || {}, { name: s.name.trim() || 'Sound', file: path, loop: s.loop, volume: round(s.volume ?? 0.75) });
       if (s.duration) out.duration = round(s.duration, 1);
       return out;
@@ -213,18 +219,21 @@
     if (story.version !== 1 && story.version !== 2) throw new Error(`This file uses format version ${story.version}, which this builder does not know yet.`);
     const total = (story.chapters || []).reduce((a, c) => a + ZONES.reduce((b, z) => b + (c[z] || []).length, 0), 0) + (story.soundbox || []).length;
     let done = 0;
+    // Sounds that share a file share one File object too, so they stay one file when forged again.
+    const read = new Map();
     const sound = async (s) => {
       const get = files.get(s.file);
       if (!get) throw new Error(`Missing sound in the archive: ${s.file}`);
-      const blob = await get();
       const fileName = s.file.split('/').pop();
+      if (!read.has(s.file)) read.set(s.file, get().then((b) => new File([b], fileName, { type: b.type || 'audio/mpeg' })));
+      const blob = await read.get(s.file);
       const extra = {};
       Object.keys(s).forEach((k) => { if (!KNOWN_SOUND.includes(k)) extra[k] = s[k]; });
       done += 1;
       if (onProgress) onProgress(done, total);
       return {
         name: s.name || fileName,
-        blob: new File([blob], fileName, { type: blob.type || 'audio/mpeg' }),
+        blob,
         fileName,
         loop: LOOPS.includes(s.loop) || s.loop === 'random' ? s.loop : 'once',
         volume: typeof s.volume === 'number' ? s.volume : 0.75,
