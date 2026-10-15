@@ -3,7 +3,6 @@
 (() => {
   'use strict';
   const KEY = 'bardic.settings';
-  const THEMES = [['obsidian', 'Obsidian'], ['parchment', 'Parchment'], ['blood', 'Blood'], ['divination', 'Divination']];
   const light = matchMedia('(prefers-color-scheme: light)');
 
   const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } };
@@ -17,7 +16,7 @@
     const s = get();
     const mode = s.mode === 'system' ? (light.matches ? 'light' : 'dark') : s.mode;
     const root = document.documentElement;
-    root.dataset.theme = s.theme;
+    root.dataset.theme = window.BardicThemes ? BardicThemes.resolve(s.theme) : s.theme;
     root.dataset.mode = mode;
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = getComputedStyle(root).getPropertyValue('--bar').trim();
@@ -43,35 +42,16 @@
   document.body.append(dlg);
 
   const themes = dlg.querySelector('.themes');
-  THEMES.forEach(([id, label]) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'theme';
-    b.setAttribute('role', 'radio');
-    b.dataset.v = id;
-    const sw = document.createElement('div');
-    sw.className = 'swatch';
-    sw.dataset.theme = id;
-    sw.style.background = 'var(--bg)';
-    ['--music', '--amb', '--evt'].forEach((c, n) => {
-      const i = document.createElement('i');
-      i.style.background = `var(${c})`;
-      i.style.width = `${[70, 100, 45][n]}%`;
-      sw.append(i);
-    });
-    const name = document.createElement('span');
-    name.textContent = label;
-    b.append(sw, name);
-    b.onclick = () => { write({ theme: id }); sync(); };
-    themes.append(b);
-  });
+  const paintThemes = () => window.BardicThemes && BardicThemes.render(themes, get().theme, (id) => { write({ theme: id }); sync(); });
+  paintThemes();
+  dlg.addEventListener('toggle', paintThemes);
   dlg.querySelectorAll('.seg button').forEach((b) => { b.onclick = () => { write({ mode: b.dataset.v }); sync(); }; });
   if (window.BardAccount) window.BardAccount.mount(dlg.querySelector('.bard-account'));
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 
   function sync() {
     const s = get();
-    themes.querySelectorAll('.theme').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === s.theme)));
+    themes.querySelectorAll('.theme').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === (window.BardicThemes ? BardicThemes.resolve(s.theme) : s.theme))));
     dlg.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === s.mode)));
     apply();
   }

@@ -14,8 +14,7 @@
     { id: 'events', label: 'Events', color: 'var(--evt)', loop: 0, empty: 'No events in this chapter yet.' },
   ];
   const LOOP_LABELS = ['1×', '2×', '∞'];
-  const THEMES = [['obsidian', 'Obsidian'], ['parchment', 'Parchment'], ['blood', 'Blood'], ['divination', 'Divination']];
-  const WIDE = matchMedia('(min-width: 1181px)');
+    const WIDE = matchMedia('(min-width: 1181px)');
 
   const svg = (d, size = 18, fill = false) =>
     `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true" ${fill ? 'fill="currentColor"' : 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'}>${d}</svg>`;
@@ -41,7 +40,7 @@
   function applyTheme() {
     const mode = settings.mode === 'system' ? (lightQuery.matches ? 'light' : 'dark') : settings.mode;
     const root = document.documentElement;
-    root.dataset.theme = settings.theme;
+    root.dataset.theme = BardicThemes.resolve(settings.theme);
     root.dataset.mode = mode;
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = getComputedStyle(root).getPropertyValue('--bar').trim();
@@ -716,17 +715,9 @@
   /* ---------------- Settings dialog ---------------- */
   function buildSettings() {
     const pick = $('#theme-pick');
-    THEMES.forEach(([id, label]) => {
-      const b = el('button', 'theme');
-      b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.v = id;
-      const sw = el('div', 'swatch');
-      sw.dataset.theme = id;
-      sw.style.background = 'var(--bg)';
-      ['--music', '--amb', '--evt'].forEach((c, n) => { const i = el('i'); i.style.background = `var(${c})`; i.style.width = `${[70, 100, 45][n]}%`; sw.append(i); });
-      b.append(sw, el('span', '', label));
-      b.addEventListener('click', () => { settings.theme = id; save(); applyTheme(); syncSettings(); });
-      pick.append(b);
-    });
+    const paintThemes = () => BardicThemes.render(pick, settings.theme, (id) => { settings.theme = id; save(); applyTheme(); syncSettings(); });
+    paintThemes();
+    $('#settings').addEventListener('toggle', paintThemes);
     segment('#mode-pick', 'mode', (v) => v);
     segment('#fade-pick', 'fade', Number);
     const stepRandom = (d) => { settings.randomMax = Math.min(10, Math.max(1, randomMax() + d)); save(); syncSettings(); };
@@ -746,7 +737,7 @@
     }));
   }
   function syncSettings() {
-    document.querySelectorAll('#theme-pick .theme').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.theme)));
+    document.querySelectorAll('#theme-pick .theme').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === BardicThemes.resolve(settings.theme))));
     document.querySelectorAll('#mode-pick button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.mode)));
     document.querySelectorAll('#fade-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === settings.fade)));
     $('#random-val').textContent = `${randomMax()} s`;

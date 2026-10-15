@@ -6,6 +6,7 @@
   --music:#E0A84B; --amb:#4FB3A5; --evt:#E06A63; --blue:#2F8BFF; --on-z:#0F0F13; --shadow:rgba(0,0,0,.45);
   color-scheme: dark;
 }
+[data-mode="dark"] { --music:#E0A84B; --amb:#4FB3A5; --evt:#E06A63; --blue:#2F8BFF; --shadow:rgba(0,0,0,.45); color-scheme: dark; }
 [data-theme="parchment"][data-mode="dark"]  { --bg:#1E1912; --bar:#251F16; --card:#30281D; --line:#4A3D2B; --text:#F1E6CF; --muted:#BBA987; --accent:#E0B062; --on-z:#1E1912; }
 [data-theme="blood"][data-mode="dark"]      { --bg:#140B0C; --bar:#1A0E10; --card:#261517; --line:#43242A; --text:#F2E4E2; --muted:#B79A9D; --accent:#F0606A; --on-z:#140B0C; }
 [data-theme="divination"][data-mode="dark"] { --bg:#0B1020; --bar:#0F1529; --card:#18213D; --line:#2B3762; --text:#E6E9F8; --muted:#9EA6C8; --accent:#C9A7F5; --on-z:#0B1020; }
@@ -18,6 +19,16 @@
 [data-theme="parchment"][data-mode="light"]  { --bg:#F3EAD7; --bar:#EDE1C8; --card:#FBF5E8; --line:#D9C7A3; --text:#2E2416; --muted:#7A6A4E; --accent:#A06A16; }
 [data-theme="blood"][data-mode="light"]      { --bg:#F7EDED; --bar:#F0E1E1; --card:#FFF9F9; --line:#E2C6CA; --text:#2A1416; --muted:#84636A; --accent:#B3303B; }
 [data-theme="divination"][data-mode="light"] { --bg:#ECEFFA; --bar:#E3E8F7; --card:#FAFBFF; --line:#CBD2EE; --text:#141A33; --muted:#5D6590; --accent:#7450C2; }
+
+/* ---------- Limited editions, offered until 31 December 2026 (themes.js). One look in dark and light. ---------- */
+[data-theme="pumpkin"][data-mode]    { --bg:#120C08; --bar:#1A110B; --card:#24170F; --line:#46301E; --text:#F6E7D4; --muted:#BC9F84; --accent:#FF8A1E; --music:#FF8A1E; --amb:#8BD450; --evt:#B66BF0; --blue:#FFB347; --on-z:#120C08; --shadow:rgba(0,0,0,.5); color-scheme: dark; }
+[data-theme="santa"][data-mode]      { --bg:#0B1811; --bar:#0F1F16; --card:#16291E; --line:#2A4634; --text:#F5F2EA; --muted:#A9BCAE; --accent:#E6B84E; --music:#E6B84E; --amb:#A9DCF0; --evt:#E5484D; --blue:#A9DCF0; --on-z:#0B1811; --shadow:rgba(0,0,0,.5); color-scheme: dark; }
+[data-theme="pride"][data-mode]      { --bg:#D9EFFB; --bar:#E9F6FD; --card:#FFFFFF; --line:#B5DAF0; --text:#13233A; --muted:#4D6985; --accent:#7A35D8; --music:#E8590C; --amb:#0B8F3E; --evt:#D61F69; --blue:#1F5FE0; --on-z:#FFFFFF; --shadow:rgba(30,60,90,.16); color-scheme: light; }
+[data-theme="dragonfire"][data-mode] { --bg:#130705; --bar:#1B0A07; --card:#28110B; --line:#4E2315; --text:#F9E7D9; --muted:#C49C87; --accent:#FF5A1F; --music:#FFB238; --amb:#B9A397; --evt:#FF3B2F; --blue:#FFD166; --on-z:#130705; --shadow:rgba(0,0,0,.55); color-scheme: dark; }
+[data-theme="abyss"][data-mode]      { --bg:#020A13; --bar:#05101C; --card:#0A192A; --line:#163049; --text:#DCF4F8; --muted:#7EA3B6; --accent:#2EE6D6; --music:#2EE6D6; --amb:#4C86FF; --evt:#C76BFF; --blue:#4C86FF; --on-z:#020A13; --shadow:rgba(0,0,0,.55); color-scheme: dark; }
+[data-theme="excalibur"][data-mode]  { --bg:#0D1310; --bar:#121A15; --card:#1A241D; --line:#2F3E33; --text:#EEF2EC; --muted:#A3AFA4; --accent:#C8D7E2; --music:#DCC37A; --amb:#7FBF8E; --evt:#72A9DE; --blue:#72A9DE; --on-z:#0D1310; --shadow:rgba(0,0,0,.5); color-scheme: dark; }
+/* Pride: the flag runs along the top bars. */
+[data-theme="pride"] .sbar, [data-theme="pride"] .tbar { border-bottom: 4px solid transparent; border-image: linear-gradient(90deg, #E40303 0 16.6%, #FF8C00 0 33.3%, #FFED00 0 50%, #008026 0 66.6%, #004DFF 0 83.3%, #750787 0) 1; }
 
 /* ---------- Computer or phone ---------- */
 /* .pc is set on <html> for a mouse and a screen of at least 900 px: the Story builder and playing your own files live there. */
@@ -224,7 +235,16 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .set-head h2 { margin: 0; font-size: 26px; }
 .settings section { padding: 12px 0; border-top: 1px solid var(--line); }
 .settings h3 { font-family: inherit; font-weight: 600; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
-.themes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.themes { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 2px 2px 8px; margin: 0 -2px; scrollbar-width: thin; }
+.themes .theme { flex: 0 0 108px; scroll-snap-align: start; }
+.theme .swatch { position: relative; }
+.theme.special .medal { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FFF4C2 0 18%, #F6C945 40%, #B8860B 100%); border: 1px solid #8A6410;
+  box-shadow: 0 0 8px 2px rgba(246, 201, 69, .75); animation: medal-glow 2.4s ease-in-out infinite; }
+.theme.special .medal::after { content: '★'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: #7A5408; line-height: 1; }
+@keyframes medal-glow { 50% { box-shadow: 0 0 14px 4px rgba(246, 201, 69, .95); } }
+@media (prefers-reduced-motion: reduce) { .theme.special .medal { animation: none; } }
+.theme-note { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
 .theme {
   border: 1px solid var(--line); border-radius: 12px; padding: 6px; background: var(--card); display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px;
 }

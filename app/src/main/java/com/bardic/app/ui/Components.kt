@@ -1,5 +1,6 @@
 package com.bardic.app.ui
 
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -160,11 +161,21 @@ fun Btn(
 /** Top bar of every screen. */
 @Composable
 fun Bar(content: @Composable RowScope.() -> Unit) {
+    val rainbow = C.rainbow
     Row(
         Modifier
             .fillMaxWidth()
             .height(56.dp)
             .background(C.bar)
+            .then(
+                if (rainbow) Modifier.drawBehind {
+                    val w = size.width / PrideFlag.size
+                    PrideFlag.forEachIndexed { i, col ->
+                        drawRect(col, topLeft = androidx.compose.ui.geometry.Offset(i * w, size.height - 4.dp.toPx()),
+                            size = androidx.compose.ui.geometry.Size(w + 1f, 4.dp.toPx()))
+                    }
+                } else Modifier
+            )
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),

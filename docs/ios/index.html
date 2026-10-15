@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="../play/style.css">
 <link rel="stylesheet" href="../compagnie/compagnie.css">
 <link rel="stylesheet" href="ios.css">
+<script src="../themes.js"></script>
 <script>
   // Theme before first paint, then which face of the page to show:
   // the app (iPhone, opened from the Home Screen), the install guide (iPhone, in a browser) or the iPhone-only notice.
@@ -29,7 +30,7 @@
       var s = JSON.parse(localStorage.getItem('bardic.settings') || '{}');
       var mode = s.mode || 'dark';
       if (mode === 'system') mode = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-      root.dataset.theme = s.theme || 'obsidian';
+      root.dataset.theme = window.BardicThemes ? BardicThemes.resolve(s.theme || 'obsidian') : (s.theme || 'obsidian');
       root.dataset.mode = mode;
     } catch (e) {}
     var iphone = /iPhone|iPod/.test(navigator.userAgent);

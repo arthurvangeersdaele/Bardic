@@ -1,5 +1,8 @@
 package com.bardic.app.ui
 
+import androidx.compose.animation.core.animateFloat
+
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -335,13 +338,14 @@ private fun SettingsPanel(m: AppModel) {
     }
     Panel("Settings", { m.settingsOpen = false }) {
         SetSection("Theme")
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ThemeName.values().forEach { th ->
+        val themeScroll = rememberScrollState()
+        Row(Modifier.fillMaxWidth().horizontalScroll(themeScroll), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            st.themes.forEach { th ->
                 val p = paletteOf(th, dark)
-                val on = st.theme == th
+                val on = st.shownTheme == th
                 Column(
                     Modifier
-                        .weight(1f)
+                        .width(112.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(C.card)
                         .border(if (on) 2.dp else 1.dp, if (on) C.accent else C.line, RoundedCornerShape(12.dp))
@@ -349,22 +353,36 @@ private fun SettingsPanel(m: AppModel) {
                         .padding(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(52.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(p.bg)
-                            .padding(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(5.dp),
-                    ) {
-                        listOf(p.music to 0.7f, p.amb to 1f, p.evt to 0.45f).forEach { (c, f) ->
-                            Box(Modifier.fillMaxWidth(f).height(6.dp).clip(RoundedCornerShape(3.dp)).background(c))
+                    Box {
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(52.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(p.bg)
+                                .padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.Bottom),
+                        ) {
+                            listOf(p.music to 0.7f, p.amb to 1f, p.evt to 0.45f).forEach { (c, f) ->
+                                Box(Modifier.fillMaxWidth(f).height(6.dp).clip(RoundedCornerShape(3.dp)).background(c))
+                            }
                         }
+                        if (th.special) Medal(Modifier.align(Alignment.TopEnd).padding(5.dp))
                     }
                     T(th.label, weight = FontWeight.SemiBold, size = 14.sp, modifier = Modifier.padding(start = 2.dp))
                 }
             }
+        }
+        if (st.themes.any { it.special }) {
+            Muted(
+                if (ThemeName.specialsOpen()) "Gold medal themes are limited editions. Choose one before 31 December 2026 and it stays yours on this phone for good."
+                else "Gold medal themes are the limited editions you collected in 2026.",
+                13,
+            )
+        }
+        LaunchedEffect(Unit) {
+            val i = st.themes.indexOf(st.shownTheme)
+            if (i > 2) themeScroll.scrollTo(themeScroll.maxValue * i / (st.themes.size - 1).coerceAtLeast(1))
         }
         SetSection("Appearance")
         Segmented(Appearance.values().map { it to it.label }, st.appearance) { st.changeAppearance(it) }
@@ -496,6 +514,28 @@ private fun BardAccountBlock(m: AppModel) {
             m.ghError?.let { T(it, color = C.evt, size = 14.sp) }
             Muted("Optional and free. Bardic only reads your public GitHub username: no email, no access to your repositories. You can disconnect at any time.", 13)
         }
+    }
+}
+
+/** The glowing gold medal of the limited edition themes. */
+@Composable
+private fun Medal(modifier: Modifier = Modifier) {
+    val glow = androidx.compose.animation.core.rememberInfiniteTransition(label = "medal")
+    val a by glow.animateFloat(
+        0.45f, 0.95f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1200), androidx.compose.animation.core.RepeatMode.Reverse),
+        label = "glow",
+    )
+    Box(modifier.size(22.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(22.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0xFFF6C945).copy(alpha = a * 0.5f)))
+        Box(
+            Modifier
+                .size(17.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(Brush.radialGradient(listOf(Color(0xFFFFF4C2), Color(0xFFF6C945), Color(0xFFB8860B))))
+                .border(1.dp, Color(0xFF8A6410), androidx.compose.foundation.shape.CircleShape),
+            contentAlignment = Alignment.Center,
+        ) { T("★", color = Color(0xFF7A5408), size = 10.sp, weight = FontWeight.Bold) }
     }
 }
 

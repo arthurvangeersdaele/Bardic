@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity(), Host {
         model = AppModel(applicationContext, this, lifecycleScope)
         model.start()
         setContent {
-            BardicTheme(model.settings.theme, model.settings.appearance) {
+            BardicTheme(model.settings.shownTheme, model.settings.appearance) {
                 App(model)
             }
         }
