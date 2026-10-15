@@ -17,4 +17,6 @@ Rules:
 - a tale already in the Recueil keeps its bard: to update yours, forge it again (the revision goes up) and send the new file under the same name;
 - its sounds also join the sound library of the Story builder (**Recueil sounds**), where other bards can pick them one by one for their own tales. A sound picked there remembers its tale, so it can be credited.
 
+The sounds of the tales forged by Bardic are credited file by file in [CREDITS.md](CREDITS.md).
+
 The file format is described in [BARDIC_FORMAT.md](../../BARDIC_FORMAT.md). `index.json` and `sounds.json` (the sound library of the Story builder) are rebuilt automatically, and `bards.json` (the registered bard names) is written by Bardic's sign-in helper: do not edit them by hand.
