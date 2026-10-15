@@ -21,7 +21,7 @@ beforeEach(() => {
     const auth = (init.headers && init.headers.Authorization) || '';
     const res = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
     if (u === 'https://github.com/login/device/code') {
-      assert.equal(JSON.parse(init.body).client_id, 'cid');
+      assert.equal(new URLSearchParams(init.body).get('client_id'), 'cid');
       return res(200, { device_code: 'dc', user_code: 'ABCD-1234', verification_uri: 'https://github.com/login/device', expires_in: 900, interval: 5 });
     }
     if (u === 'https://github.com/login/oauth/access_token') {
@@ -96,6 +96,15 @@ test('device sign-in, then register once and for all', async () => {
   assert.equal((await r.json()).name, 'Alice the Bold');
   r = await call('/bard', { token: 'tB' });
   assert.equal((await r.json()).name, null);
+});
+
+test('says why GitHub refused', async () => {
+  const real = globalThis.fetch;
+  globalThis.fetch = async (url, init) => (String(url).endsWith('/device/code')
+    ? new Response(JSON.stringify({ error: 'device_flow_disabled' }), { status: 400 }) : real(url, init));
+  const r = await call('/device/code', { method: 'POST' });
+  assert.equal(r.status, 502);
+  assert.match((await r.json()).error, /Device Flow is not enabled/);
 });
 
 test('refuses strangers and bad tokens', async () => {

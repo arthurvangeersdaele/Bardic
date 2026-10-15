@@ -123,13 +123,22 @@ const ownedBy = (data, user) => data.bards.find((b) => b.githubId === user.id) |
 // ------------------------------------------------------------------ routes
 
 async function deviceCode(env) {
+  if (!env.CLIENT_ID) return [{ error: 'The GitHub Client ID is missing on the Bardic side.' }, 500];
   const r = await fetch('https://github.com/login/device/code', {
     method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'User-Agent': UA },
-    body: JSON.stringify({ client_id: env.CLIENT_ID, scope: '' }),
+    headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA },
+    body: new URLSearchParams({ client_id: env.CLIENT_ID }).toString(),
   });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok || !d.device_code) return [{ error: 'GitHub did not answer. Try again in a moment.' }, 502];
+  const text = await r.text();
+  let d = {};
+  try { d = JSON.parse(text); } catch (e) { d = {}; }
+  if (!r.ok || !d.device_code) {
+    // Say what GitHub said, so a setup mistake (device flow off, wrong Client ID) can be seen.
+    const why = d.error === 'device_flow_disabled' ? 'Device Flow is not enabled on the GitHub OAuth App.'
+      : (d.error === 'unauthorized_client' || r.status === 404) ? 'GitHub does not know this Client ID.'
+        : `GitHub answered ${r.status}${d.error ? ` (${d.error})` : ''}.`;
+    return [{ error: `GitHub refused to start the sign-in: ${why}`, github: d.error || r.status }, 502];
+  }
   return [{
     device_code: d.device_code, user_code: d.user_code, verification_uri: d.verification_uri,
     expires_in: d.expires_in, interval: d.interval,
@@ -140,8 +149,8 @@ async function deviceToken(env, body) {
   if (!body.device_code) return [{ error: 'missing device_code' }, 400];
   const r = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'User-Agent': UA },
-    body: JSON.stringify({ client_id: env.CLIENT_ID, device_code: body.device_code, grant_type: 'urn:ietf:params:oauth:grant-type:device_code' }),
+    headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA },
+    body: new URLSearchParams({ client_id: env.CLIENT_ID, device_code: body.device_code, grant_type: 'urn:ietf:params:oauth:grant-type:device_code' }).toString(),
   });
   const d = await r.json().catch(() => ({}));
   if (d.access_token) {
