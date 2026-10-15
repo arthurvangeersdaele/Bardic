@@ -460,7 +460,8 @@
       if (!CUSTOM.meta.chapters.length) throw new Error('This tale has no chapter.');
       dropState('Drop a .bardic file here', 'or click to browse your computer', null, false);
       audio();
-      location.hash = '#/bardic/1';
+      // The page may already sit on #/bardic/1 (reloaded on a tale): no hashchange then, so open it here.
+      if (location.hash === '#/bardic/1') route(); else location.hash = '#/bardic/1';
     } catch (e) {
       dropState('This file could not be opened', e.message || String(e), null, false, true);
     }
