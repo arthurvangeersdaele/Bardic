@@ -40,9 +40,6 @@ class AppSettings(context: Context) {
         private set
     var keepAwake by mutableStateOf(prefs.getBoolean("awake", true))
         private set
-    /** Fade-in when Play is tapped (and when a random event comes back), in ms; 0 is off. */
-    var fadeInMs by mutableIntStateOf(prefs.getInt("fadeIn", 0))
-        private set
     /** Opening another chapter fades out the sounds of the previous one over 4 s. */
     var silenceChapters by mutableStateOf(prefs.getBoolean("silence", false))
         private set
@@ -71,7 +68,6 @@ class AppSettings(context: Context) {
     fun changeAppearance(v: Appearance) { appearance = v; prefs.edit().putString("mode", v.id).apply() }
     fun changeFade(ms: Int) { fadeMs = ms; prefs.edit().putInt("fade", ms).apply() }
     fun changeCrossfade(v: Boolean) { crossfade = v; prefs.edit().putBoolean("crossfade", v).apply() }
-    fun changeFadeIn(ms: Int) { fadeInMs = ms; prefs.edit().putInt("fadeIn", ms).apply() }
     fun changeSilenceChapters(v: Boolean) { silenceChapters = v; prefs.edit().putBoolean("silence", v).apply() }
     fun changeKeepAwake(v: Boolean) { keepAwake = v; prefs.edit().putBoolean("awake", v).apply() }
     fun changeMaster(v: Float) { master = v; prefs.edit().putFloat("master", v).apply() }

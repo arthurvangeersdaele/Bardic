@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261015.9';
+  const VERSION = '261015.10';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -61,7 +61,7 @@
   /* ================= Settings ================= */
   const KEY = 'bardic.settings';
   const DEFAULTS = {
-    theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, fadeIn: 0, silence: false, awake: true, silent: true,
+    theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, silence: false, awake: true, silent: true,
     master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], randomMax: 5,
   };
   const settings = Object.assign({}, DEFAULTS, readJSON(KEY));
