@@ -1,4 +1,11 @@
 {
  "version": 1,
- "bards": []
+ "bards": [
+  {
+   "name": "Chiffon",
+   "github": "arthurvangeersdaele",
+   "githubId": 64006823,
+   "registered": "2026-10-15"
+  }
+ ]
 }
