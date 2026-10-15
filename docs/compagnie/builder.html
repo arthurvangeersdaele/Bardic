@@ -36,8 +36,8 @@
     <a href="./">Compagnie<span class="long">&nbsp;des bardes</span></a>
   </nav>
   <span class="grow"></span>
+  <span class="saved-note pc-only" id="saved" aria-live="polite"></span>
   <button class="btn pc-only" type="button" id="new-btn"><span class="long">New story</span><span class="short">New</span></button>
-  <button class="btn pc-only lib-btn" type="button" id="lib-btn" aria-pressed="false" title="Every sound of the Recueil, to drag into your story"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7"/></svg><span class="long">Recueil sounds</span><span class="short">Sounds</span></button>
   <button class="btn pc-only" type="button" id="open-btn"><span class="long">Open a .bardic</span><span class="short">Open</span></button><input type="file" id="open-input" accept=".bardic,application/zip" hidden>
 </header>
 
@@ -55,7 +55,6 @@
     </div>
     <div class="bld-actions">
       <button class="signed" type="button" id="bard-btn" title="The bard name that signs your stories: register yours in Settings"></button>
-      <span class="saved-note" id="saved" aria-live="polite"></span>
       <span class="total" id="total"></span>
       <button class="btn primary" type="button" id="forge-btn">Forge .bardic</button>
     </div>

@@ -100,8 +100,10 @@
 
   /* ---------- the panel ---------- */
   let panel = null;
-  function open() {
-    if (panel) { panel.querySelector('.lib-find').focus(); return; }
+  /** Opens the panel, on the tab of `row` (music, ambience, events or soundbox) when given. */
+  function open(row) {
+    if (ROWS.some((r) => r.id === row)) tab = row;
+    if (panel) { render(); panel.querySelector('.lib-find').focus(); return; }
     panel = el('aside', 'lib');
     panel.setAttribute('aria-label', 'Sounds of the Recueil');
     panel.innerHTML = `<div class="lib-head"><h2>Sounds of the Recueil</h2><button class="lib-close" type="button" aria-label="Close">${ICON.x}</button></div>

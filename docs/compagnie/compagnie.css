@@ -64,6 +64,7 @@ html.pc .doors { grid-template-columns: repeat(3, minmax(0, 290px)); }
 .total { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .total.warn { color: var(--evt); }
 .saved-note { font-size: 13px; color: var(--muted); opacity: .85; white-space: nowrap; }
+.sbar .saved-note { position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none; }
 @media (max-width: 640px) { .bld-head .fields { grid-template-columns: minmax(0, 1fr); } }
 
 .bld .rail { border-right: 1px solid var(--line); background: var(--bar); padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; }
@@ -79,7 +80,8 @@ html.pc .doors { grid-template-columns: repeat(3, minmax(0, 290px)); }
 .ed-top { display: flex; align-items: center; gap: 10px; }
 .ed-top .n { font-family: 'Cormorant SC', serif; font-weight: 700; font-size: 28px; color: var(--accent); }
 .chap-title { flex: 1; font-family: 'Cormorant SC', serif; font-weight: 700; font-size: 24px; padding: 4px 12px; }
-.ed-top .del { color: var(--muted); }
+.ed-top .del { color: var(--evt); border-color: color-mix(in srgb, var(--evt) 45%, var(--line)); }
+.ed-top .del:hover:not(:disabled) { border-color: var(--evt); background: color-mix(in srgb, var(--evt) 10%, var(--card)); }
 
 .editor .zrow { flex: 0 0 auto; align-items: stretch; }
 @media (min-width: 1101px) {

@@ -63,6 +63,17 @@ html.iphone .not-iphone{display:none!important}
 .get b{display:block;font-family:'Cormorant SC',serif;font-size:25px;line-height:1.05}
 html.android .get .for-ios, html.ios .get .for-android{display:none}
 html.android .get a, html.ios .get a{min-width:min(100%,380px)}
+.qr-veil{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(5,5,8,.72);backdrop-filter:blur(3px);padding:16px}
+.qr-veil[hidden]{display:none}
+.qr-box{position:relative;background:var(--bar);border:1px solid var(--line);border-radius:18px;padding:26px 28px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.qr-box h3{font-family:'Cormorant SC',serif;font-size:28px;margin:0 0 4px}
+.qr-box p{color:var(--muted);font-size:15px;margin:0 0 14px}
+.qr-code{background:#fff;border-radius:14px;padding:14px;width:232px;height:232px;margin:0 auto 14px;display:grid;place-items:center}
+.qr-code svg{width:100%;height:100%;display:block}
+.qr-box .small{font-size:14px}
+.qr-box .small a{color:var(--accent)}
+.qr-close{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;display:grid;place-items:center}
+.qr-close:hover{border-color:var(--muted)}
 .get-note{font-size:15px;color:var(--muted);max-width:620px;margin:12px 0 0}
 
 /* sections */
@@ -200,7 +211,7 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
 <div class="wrap">
   <nav>
     <a class="logo" href="#">Bardic</a>
-    <div class="navlinks"><a href="play/" style="color:var(--accent);font-weight:600">Test it online</a><a href="#get">Get the app</a><a href="#tutorial">Tutorial</a><a href="#table">How it plays</a><a href="compagnie/">Compagnie des bardes</a><a href="https://discord.gg/EkcyrgKQT" target="_blank" rel="noopener">Discord</a><a href="#geek">GitHub</a></div>
+    <div class="navlinks"><a href="play/" style="color:var(--accent);font-weight:600">Test it online</a><a href="#tutorial">Tutorial</a><a href="compagnie/">Compagnie des bardes</a><a href="#geek">GitHub</a></div>
   </nav>
 
   <!-- 1. Name and title -->
@@ -213,6 +224,7 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
     <div class="ctas">
       <a class="btn primary big" href="play/">Test it quick</a>
       <a class="d20" href="https://github.com/arthurvangeersdaele/Bardic" aria-label="Bardic on GitHub" title="Bardic on GitHub"><svg viewBox="0 0 48 48" width="56" height="56" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M24 2 43 13v22L24 46 5 35V13Z"/><path d="M24 9 9 34h30Z"/><path d="M24 2v7M43 13 24 9M5 13l19-4M5 13l4 21M43 13l-4 21M5 35l4-1M43 35l-4-1M24 46 9 34M24 46l15-12"/></g><path class="gh" transform="translate(16 17.7)" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg></a>
+      <a class="d20 d4" href="https://discord.gg/EkcyrgKQT" target="_blank" rel="noopener" aria-label="The Bardic Discord" title="The Bardic Discord"><svg viewBox="0 0 48 48" width="56" height="56" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M24 3 45 40H3Z"/><path d="M24 3v15M45 40l-12.3-7M3 40l12.3-7"/></g><path class="gh" transform="translate(16.8 20.6) scale(.6)" d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></a>
     </div>
 
     <!-- 3. Get the app: picks Android or iPhone on a phone, shows both elsewhere -->
@@ -225,6 +237,15 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
         <span class="gi"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8v6M9 11h6"/></svg></span>
         <span><small>Free, on your Home Screen</small><b>Get Bardic for iPhone</b></span>
       </a>
+    </div>
+    <div class="qr-veil" id="qr" hidden role="dialog" aria-modal="true" aria-labelledby="qr-title">
+      <div class="qr-box">
+        <button class="qr-close" type="button" id="qr-close" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        <h3 id="qr-title"></h3>
+        <p id="qr-text"></p>
+        <div class="qr-code" id="qr-code"></div>
+        <p class="small" id="qr-more"></p>
+      </div>
     </div>
     <p class="get-note">The web test plays three ready-made storiesor you to discover Bardic in no-time. The app is the one built for real sessions: your own stories and sounds, kept on the phone, the soundbox, .bardic files, and playback with the screen off.</p>
   </header>
@@ -464,16 +485,44 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
   }
   window.addEventListener('resize',fit);fit();
 
-  /* Latest APK: download counter for everyone, direct link on Android.
+  /* Latest APK: download counter for everyone, direct link on Android and in the computer's QR code.
      Each build replaces the release, so the notes carry the downloads of the earlier builds. */
+  var RELEASE='https://github.com/arthurvangeersdaele/Bardic/releases/tag/dev-latest', apkUrl=null;
   fetch('https://api.github.com/repos/arthurvangeersdaele/Bardic/releases/tags/dev-latest').then(function(r){return r.ok?r.json():null}).then(function(j){
     if(!j)return;
     var a=(j.assets||[]).filter(function(x){return /\.apk$/i.test(x.name)})[0];
-    if(a&&document.documentElement.classList.contains('android'))document.getElementById('get-android').href=a.browser_download_url;
+    if(a){apkUrl=a.browser_download_url;if(document.documentElement.classList.contains('android'))document.getElementById('get-android').href=apkUrl;}
     var m=/downloads-before:\s*(\d+)/.exec(j.body||'');
     var n=(m?+m[1]:0)+(a?a.download_count||0:0);
     if(n>0){document.getElementById('dl-n').textContent=n.toLocaleString('en');document.getElementById('dl').hidden=false;}
   }).catch(function(){});
+
+  /* On a computer, the download buttons show a QR code to scan with the phone */
+  (function(){
+    var veil=document.getElementById('qr'),last=null;
+    function show(kind,btn){
+      var android=kind==='android',url=android?(apkUrl||RELEASE):new URL('ios/',location.href).href;
+      document.getElementById('qr-title').textContent=android?'Bardic for Android':'Bardic for iPhone';
+      document.getElementById('qr-text').textContent=android
+        ?'Scan with your Android phone: the APK downloads there. Open it to install Bardic, and allow installs from your browser when asked.'
+        :'Scan with your iPhone camera and open the page in Safari. Then tap Share and Add to Home Screen.';
+      var q=qrcode(0,'M');q.addData(url);q.make();
+      document.getElementById('qr-code').innerHTML=q.createSvgTag({cellSize:4,margin:0,scalable:true});
+      var more=document.getElementById('qr-more');
+      more.innerHTML=android?'Or <a href="'+url+'">download the APK on this computer</a>.':'Or <a href="ios/">open the iPhone page here</a>.';
+      last=btn;veil.hidden=false;document.getElementById('qr-close').focus();
+    }
+    function hide(){veil.hidden=true;if(last)last.focus();}
+    document.querySelectorAll('.get a').forEach(function(a){
+      a.addEventListener('click',function(e){
+        if(!document.documentElement.classList.contains('pc')||typeof qrcode!=='function')return;
+        e.preventDefault();show(a.classList.contains('for-android')?'android':'ios',a);
+      });
+    });
+    document.getElementById('qr-close').addEventListener('click',hide);
+    veil.addEventListener('click',function(e){if(e.target===veil)hide();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!veil.hidden)hide();});
+  })();
 
   /* Reduced motion: keep the Compagnie logo still */
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)document.getElementById('sigil').pauseAnimations();
@@ -511,5 +560,6 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
   paint();
 })();
 </script>
+<script src="vendor/qrcode-generator-1.4.4.js"></script>
 </body>
 </html>

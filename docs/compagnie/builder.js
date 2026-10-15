@@ -17,6 +17,7 @@
   const svg = (d, size = 16, fill = false) =>
     `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true" ${fill ? 'fill="currentColor"' : 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'}>${d}</svg>`;
   const ICON = {
+    book: svg('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7"/>', 14),
     play: svg('<path d="M7 4.5v15a1 1 0 0 0 1.5.9l12-7.5a1 1 0 0 0 0-1.8l-12-7.5A1 1 0 0 0 7 4.5z"/>', 14, true),
     stop: svg('<rect x="5.5" y="5.5" width="13" height="13" rx="2"/>', 12, true),
     x: svg('<path d="M18 6L6 18M6 6l12 12"/>', 15),
@@ -231,6 +232,9 @@
   }
   function paintPlaying() {
     if (ruPaint) ruPaint();
+    // A dot on the chapter whose sound is playing, as in the players.
+    const live = playingId == null ? -1 : state.chapters.findIndex((c) => ZONES.some((z) => c[z].some((x) => x.id === playingId)));
+    document.querySelectorAll('#rail .chap').forEach((b, i) => b.classList.toggle('playing', i === live));
     cards.forEach((c, sid) => {
       const on = sid === playingId;
       c.root.classList.toggle('playing', on);
@@ -268,7 +272,7 @@
       up.onclick = (e) => { e.stopPropagation(); moveChapter(i, -1); };
       dn.onclick = (e) => { e.stopPropagation(); moveChapter(i, 1); };
       mv.append(up, dn);
-      b.append(el('span', 'n', String(i + 1)), t, mv);
+      b.append(el('span', 'n', String(i + 1)), t, el('i', 'live'), mv);
       b.onclick = () => { current = i; renderAll(); };
       b.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); } };
       // Dragging over a chapter in the rail opens it, so sounds can be dropped into its zones.
@@ -350,6 +354,14 @@
       reuse.innerHTML = `${ICON.reuse}<span>From this story</span>`;
       reuse.onclick = () => reuseSounds(zone);
       adds.append(reuse);
+    }
+    // The sounds of every tale in the Recueil, opened on this row's tab.
+    if (window.BardicLibrary) {
+      const rec = el('button', 'link-btn');
+      rec.type = 'button';
+      rec.innerHTML = `${ICON.book}<span>From the Recueil</span>`;
+      rec.onclick = () => window.BardicLibrary.open(zone);
+      adds.append(rec);
     }
     dz.append(adds);
   }
