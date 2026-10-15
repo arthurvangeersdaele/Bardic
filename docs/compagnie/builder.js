@@ -118,6 +118,7 @@
     renderZone($('#sb-zone'), 'soundbox');
     renderTotal();
     paintPlaying();
+    saveSoon();
   }
 
   function renderRail() {
@@ -493,13 +494,81 @@
     e.target.value = '';
     if (f) load(f, f.name);
   });
-  const fromUrl = new URLSearchParams(location.search).get('open');
-  if (fromUrl && /^[\w./%-]+\.bardic$/i.test(fromUrl)) load(fromUrl, decodeURIComponent(fromUrl.split('/').pop()));
-
+  /* ---------- draft kept in this browser ---------- */
+  const Draft = window.BardicDraft;
+  let restoring = true, pending = false, saving = null, saveTimer = 0;
+  const isEmpty = () => !allSounds().length && !state.title.trim() && !state.description.trim() && state.chapters.length === 1 && /^Chapter 1$/.test(state.chapters[0].title.trim());
+  function paintSaved(text) { const t = $('#saved'); if (t) t.textContent = text; }
+  function saveSoon() {
+    if (restoring || !Draft) return;
+    pending = true;
+    paintSaved('Saving…');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flush, 600);
+  }
+  async function flush() {
+    clearTimeout(saveTimer);
+    if (!pending || !Draft) return;
+    if (saving) { await saving; if (!pending) return; }
+    pending = false;
+    saving = (isEmpty() ? Draft.clear() : Draft.save(state, current))
+      .then(() => { if (!pending) paintSaved(isEmpty() ? '' : 'Saved in this browser'); })
+      .catch(() => { paintSaved('Not saved: this browser blocks storage'); })
+      .finally(() => { saving = null; });
+    await saving;
+  }
+  // Any edit (typing a name, a loop mode, a drop) schedules a save; structural changes go through renderAll.
+  ['input', 'change', 'click', 'drop'].forEach((t) => document.addEventListener(t, (e) => { if (e.target.closest && e.target.closest('#bld')) saveSoon(); }, true));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+  window.addEventListener('pagehide', () => { flush(); });
   window.addEventListener('beforeunload', (e) => {
-    if (allSounds().length) { e.preventDefault(); e.returnValue = ''; }
+    // The draft is kept in the browser: only warn while a change has not been written yet.
+    if (pending || saving) { flush(); e.preventDefault(); e.returnValue = ''; }
   });
+
+  function adopt(d, at) {
+    d.chapters.forEach((c) => { c.id = id(); ZONES.forEach((z) => c[z].forEach((s) => { s.id = id(); probe(s); })); });
+    d.soundbox.forEach((s) => { s.id = id(); probe(s); });
+    if (!d.chapters.length) d.chapters.push(newChapter(1));
+    state = d;
+    current = Math.min(Math.max(0, at || 0), state.chapters.length - 1);
+    fillFields();
+  }
+
+  $('#new-btn').addEventListener('click', async () => {
+    if (!isEmpty() && !confirm('Start a new story? The one in progress will be cleared from this browser (forge it first to keep it).')) return;
+    stopPreview();
+    state = { id: null, revision: 0, created: null, title: '', description: '', extra: {}, chapters: [newChapter(1)], soundbox: [] };
+    current = 0;
+    fillFields();
+    pending = false;
+    try { await Draft.clear(); } catch (e) { /* nothing kept */ }
+    renderAll();
+    paintSaved('');
+    $('#f-title').focus();
+  });
+
+  async function start() {
+    const fromUrl = new URLSearchParams(location.search).get('open');
+    const wanted = fromUrl && /^[\w./%-]+\.bardic$/i.test(fromUrl) ? fromUrl : null;
+    let draft = null;
+    try { draft = Draft ? await Draft.load() : null; } catch (e) { draft = null; }
+    const has = draft && (draft.story.title || draft.story.chapters.some((c) => ZONES.some((z) => c[z].length)) || draft.story.soundbox.length);
+    let useDraft = !!has;
+    if (has && wanted) useDraft = !confirm(`You have an unfinished story in this browser${draft.story.title ? `, "${draft.story.title}"` : ''}. Open the tale from the Recueil instead? Your unfinished story will be replaced.`);
+    if (useDraft) {
+      adopt(draft.story, draft.current);
+      renderAll();
+      toast(draft.lost
+        ? `Your unfinished story is back, but ${draft.lost} sound${draft.lost > 1 ? 's were' : ' was'} missing from this browser.`
+        : `Your unfinished story${draft.story.title ? `, "${draft.story.title}",` : ''} is back where you left it.`);
+      paintSaved('Saved in this browser');
+    }
+    restoring = false;
+    if (wanted && !useDraft) load(wanted, decodeURIComponent(wanted.split('/').pop()));
+  }
 
   paintBard();
   renderAll();
+  start();
 })();

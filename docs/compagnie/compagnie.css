@@ -63,6 +63,7 @@ html.pc .doors { grid-template-columns: repeat(3, minmax(0, 290px)); }
 .bld-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .total { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .total.warn { color: var(--evt); }
+.saved-note { font-size: 13px; color: var(--muted); opacity: .85; white-space: nowrap; }
 @media (max-width: 640px) { .bld-head .fields { grid-template-columns: minmax(0, 1fr); } }
 
 .bld .rail { border-right: 1px solid var(--line); background: var(--bar); padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; }
@@ -194,7 +195,7 @@ html:not(.pc) .tale .dl { background: var(--accent); border-color: var(--accent)
 
 .tabs a { white-space: nowrap; }
 @media (max-width: 560px) {
-  #open-btn { height: 38px; padding: 0 10px; font-size: 14px; }
-  #open-btn .long { display: none; }
+  #open-btn, #new-btn { height: 38px; padding: 0 10px; font-size: 14px; }
+  #open-btn .long, #new-btn .long { display: none; }
 }
-@media (min-width: 561px) { #open-btn .short { display: none; } }
+@media (min-width: 561px) { #open-btn .short, #new-btn .short { display: none; } }

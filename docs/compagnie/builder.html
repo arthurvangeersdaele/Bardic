@@ -36,6 +36,7 @@
     <a href="./">Compagnie<span class="long">&nbsp;des bardes</span></a>
   </nav>
   <span class="grow"></span>
+  <button class="btn pc-only" type="button" id="new-btn"><span class="long">New story</span><span class="short">New</span></button>
   <button class="btn pc-only" type="button" id="open-btn"><span class="long">Open a .bardic</span><span class="short">Open</span></button><input type="file" id="open-input" accept=".bardic,application/zip" hidden>
 </header>
 
@@ -53,6 +54,7 @@
     </div>
     <div class="bld-actions">
       <button class="signed" type="button" id="bard-btn" title="Your bard name, set once for every story"></button>
+      <span class="saved-note" id="saved" aria-live="polite"></span>
       <span class="total" id="total"></span>
       <button class="btn primary" type="button" id="forge-btn">Forge .bardic</button>
     </div>
@@ -71,6 +73,7 @@
 </div>
 <input type="file" id="pick" accept=".mp3,.ogg,.m4a,.wav,audio/*" multiple hidden>
 <script src="bardic-format.js"></script>
+<script src="draft.js"></script>
 <script src="builder.js"></script>
 <script src="settings.js"></script>
 </body>

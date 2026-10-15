@@ -1,0 +1,100 @@
+1
+00:00:01,085 --> 00:00:05,340
+Meet Bardic, the sound mixing table for game masters.
+
+2
+00:00:05,290 --> 00:00:10,547
+Music, ambiences and sound effects to bring your tabletop RPG sessions to life.
+
+3
+00:00:10,497 --> 00:00:15,350
+Each story is split into chapters, each with its own sounds.
+
+4
+00:00:17,128 --> 00:00:21,784
+At the table, three zones: Music, Ambience and Events.
+
+5
+00:00:23,064 --> 00:00:27,919
+Example: Underwater Adventure, chapter 1, “Chill on the beach”.
+
+6
+00:00:27,869 --> 00:00:33,925
+Put your headphones on, close your eyes and let yourself drift away.
+
+7
+00:00:35,489 --> 00:00:46,539
+First, the background music.
+
+8
+00:00:46,490 --> 00:00:56,541
+Then the waves, brought in gently with the volume slider.
+
+9
+00:00:56,491 --> 00:01:07,041
+A tropical day blends in.
+
+10
+00:01:08,993 --> 00:01:12,843
+Finally, the events, right when the story calls for them.
+
+11
+00:01:12,793 --> 00:01:17,846
+Footsteps in the sand
+
+12
+00:01:19,297 --> 00:01:23,347
+A splash
+
+13
+00:01:26,298 --> 00:01:32,348
+A ship's horn, far away
+
+14
+00:01:38,301 --> 00:01:42,852
+You can open your eyes now.
+
+15
+00:01:47,974 --> 00:01:51,628
+Creating your own story only takes a moment.
+
+16
+00:01:51,578 --> 00:02:00,629
+Give it a name, then name your first chapter.
+
+17
+00:02:00,579 --> 00:02:17,911
+Add sounds to each zone: from your files, or by reusing the ones already on your phone.
+
+18
+00:02:18,466 --> 00:02:23,519
+To share it, tap Share: Bardic forges a .bardic file.
+
+19
+00:02:23,469 --> 00:02:28,520
+Send it to another bard, who opens it with Import.
+
+20
+00:02:31,078 --> 00:02:37,129
+The Compagnie des bardes is the Bardic community on the web.
+
+21
+00:02:38,937 --> 00:02:44,200
+Its Story builder forges .bardic files from a computer.
+
+22
+00:02:45,972 --> 00:02:50,824
+The Recueil gathers the stories shared by the bards.
+
+23
+00:02:50,774 --> 00:02:55,628
+And you can lay your own tales in it too.
+
+24
+00:02:57,406 --> 00:03:02,962
+Bardic is available on iPhone, on Android (beta) and on the web.
+
+25
+00:03:02,913 --> 00:03:08,466
+Find it at arthurvangeersdaele.github.io/Bardic
+

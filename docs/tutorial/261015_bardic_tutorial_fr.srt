@@ -1,0 +1,100 @@
+1
+00:00:01,085 --> 00:00:05,340
+Voici Bardic, la table de mixage sonore des maîtres de jeu.
+
+2
+00:00:05,290 --> 00:00:10,547
+Musiques, ambiances et effets sonores pour donner vie à vos parties de jeu de rôle.
+
+3
+00:00:10,497 --> 00:00:15,350
+Chaque histoire se découpe en chapitres, chacun avec ses propres sons.
+
+4
+00:00:17,128 --> 00:00:21,784
+À la table, trois zones : Musique, Ambiance et Événements.
+
+5
+00:00:23,064 --> 00:00:27,919
+Exemple : Underwater Adventure, chapitre 1, « Chill on the beach ».
+
+6
+00:00:27,869 --> 00:00:33,925
+Mettez un casque, fermez les yeux et laissez-vous porter.
+
+7
+00:00:35,489 --> 00:00:46,539
+D'abord, la musique de fond.
+
+8
+00:00:46,490 --> 00:00:56,541
+Puis les vagues, amenées en douceur avec le curseur de volume.
+
+9
+00:00:56,491 --> 00:01:07,041
+Une journée tropicale vient s'y mêler.
+
+10
+00:01:08,993 --> 00:01:12,843
+Enfin, les événements, au moment où l'histoire les appelle.
+
+11
+00:01:12,793 --> 00:01:17,846
+Des pas dans le sable
+
+12
+00:01:19,297 --> 00:01:23,347
+Un plongeon
+
+13
+00:01:26,298 --> 00:01:32,348
+Au loin, la corne d'un navire
+
+14
+00:01:38,301 --> 00:01:42,852
+Vous pouvez rouvrir les yeux.
+
+15
+00:01:47,974 --> 00:01:51,628
+Créer votre propre histoire ne prend qu'un instant.
+
+16
+00:01:51,578 --> 00:02:00,629
+Donnez-lui un nom, puis nommez votre premier chapitre.
+
+17
+00:02:00,579 --> 00:02:17,911
+Ajoutez des sons dans chaque zone : depuis vos fichiers, ou en réutilisant ceux déjà sur votre téléphone.
+
+18
+00:02:18,466 --> 00:02:23,519
+Pour la partager, touchez Partager : Bardic forge un fichier .bardic.
+
+19
+00:02:23,469 --> 00:02:28,520
+Envoyez-le à un autre barde, qui l'ouvre avec Importer.
+
+20
+00:02:31,078 --> 00:02:37,129
+La Compagnie des bardes, c'est la communauté de Bardic sur le web.
+
+21
+00:02:38,937 --> 00:02:44,200
+Son Story builder forge des fichiers .bardic depuis un ordinateur.
+
+22
+00:02:45,972 --> 00:02:50,824
+Le Recueil rassemble les histoires partagées par les bardes.
+
+23
+00:02:50,774 --> 00:02:55,628
+Et vous pouvez y déposer vos propres histoires.
+
+24
+00:02:57,406 --> 00:03:02,962
+Bardic est disponible sur iPhone, sur Android (bêta) et sur le web.
+
+25
+00:03:02,913 --> 00:03:08,466
+Rendez-vous sur arthurvangeersdaele.github.io/Bardic
+

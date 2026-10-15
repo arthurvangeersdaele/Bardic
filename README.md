@@ -4,6 +4,12 @@ Game Master Phone Sound Table: an Android app that lets tabletop RPG game master
 
 Project page: https://arthurvangeersdaele.github.io/Bardic/
 
+## Tutorial
+
+[![Bardic tutorial: watch the video](docs/tutorial/261015_bardic_tutorial_poster.jpg)](https://arthurvangeersdaele.github.io/Bardic/tutorial/261015_bardic_tutorial_en.mp4)
+
+Three minutes, subtitled, no voice over: what Bardic is, a chapter of Underwater Adventure layered sound by sound (headphones on), how to forge and share a story, the Compagnie des bardes, and where to get Bardic. [Watch it in English](https://arthurvangeersdaele.github.io/Bardic/tutorial/261015_bardic_tutorial_en.mp4), [en français](https://arthurvangeersdaele.github.io/Bardic/tutorial/261015_bardic_tutorial_fr.mp4), or on the [project page](https://arthurvangeersdaele.github.io/Bardic/#tutorial). Files, subtitles (`.srt`) and sound credits are in [`docs/tutorial/`](docs/tutorial/).
+
 **Play it in your browser:** https://arthurvangeersdaele.github.io/Bardic/play/ with three ready-made stories (The Forest Adventure, The Big War, Underwater Adventure), the mixing table and the soundbox. More tales, like Werewolf, are in the Compagnie des bardes. No import and no story editing in the web edition; its sounds live in [`docs/play/sounds/`](docs/play/sounds/).
 
 **On iPhone:** [Bardic for iPhone](https://arthurvangeersdaele.github.io/Bardic/ios/) installs from Safari on the Home Screen (Share, then Add to Home Screen). It only runs from there: opened in a browser tab it shows the install steps, and on other devices it says it is made for iPhone. The Bardic page shows its install button only on an iPhone.
@@ -82,7 +88,7 @@ iOS limits to know: audio stops when the screen locks in a Home Screen app, henc
 Builder and playing your own files are for computers (the app does both on a phone); on a phone the Compagnie shows the Recueil only.
 
 - **Play a tale** (`../play/#/bardic`): opens a `.bardic` file from the computer, or a tale of the Recueil, on the player's mixing table.
-- **Story builder** (`builder.html`): name a story and its chapters, drop MP3s into Music, Ambience, Events and the Soundbox, and download a `.bardic` file. Everything runs in the browser, nothing is uploaded. It can also open an existing `.bardic` to edit it.
+- **Story builder** (`builder.html`): name a story and its chapters, drop MP3s into Music, Ambience, Events and the Soundbox, and download a `.bardic` file. Everything runs in the browser, nothing is uploaded. It can also open an existing `.bardic` to edit it. The story in progress is saved in the browser as it changes, sounds included (IndexedDB, `draft.js`): leaving the page or closing the tab never loses it, and it comes back on the next visit until **New story** clears it.
 - **Recueil** (`recueil.html`): the shared library of `.bardic` files stored in `docs/recueil/`. Anyone can add one through a pull request ([how](docs/recueil/README.md)); the **Recueil** action checks pull requests and rebuilds `docs/recueil/index.json` once they are merged.
 
 The `.bardic` format (a ZIP with `story.json` and the audio files, signed with a bard name and versioned by a hidden revision counter) is specified in [BARDIC_FORMAT.md](BARDIC_FORMAT.md). The bard name is set in Settings: the web player's (shared with the Story builder) and the Android app's. In the app, `app/src/main/java/com/bardic/app/bardic/` reads and writes the format and `settings/BardSettings.kt` keeps the bard name; the engine test screen can already open a `.bardic` and export it as its next revision.
