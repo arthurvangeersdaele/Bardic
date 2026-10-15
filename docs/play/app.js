@@ -32,7 +32,7 @@
   };
 
   /* ---------------- Settings ---------------- */
-  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, awake: false, master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], randomMax: 5 };
+  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, fadeIn: 0, silence: false, awake: false, master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], randomMax: 5 };
   const settings = Object.assign({}, DEFAULTS, readJSON('bardic.settings'));
   function readJSON(key) { try { return JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (e) { return {}; } }
   function save() { try { const cur = readJSON('bardic.settings'); localStorage.setItem('bardic.settings', JSON.stringify(Object.assign(cur, settings))); } catch (e) { /* private mode */ } }
@@ -498,6 +498,18 @@
   }
 
   function setChapter(i) {
+    // Silence between chapters (setting): the sounds of the other chapters fade out over 4 s.
+    if (settings.silence && story && i !== chapterIdx) {
+      const here = new Set(ZONES.flatMap((z) => story.chapters[i].voices[z.id]));
+      story.all.forEach((v) => {
+        if (here.has(v) || !(v.active || v.state === 'paused' || v.waiting)) return;
+        v.end(4000);
+        v.paint();
+      });
+      pausedByAll = pausedByAll.filter((v) => here.has(v));
+      heldRandom = heldRandom.filter((v) => here.has(v));
+      paintMaster();
+    }
     chapterIdx = i;
     const ch = story.chapters[i];
     $('#t-chapter').textContent = `Chapter ${i + 1}: ${ch.meta.title}`;
@@ -550,6 +562,9 @@
     return c;
   }
 
+  /** Fade-in when Play is tapped (and when a random event comes back), from the settings. */
+  const fadeInS = () => Math.max(0.03, (+settings.fadeIn || 0) / 1000);
+
   function toggleVoice(v) {
     audio();
     // Between two plays, a tap stops the random event.
@@ -559,9 +574,9 @@
       const others = story.all.filter((o) => o !== v && o.zone.id === 'music' && (o.active || o.state === 'paused'));
       const crossing = others.some((o) => o.active);
       others.forEach((o) => o.end(settings.crossfade ? settings.fade : 150));
-      v.play(crossing && settings.crossfade && v.state !== 'paused' ? settings.fade / 1000 : 0.03);
+      v.play(crossing && settings.crossfade && v.state !== 'paused' ? Math.max(settings.fade / 1000, fadeInS()) : fadeInS());
     } else {
-      v.play();
+      v.play(fadeInS());
     }
     pausedByAll = pausedByAll.filter((o) => o !== v);
     paintMaster();
@@ -714,10 +729,12 @@
     });
     segment('#mode-pick', 'mode', (v) => v);
     segment('#fade-pick', 'fade', Number);
+    segment('#fadein-pick', 'fadeIn', Number);
     const stepRandom = (d) => { settings.randomMax = Math.min(10, Math.max(1, randomMax() + d)); save(); syncSettings(); };
     $('#random-less').addEventListener('click', () => stepRandom(-1));
     $('#random-more').addEventListener('click', () => stepRandom(1));
     $('#opt-crossfade').addEventListener('change', (e) => { settings.crossfade = e.target.checked; save(); });
+    $('#opt-silence').addEventListener('change', (e) => { settings.silence = e.target.checked; save(); });
     if (window.BardAccount) window.BardAccount.mount($('#bard-account'));
     $('#opt-awake').addEventListener('change', (e) => { settings.awake = e.target.checked; save(); settings.awake ? acquireWake() : releaseWake(); });
     syncSettings();
@@ -733,11 +750,13 @@
     document.querySelectorAll('#theme-pick .theme').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.theme)));
     document.querySelectorAll('#mode-pick button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.mode)));
     document.querySelectorAll('#fade-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === settings.fade)));
+    document.querySelectorAll('#fadein-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === (+settings.fadeIn || 0))));
     $('#random-val').textContent = `${randomMax()} s`;
     $('#random-note').textContent = `Plays again after a pause of 0.5\u00a0s to ${randomMax()}\u00a0s`;
     $('#random-less').disabled = randomMax() <= 1;
     $('#random-more').disabled = randomMax() >= 10;
     $('#opt-crossfade').checked = settings.crossfade;
+    $('#opt-silence').checked = !!settings.silence;
     $('#opt-awake').checked = settings.awake;
     applyTheme();
   }
@@ -823,7 +842,7 @@
       if (sounding) { if (v.next) v.next = 0; return; }
       if (now - v.startedAt <= 400) return;
       if (!v.next) { v.next = now + randomPause(); v.paint(); }
-      else if (now >= v.next) { v.next = 0; v.play(); }
+      else if (now >= v.next) { v.next = 0; v.play(fadeInS()); }
     });
   }, 50);
 

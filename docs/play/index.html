@@ -159,12 +159,22 @@
       </div>
     </div>
     <div class="row-set">
+      <span>Fade-in on play<small>When you tap Play, not between loops</small></span>
+      <div class="seg small" id="fadein-pick" role="radiogroup" aria-label="Fade-in duration">
+        <button role="radio" data-v="0">Off</button>
+        <button role="radio" data-v="500">0.5 s</button>
+        <button role="radio" data-v="1000">1 s</button>
+        <button role="radio" data-v="2000">2 s</button>
+      </div>
+    </div>
+    <div class="row-set">
       <span>Random sounds<small id="random-note">Plays again after a pause of 0.5&nbsp;s to 5&nbsp;s</small></span>
       <div class="stepper" role="group" aria-label="Longest pause of random sounds">
         <button type="button" id="random-less" aria-label="Shorter">‹</button><b id="random-val">5 s</b><button type="button" id="random-more" aria-label="Longer">›</button>
       </div>
     </div>
     <label class="row-set toggle"><span>Crossfade music tracks<small>Starting a track fades out the one playing</small></span><input type="checkbox" id="opt-crossfade"><i></i></label>
+    <label class="row-set toggle"><span>Silence between chapters<small>Opening another chapter fades out the sounds of the previous one over 4 s</small></span><input type="checkbox" id="opt-silence"><i></i></label>
     <label class="row-set toggle"><span>Keep screen awake<small>While a story is open</small></span><input type="checkbox" id="opt-awake"><i></i></label>
   </section>
 

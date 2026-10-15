@@ -167,7 +167,15 @@ class TableSession(
     // ------------------------------------------------------------------ actions
 
     fun setChapter(i: Int) {
-        chapterIndex = i.coerceIn(0, story.chapters.lastIndex)
+        val next = i.coerceIn(0, story.chapters.lastIndex)
+        // Silence between chapters (setting): the sounds of the other chapters fade out over 4 s.
+        if (settings.silenceChapters && next != chapterIndex) {
+            cards.filter { it.chapterIndex != next && (isActive(it) || stateOf(it) == NativeEngine.PAUSED || it.waiting) }
+                .forEach { end(it, 4000) }
+            pausedByAll = pausedByAll.filter { it.chapterIndex == next }
+            heldRandom = heldRandom.filter { it.chapterIndex == next }
+        }
+        chapterIndex = next
         val target = chapterIndex
         scope.launch(engine) {
             // Preload the chapter on screen, so its sounds start the moment they are tapped.
@@ -193,12 +201,12 @@ class TableSession(
             return
         }
         val fade = settings.fadeMs
-        var fadeIn = 30
+        var fadeIn = fadeInMs()
         if (card.zone == Zone.MUSIC && st != NativeEngine.ENDING) {
             val others = cards.filter { it !== card && it.zone == Zone.MUSIC && (isActive(it) || stateOf(it) == NativeEngine.PAUSED) }
             val crossing = others.any { isActive(it) }
             others.forEach { end(it, if (settings.crossfade) fade else 150) }
-            if (crossing && settings.crossfade && st != NativeEngine.PAUSED) fadeIn = fade
+            if (crossing && settings.crossfade && st != NativeEngine.PAUSED) fadeIn = maxOf(fade, fadeIn)
         }
         if (card.sound.loop == LoopMode.RANDOM) {
             card.randomOn = true
@@ -224,11 +232,14 @@ class TableSession(
                 } else if (now >= c.nextAt) {
                     c.nextAt = 0L
                     c.startedAt = now
-                    play(c, 30)
+                    play(c, fadeInMs())
                 }
             }
         }
     }
+
+    /** Fade-in when Play is tapped (and when a random event comes back), from the settings. */
+    private fun fadeInMs() = settings.fadeInMs.coerceAtLeast(30)
 
     private fun randomPause(): Long {
         val max = settings.randomMax * 1000L

@@ -231,8 +231,8 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .theme[aria-checked="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
 .swatch { height: 44px; border-radius: 8px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 6px; border: 1px solid rgba(127,127,127,.25); }
 .swatch i { display: block; height: 4px; border-radius: 2px; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; background: var(--card); }
-.seg button { border: 0; background: transparent; border-radius: 7px; height: 32px; padding: 0 14px; font-weight: 600; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; background: var(--card); flex: none; }
+.seg button { border: 0; background: transparent; border-radius: 7px; height: 32px; padding: 0 14px; font-weight: 600; color: var(--muted); white-space: nowrap; }
 .seg button[aria-checked="true"] { background: var(--text); color: var(--bg); }
 .seg.small button { padding: 0 10px; height: 28px; font-size: 14px; }
 .row-set { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; }
