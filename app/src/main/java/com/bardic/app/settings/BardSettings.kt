@@ -2,18 +2,19 @@ package com.bardic.app.settings
 
 import android.content.Context
 
-/** App settings kept on the phone. The bard name signs every .bardic file the app exports. */
+/**
+ * The bard name that signs every .bardic file the app exports: the name registered with a GitHub
+ * account in the settings (see AppSettings and AppModel.connectGitHub), else "Forgotten Barde".
+ */
 object BardSettings {
     private const val PREFS = "bardic.settings"
-    const val KEY_BARD_NAME = "bard_name"
-    const val MAX_BARD_NAME = 60
+    const val FORGOTTEN = "Forgotten Barde"
+    const val KEY_TOKEN = "gh_token"
+    const val KEY_LOGIN = "gh_login"
+    const val KEY_NAME = "gh_name"
 
     fun bardName(context: Context): String =
-        prefs(context).getString(KEY_BARD_NAME, "")?.trim().orEmpty()
-
-    fun setBardName(context: Context, name: String) {
-        prefs(context).edit().putString(KEY_BARD_NAME, name.trim().take(MAX_BARD_NAME)).apply()
-    }
+        prefs(context).getString(KEY_NAME, "")?.trim().orEmpty().ifBlank { FORGOTTEN }
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

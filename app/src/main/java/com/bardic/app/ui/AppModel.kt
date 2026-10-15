@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import com.bardic.app.audio.TableSession
 import com.bardic.app.bardic.LoopMode
 import com.bardic.app.bardic.UnpackedStory
+import com.bardic.app.data.BardAccount
 import com.bardic.app.data.BardicIO
 import com.bardic.app.data.Chapter
 import com.bardic.app.data.Library
@@ -420,17 +421,128 @@ class AppModel(private val app: Context, private val host: Host, val scope: Coro
 
     // ------------------------------------------------------------------ export
 
-    private suspend fun ensureBard(): String? {
-        if (settings.bardName.isNotBlank()) return settings.bardName
-        val a = ask(
-            "Your bard name",
-            "It signs every story you export, so other bards know whose tale it is. Set it once.",
-            listOf(AskButton("Cancel", null), AskButton("Save", "ok", BtnKind.PRIMARY)),
-            AskInput(placeholder = "Your bard name", max = 60),
-        ) ?: return null
-        if (a.text.isBlank()) return null
-        settings.changeBardName(a.text)
-        return settings.bardName
+    /** Signs exports: the bard name registered with GitHub in the settings, else Forgotten Barde. */
+    private fun ensureBard(): String = settings.bardName
+
+    // ------------------------------------------------------------------ GitHub connection (optional)
+
+    /** A GitHub sign-in in progress: the code the bard types on github.com. */
+    class GhFlow(val code: String, val uri: String) {
+        var error by mutableStateOf<String?>(null)
+    }
+
+    /** null while unknown (offline), false while GitHub connection is not open yet. */
+    var ghOpen by mutableStateOf<Boolean?>(null)
+        private set
+    var ghFlow by mutableStateOf<GhFlow?>(null)
+        private set
+    var ghBusy by mutableStateOf(false)
+        private set
+    var ghError by mutableStateOf<String?>(null)
+        private set
+    private var ghJob: Job? = null
+
+    /** When the settings open: is the connection open, and is the saved one still valid (or named elsewhere)? */
+    fun checkGitHub() = scope.launch {
+        val open = withContext(Dispatchers.IO) { runCatching { BardAccount.worker().isNotBlank() }.getOrNull() }
+        if (open != null) ghOpen = open
+        val token = settings.ghToken
+        if (open != true || token.isBlank()) return@launch
+        val r = withContext(Dispatchers.IO) { runCatching { BardAccount.whoAmI(token) }.getOrNull() } ?: return@launch
+        if (settings.ghToken != token) return@launch
+        when (r.status) {
+            401 -> settings.clearAccount()
+            200 -> settings.setAccount(token, r.body.optString("login", settings.ghLogin), r.body.optString("name").takeIf { !r.body.isNull("name") }.orEmpty())
+        }
+    }
+
+    fun connectGitHub() {
+        if (ghBusy || ghFlow != null) return
+        ghError = null
+        ghBusy = true
+        ghJob = scope.launch {
+            val dc = try {
+                withContext(Dispatchers.IO) { BardAccount.deviceCode() }
+            } catch (e: Exception) {
+                ghBusy = false
+                ghError = "${e.message ?: "GitHub did not answer."} Check your connection and try again."
+                return@launch
+            }
+            ghBusy = false
+            val flow = GhFlow(dc.userCode, dc.uri)
+            ghFlow = flow
+            var interval = dc.interval
+            val until = System.currentTimeMillis() + dc.expiresIn * 1000L
+            while (ghFlow === flow) {
+                delay(interval * 1000L)
+                if (ghFlow !== flow) return@launch
+                if (System.currentTimeMillis() > until) {
+                    flow.error = "The code has expired. Cancel and connect again."
+                    return@launch
+                }
+                val d = withContext(Dispatchers.IO) { runCatching { BardAccount.deviceToken(dc.deviceCode) }.getOrNull() } ?: continue
+                when (d.optString("status")) {
+                    "ok" -> {
+                        settings.setAccount(d.getString("token"), d.optString("login"), if (d.isNull("name")) "" else d.optString("name"))
+                        ghFlow = null
+                        toast("Connected to GitHub as @${d.optString("login")}.")
+                        return@launch
+                    }
+                    "slow_down" -> interval += 5
+                    "expired_token" -> { flow.error = "The code has expired. Cancel and connect again."; return@launch }
+                    "access_denied" -> { ghFlow = null; ghError = "The connection was cancelled on GitHub."; return@launch }
+                }
+            }
+        }
+    }
+
+    /** Opens github.com/login/device (the code is copied by the settings panel). */
+    fun openGitHubCode() {
+        ghFlow?.let { host.openLink(it.uri) }
+    }
+
+    fun cancelGitHub() {
+        ghJob?.cancel()
+        ghFlow = null
+        ghBusy = false
+    }
+
+    fun registerBard(raw: String) = scope.launch {
+        ghError = null
+        val name = raw.replace(Regex("\\s+"), " ").trim()
+        if (name.length !in 2..40) {
+            ghError = "A bard name has 2 to 40 characters."
+            return@launch
+        }
+        val v = ask(
+            "Register “$name” for good?",
+            "Your bard name is registered once and for all: it can never be changed afterwards, and no other bard can ever take it.",
+            listOf(AskButton("Change it", null), AskButton("Register for good", "go", BtnKind.PRIMARY)),
+        ) ?: return@launch
+        if (v.value != "go") return@launch
+        val token = settings.ghToken
+        ghBusy = true
+        val r = withContext(Dispatchers.IO) { runCatching { BardAccount.register(token, name) }.getOrNull() }
+        ghBusy = false
+        when {
+            r == null -> ghError = "Bardic could not reach GitHub. Check your connection and try again."
+            r.status == 200 && r.body.optString("name").isNotBlank() -> {
+                settings.setAccount(token, r.body.optString("login", settings.ghLogin), r.body.getString("name"))
+                toast("${r.body.getString("name")} is your bard name.")
+            }
+            r.status == 401 -> {
+                settings.clearAccount()
+                ghError = "Your GitHub connection has ended. Connect again."
+            }
+            r.status == 409 && r.body.optString("name").isNotBlank() -> settings.setAccount(token, settings.ghLogin, r.body.getString("name"))
+            else -> ghError = r.body.optString("error").ifBlank { "The name could not be registered. Try again later." }
+        }
+    }
+
+    fun disconnectGitHub() {
+        cancelGitHub()
+        ghError = null
+        settings.clearAccount()
     }
 
     fun exportStories(list: List<Story>) = scope.launch {
@@ -439,7 +551,7 @@ class AppModel(private val app: Context, private val host: Host, val scope: Coro
             return@launch
         }
         flushEditor()
-        val bard = ensureBard() ?: return@launch
+        val bard = ensureBard()
         val files = ArrayList<File>()
         try {
             list.forEachIndexed { i, s0 ->

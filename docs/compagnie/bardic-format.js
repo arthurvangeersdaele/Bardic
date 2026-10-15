@@ -260,16 +260,11 @@
     };
   }
 
-  /* The bard name lives in the shared settings (same as the player's Settings). */
+  /* The bard name: the one registered with a GitHub account in the settings (auth/account.js),
+     else "Forgotten Barde". Read straight from storage, so pages without the settings block agree. */
+  const FORGOTTEN = 'Forgotten Barde';
   function bardName() {
-    try { return (JSON.parse(localStorage.getItem('bardic.settings') || '{}').bardName || '').trim(); } catch (e) { return ''; }
-  }
-  function setBardName(name) {
-    try {
-      const s = JSON.parse(localStorage.getItem('bardic.settings') || '{}');
-      s.bardName = (name || '').trim().slice(0, 60);
-      localStorage.setItem('bardic.settings', JSON.stringify(s));
-    } catch (e) { /* private mode: the name only lasts for this page */ }
+    try { return (JSON.parse(localStorage.getItem('bardic.account') || 'null') || {}).name || FORGOTTEN; } catch (e) { return FORGOTTEN; }
   }
 
   function round(v, d = 2) { const f = 10 ** d; return Math.round(v * f) / f; }
@@ -279,5 +274,5 @@
     return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`;
   }
 
-  global.Bardic = { ZONES, LOOPS, SHARE_LIMIT, FORMAT_VERSION, pack, unpack, validate, isAudio, formatSize, slug, bardName, setBardName };
+  global.Bardic = { ZONES, LOOPS, SHARE_LIMIT, FORMAT_VERSION, pack, unpack, validate, isAudio, formatSize, slug, bardName, FORGOTTEN };
 })(window);

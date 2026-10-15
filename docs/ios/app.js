@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261015.2';
+  const VERSION = '261015.3';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -62,7 +62,7 @@
   const KEY = 'bardic.settings';
   const DEFAULTS = {
     theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, awake: true, silent: true,
-    master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], bardName: '', randomMax: 5,
+    master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], randomMax: 5,
   };
   const settings = Object.assign({}, DEFAULTS, readJSON(KEY));
   function readJSON(key) { try { return JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (e) { return {}; } }
@@ -597,16 +597,9 @@
   }
 
   /* ================= Export ================= */
+  /** The bard name that signs exports: registered with GitHub in Settings, else Forgotten Barde. */
   async function ensureBard() {
-    if (settings.bardName) return settings.bardName;
-    const a = await ask('Your bard name', 'It signs every story you export, so other bards know whose tale it is. Set it once.', [
-      { label: 'Cancel', value: null }, { label: 'Save', value: 'ok', cls: 'primary' },
-    ], { placeholder: 'Your bard name', max: 60 });
-    if (!a || !a.text) return '';
-    settings.bardName = a.text.slice(0, 60);
-    save();
-    syncSettings();
-    return settings.bardName;
+    return window.Bardic.bardName();
   }
 
   async function draftOf(story) {
@@ -1589,8 +1582,7 @@
     $('#opt-crossfade').addEventListener('change', (e) => { settings.crossfade = e.target.checked; save(); });
     $('#opt-awake').addEventListener('change', (e) => { settings.awake = e.target.checked; save(); settings.awake ? acquireWake() : releaseWake(); });
     $('#opt-silent').addEventListener('change', (e) => { settings.silent = e.target.checked; save(); applyAudioSession(); });
-    $('#opt-bard').addEventListener('input', (e) => { settings.bardName = e.target.value.trim().slice(0, 60); save(); });
-    $('#opt-bard').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
+    if (window.BardAccount) window.BardAccount.mount($('#bard-account'));
     $('#app-version').textContent = `version ${VERSION}`;
     syncSettings();
   }
@@ -1611,7 +1603,6 @@
     $('#opt-crossfade').checked = settings.crossfade;
     $('#opt-awake').checked = settings.awake;
     $('#opt-silent').checked = settings.silent;
-    if (document.activeElement !== $('#opt-bard')) $('#opt-bard').value = settings.bardName || '';
     applyTheme();
   }
   async function openSettings() {

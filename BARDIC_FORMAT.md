@@ -57,7 +57,7 @@ The folder layout above is what the builder writes, but readers find sounds **on
 | `version` | integer | yes | `2`. A reader refuses versions it does not know. |
 | `id` | string | yes | UUID of the story, created at the first forge and kept by every later revision. Lets the app recognise a newer revision of a story it already has. |
 | `revision` | integer | yes | Hidden counter, 1 for the first forge, +1 every time the story is forged again. Never typed by hand. |
-| `bard` | string | yes | Bard name of whoever forged this revision, taken from the settings (app or web). 1 to 60 characters. |
+| `bard` | string | yes | Bard name of whoever forged this revision: the name registered with a GitHub account in the settings (app or web), or `"Forgotten Barde"` for a bard who has not connected one. 1 to 60 characters. |
 | `title` | string | yes | Story title, 1 to 120 characters. |
 | `description` | string | no | One or two sentences. |
 | `created` | string | no | ISO 8601 date of the first forge, kept across revisions. |
@@ -88,9 +88,11 @@ Every tool that writes a `.bardic` file (web Story builder, Android app, Bardic 
 
 1. keep `id` and `created` from the opened file, or create them for a new story;
 2. set `revision` to the opened revision + 1 (1 for a new story);
-3. set `bard` to the bard name from the settings, and `forged` to now.
+3. set `bard` to the registered bard name (or `Forgotten Barde`), and `forged` to now.
 
-The bard name is set once, in the app settings or in the web player's Settings (it is shared with the Story builder). A file cannot be forged without one.
+Nobody has to sign in. Without a GitHub connection, every file is signed **Forgotten Barde**. In the settings of any Bardic (Android, iPhone, web player, Story builder), a bard can connect a GitHub account and register a bard name **once and for all**: it cannot be changed, and no other account can take it (case, accents and spacing do not make a different name). The registry is [`docs/recueil/bards.json`](docs/recueil/bards.json), written only by the sign-in helper ([`auth-worker/`](auth-worker/)).
+
+The Recueil checks every pull request: a registered name only signs tales sent by its GitHub owner, `Forgotten Barde` is open to everyone, a tale already in the Recueil keeps its bard, and an update must raise its revision.
 
 ## Version 1
 

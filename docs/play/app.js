@@ -32,7 +32,7 @@
   };
 
   /* ---------------- Settings ---------------- */
-  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, awake: false, master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], bardName: '', randomMax: 5 };
+  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, awake: false, master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], randomMax: 5 };
   const settings = Object.assign({}, DEFAULTS, readJSON('bardic.settings'));
   function readJSON(key) { try { return JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (e) { return {}; } }
   function save() { try { const cur = readJSON('bardic.settings'); localStorage.setItem('bardic.settings', JSON.stringify(Object.assign(cur, settings))); } catch (e) { /* private mode */ } }
@@ -718,7 +718,7 @@
     $('#random-less').addEventListener('click', () => stepRandom(-1));
     $('#random-more').addEventListener('click', () => stepRandom(1));
     $('#opt-crossfade').addEventListener('change', (e) => { settings.crossfade = e.target.checked; save(); });
-    $('#opt-bard').addEventListener('input', (e) => { settings.bardName = e.target.value.trim().slice(0, 60); save(); });
+    if (window.BardAccount) window.BardAccount.mount($('#bard-account'));
     $('#opt-awake').addEventListener('change', (e) => { settings.awake = e.target.checked; save(); settings.awake ? acquireWake() : releaseWake(); });
     syncSettings();
   }
@@ -739,7 +739,6 @@
     $('#random-more').disabled = randomMax() >= 10;
     $('#opt-crossfade').checked = settings.crossfade;
     $('#opt-awake').checked = settings.awake;
-    if (document.activeElement !== $('#opt-bard')) $('#opt-bard').value = settings.bardName || '';
     applyTheme();
   }
 

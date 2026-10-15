@@ -39,9 +39,7 @@
         <button type="button" role="radio" data-v="dark">Dark</button><button type="button" role="radio" data-v="light">Light</button><button type="button" role="radio" data-v="system">System</button>
       </div>
     </section>
-    <section><h3>Compagnie des bardes</h3>
-      <label class="row-set bard"><span>Bard name<small>Signs the stories you forge in the Story builder</small></span><input type="text" maxlength="60" placeholder="Your bard name" autocomplete="nickname"></label>
-    </section>`;
+    <section><h3>Bard name</h3><div class="bard-account"></div></section>`;
   document.body.append(dlg);
 
   const themes = dlg.querySelector('.themes');
@@ -68,15 +66,13 @@
     themes.append(b);
   });
   dlg.querySelectorAll('.seg button').forEach((b) => { b.onclick = () => { write({ mode: b.dataset.v }); sync(); }; });
-  const bard = dlg.querySelector('.bard input');
-  bard.addEventListener('input', () => write({ bardName: bard.value.trim().slice(0, 60) }));
+  if (window.BardAccount) window.BardAccount.mount(dlg.querySelector('.bard-account'));
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 
   function sync() {
     const s = get();
     themes.querySelectorAll('.theme').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === s.theme)));
     dlg.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === s.mode)));
-    if (document.activeElement !== bard) bard.value = s.bardName || '';
     apply();
   }
 
@@ -86,7 +82,9 @@
   btn.setAttribute('aria-label', 'Settings');
   btn.title = 'Settings';
   btn.innerHTML = gear;
-  btn.onclick = () => { sync(); dlg.showModal(); };
+  const open = () => { sync(); if (!dlg.open) dlg.showModal(); };
+  btn.onclick = open;
+  window.BardicSettings = { open };
   document.querySelector('.sbar')?.append(btn);
 
   window.addEventListener('storage', (e) => { if (e.key === KEY) sync(); });

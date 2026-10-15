@@ -1,0 +1,11 @@
+name = "bardic-auth"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[vars]
+REPO = "arthurvangeersdaele/Bardic"
+REGISTRY_PATH = "docs/recueil/bards.json"
+ALLOWED_ORIGINS = "https://arthurvangeersdaele.github.io,http://localhost:8776"
+# CLIENT_ID is set by the deploy workflow from the repository variable BARDIC_GITHUB_CLIENT_ID.
+# REGISTRY_TOKEN is a secret, set by the deploy workflow from the repository secret BARDIC_REGISTRY_TOKEN.

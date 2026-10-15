@@ -1,6 +1,6 @@
 /* Bardic for iPhone: keeps the app itself on the phone so it opens without a connection.
  * Stories and sounds live in IndexedDB, not here. Bump VERSION to ship an update. */
-const VERSION = '261015.2';
+const VERSION = '261015.3';
 const SHELL = `bardic-ios-${VERSION}`;
 const FONTS = 'bardic-ios-fonts';
 const FILES = [
@@ -18,6 +18,7 @@ const FILES = [
   '../play/style.css',
   '../compagnie/compagnie.css',
   '../compagnie/bardic-format.js',
+  '../auth/account.js',
   '../icons/261013_bardic_icon.svg',
 ];
 

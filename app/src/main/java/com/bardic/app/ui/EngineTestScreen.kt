@@ -92,8 +92,6 @@ fun EngineTestScreen() {
     }
     var story by remember { mutableStateOf<UnpackedStory?>(null) }
     var status by remember { mutableStateOf<String?>(null) }
-    var settingsOpen by remember { mutableStateOf(false) }
-    var exportAfterSettings by remember { mutableStateOf(false) }
 
     // Opens a .bardic file and loads its first 20 sounds into the slots, with their loop mode and volume.
     val openBardic = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -164,11 +162,6 @@ fun EngineTestScreen() {
 
     fun startExport() {
         val current = story ?: return
-        if (BardSettings.bardName(context).isBlank()) {
-            exportAfterSettings = true
-            settingsOpen = true
-            return
-        }
         exportBardic.launch(fileNameFor(current.story.title))
     }
 
@@ -280,7 +273,6 @@ fun EngineTestScreen() {
             BarButton("End all") { for (i in 0 until n) NativeEngine.end(i, 2000) }
             BarButton("Open .bardic") { if (!loading) openBardic.launch(arrayOf("*/*")) }
             if (story != null) BarButton("Export .bardic") { startExport() }
-            BarButton("Settings") { settingsOpen = true }
             Text("Master", color = Obsidian.Muted, fontSize = 13.sp)
             Slider(
                 value = master,
@@ -363,23 +355,6 @@ fun EngineTestScreen() {
         }
     }
 
-    if (settingsOpen) {
-        SettingsDialog(
-            initialBardName = BardSettings.bardName(context),
-            onSave = { name ->
-                BardSettings.setBardName(context, name)
-                settingsOpen = false
-                if (exportAfterSettings) {
-                    exportAfterSettings = false
-                    startExport()
-                }
-            },
-            onDismiss = {
-                settingsOpen = false
-                exportAfterSettings = false
-            },
-        )
-    }
 }
 
 @Composable
@@ -580,48 +555,6 @@ private fun displayName(context: Context, uri: Uri): String {
         }
     }.getOrNull() ?: uri.lastPathSegment ?: "Sound"
     return raw.substringBeforeLast('.')
-}
-
-/** App settings. For now: the bard name that signs every exported .bardic file. */
-@Composable
-private fun SettingsDialog(initialBardName: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
-    var name by remember { mutableStateOf(initialBardName) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Obsidian.Bar,
-        title = { Text("Settings", color = Obsidian.Text, fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Bard name", color = Obsidian.Muted, fontSize = 13.sp)
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it.take(BardSettings.MAX_BARD_NAME) },
-                    singleLine = true,
-                    placeholder = { Text("Your bard name", color = Obsidian.Muted) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Obsidian.Text,
-                        unfocusedTextColor = Obsidian.Text,
-                        focusedBorderColor = Obsidian.Music,
-                        unfocusedBorderColor = Obsidian.Line,
-                        cursorColor = Obsidian.Music,
-                    ),
-                )
-                Text(
-                    "Signs every .bardic file you export. Each export also raises the story's revision.",
-                    color = Obsidian.Muted,
-                    fontSize = 12.sp,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onSave(name.trim()) }, enabled = name.isNotBlank()) {
-                Text("Save", color = if (name.isNotBlank()) Obsidian.Music else Obsidian.Muted)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = Obsidian.Muted) }
-        },
-    )
 }
 
 private fun fileNameFor(title: String): String {

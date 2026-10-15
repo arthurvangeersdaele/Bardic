@@ -1,0 +1,42 @@
+name: Bardic auth worker
+
+# Deploys auth-worker/ (Connect with GitHub, bard name registry) to Cloudflare Workers.
+# Needs, in the repository settings:
+#   secrets   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, BARDIC_REGISTRY_TOKEN
+#   variable  BARDIC_GITHUB_CLIENT_ID
+# Until they are set, the job is skipped and Bardic shows every bard as Forgotten Barde.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "auth-worker/**"
+      - ".github/workflows/auth-worker.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_CF: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && vars.BARDIC_GITHUB_CLIENT_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test the worker
+        run: node --test auth-worker/test/worker.test.js
+      - name: Skip (Cloudflare not set up yet)
+        if: env.HAS_CF != 'true'
+        run: echo "Set CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, BARDIC_REGISTRY_TOKEN and BARDIC_GITHUB_CLIENT_ID to deploy."
+      - name: Deploy to Cloudflare
+        if: env.HAS_CF == 'true'
+        uses: cloudflare/wrangler-action@v3
+        env:
+          REGISTRY_TOKEN: ${{ secrets.BARDIC_REGISTRY_TOKEN }}
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: auth-worker
+          secrets: |
+            REGISTRY_TOKEN
+          command: deploy --var CLIENT_ID:${{ vars.BARDIC_GITHUB_CLIENT_ID }}

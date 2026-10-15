@@ -1,5 +1,8 @@
 package com.bardic.app.ui
 
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.aspectRatio
@@ -366,11 +369,8 @@ private fun SettingsPanel(m: AppModel) {
         SetSection("Appearance")
         Segmented(Appearance.values().map { it to it.label }, st.appearance) { st.changeAppearance(it) }
 
-        SetSection("Bard")
-        var bard by remember { mutableStateOf(st.bardName) }
-        SetRow("Bard name", "Signs every .bardic file you export") {
-            Field(bard, { bard = it; st.changeBardName(it) }, Modifier.width(200.dp), placeholder = "Your bard name", max = 60)
-        }
+        SetSection("Bard name")
+        BardAccountBlock(m)
 
         SetSection("Playback")
         SetRow("Fade-out on stop", null) {
@@ -415,6 +415,79 @@ private fun SettingsPanel(m: AppModel) {
             Btn("Bardic page") { m.openLink(BardicIO.SITE) }
             Btn("The Recueil") { m.openLink("${BardicIO.SITE}compagnie/recueil.html") }
             Btn("Engine test") { m.goEngineTest() }
+        }
+    }
+}
+
+/** The bard name: Forgotten Barde, or the name registered with a GitHub account. Same wording as the web and iPhone editions. */
+@Composable
+private fun BardAccountBlock(m: AppModel) {
+    val st = m.settings
+    val clipboard = LocalClipboardManager.current
+    LaunchedEffect(Unit) { m.checkGitHub() }
+    val flow = m.ghFlow
+    val registered = st.ghToken.isNotBlank() && st.ghName.isNotBlank()
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Title(st.bardName, 24)
+        val (tag, on) = when {
+            registered -> "REGISTERED" to true
+            else -> "SIGNS YOUR STORIES" to false
+        }
+        Box(
+            Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .border(1.dp, if (on) C.accent.copy(alpha = 0.6f) else C.line, RoundedCornerShape(999.dp))
+                .padding(horizontal = 9.dp, vertical = 2.dp),
+        ) { T(tag, color = if (on) C.accent else C.muted, size = 11.sp, weight = FontWeight.SemiBold) }
+    }
+    when {
+        m.ghOpen == false -> {
+            Muted("Every story forged here is signed Forgotten Barde.", 14)
+            Muted("Connecting a GitHub account to register your own bard name opens soon.", 13)
+        }
+        registered -> {
+            Muted("Your bard name, registered to the GitHub account @${st.ghLogin}. It signs every story you export from this phone, and only you can sign tales with it in the Recueil.", 14)
+            Btn("Disconnect GitHub") { m.disconnectGitHub() }
+            Muted("Disconnecting signs your next stories Forgotten Barde on this phone. Your name stays yours: connect again to sign with it.", 13)
+        }
+        st.ghToken.isNotBlank() -> {
+            var draft by remember { mutableStateOf("") }
+            Muted("Connected to GitHub as @${st.ghLogin}. Choose your bard name: until you register it, your stories stay signed Forgotten Barde.", 14)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Field(draft, { draft = it }, Modifier.weight(1f), placeholder = "Your bard name", max = 40, onDone = { m.registerBard(draft) })
+                Btn(if (m.ghBusy) "Registering" else "Register", kind = BtnKind.PRIMARY, enabled = !m.ghBusy) { m.registerBard(draft) }
+            }
+            m.ghError?.let { T(it, color = C.evt, size = 14.sp) }
+            Muted("A bard name is registered once and for all: you cannot change it later, and no other bard can ever take it. 2 to 40 characters: letters, digits, spaces, apostrophes and hyphens.", 13)
+            Btn("Disconnect GitHub") { m.disconnectGitHub() }
+        }
+        flow != null -> {
+            Muted("On GitHub, sign in if asked, then enter this code:", 14)
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(C.card)
+                    .border(1.dp, C.line, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            ) { T(flow.code, size = 28.sp, weight = FontWeight.SemiBold, style = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 28.sp, letterSpacing = 4.sp)) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Btn("Open GitHub", kind = BtnKind.PRIMARY) {
+                    clipboard.setText(AnnotatedString(flow.code))
+                    m.openGitHubCode()
+                }
+                Btn("Copy the code") {
+                    clipboard.setText(AnnotatedString(flow.code))
+                    m.toast("Code copied.")
+                }
+                Btn("Cancel") { m.cancelGitHub() }
+            }
+            T(flow.error ?: "Waiting for GitHub. Come back to Bardic once the code is entered.", color = if (flow.error != null) C.evt else C.muted, size = 14.sp)
+        }
+        else -> {
+            Muted("Every story you export is signed Forgotten Barde. To sign with your own bard name, connect a GitHub account: it proves the name is yours, so no one else can sign a tale with it in the Recueil.", 14)
+            Btn(if (m.ghBusy) "Connecting" else "Connect with GitHub", kind = BtnKind.PRIMARY, enabled = !m.ghBusy) { m.connectGitHub() }
+            m.ghError?.let { T(it, color = C.evt, size = 14.sp) }
+            Muted("Optional and free. Bardic only reads your public GitHub username: no email, no access to your repositories. You can disconnect at any time.", 13)
         }
     }
 }

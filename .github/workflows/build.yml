@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths-ignore:
       - "docs/**"
+      - "auth-worker/**"
+      - ".github/workflows/auth-worker.yml"
       - "**.md"
       - ".github/scripts/**"
       - ".github/workflows/sound-library.yml"

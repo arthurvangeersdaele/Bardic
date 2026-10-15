@@ -1,0 +1,5 @@
+{
+ "name": "bardic-auth",
+ "private": true,
+ "type": "module"
+}

@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const $ = (s) => document.querySelector(s);
-  const { ZONES, pack, unpack, validate, isAudio, formatSize, SHARE_LIMIT, bardName, setBardName } = window.Bardic;
+  const { ZONES, pack, unpack, validate, isAudio, formatSize, SHARE_LIMIT, bardName } = window.Bardic;
   const ZONE_INFO = {
     music: { label: 'Music', color: 'var(--music)', loop: 'infinite', hint: 'Drop music here, one track plays at a time' },
     ambience: { label: 'Ambience', color: 'var(--amb)', loop: 'infinite', hint: 'Drop ambiences here: rain, fire, crowds' },
@@ -381,36 +381,16 @@
   function closeVeil() { $('#veil')?.remove(); }
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#veil') && !$('#veil').dataset.busy) closeVeil(); });
 
-  /* ---------- bard name (shared settings) ---------- */
+  /* ---------- bard name (Settings: GitHub account, else Forgotten Barde) ---------- */
   function paintBard() {
     const b = $('#bard-btn');
-    const name = bardName();
-    b.classList.toggle('missing', !name);
     b.innerHTML = '';
-    if (name) { b.append('Signed by '); b.append(el('b', '', name)); } else b.textContent = 'Set your bard name';
+    b.append('Signed by ');
+    b.append(el('b', '', bardName()));
   }
-  function askBard(then) {
-    const box = veil(`<h2>Your bard name</h2>
-      <p>It signs every story you forge, here and in the player's Settings. Set it once.</p>
-      <label class="field"><span>Bard name</span><input id="bard-input" maxlength="60" autocomplete="nickname" placeholder="Arthur the Resonant"></label>
-      <div class="acts"><button class="btn primary" type="button" data-ok>${then ? 'Save and forge' : 'Save'}</button><button class="btn" type="button" data-close>Cancel</button></div>`);
-    const input = box.querySelector('#bard-input');
-    input.value = bardName();
-    input.focus();
-    const ok = () => {
-      if (!input.value.trim()) { input.focus(); return; }
-      setBardName(input.value);
-      paintBard();
-      closeVeil();
-      if (then) then();
-    };
-    box.querySelector('[data-ok]').onclick = ok;
-    input.onkeydown = (e) => { if (e.key === 'Enter') ok(); };
-    box.querySelector('[data-close]').onclick = closeVeil;
-  }
-  $('#bard-btn').addEventListener('click', () => askBard(null));
-  window.addEventListener('storage', (e) => { if (e.key === 'bardic.settings') paintBard(); });
-  window.addEventListener('bardic:settings', paintBard);
+  $('#bard-btn').addEventListener('click', () => window.BardicSettings && window.BardicSettings.open());
+  window.addEventListener('storage', (e) => { if (e.key === 'bardic.account') paintBard(); });
+  window.addEventListener('bardic:account', paintBard);
 
   /* ---------- forge ---------- */
   let lastForged = null;
@@ -418,7 +398,6 @@
     stopPreview();
     const bard = bardName();
     const errors = validate(state, bard);
-    if (!bard && errors.length === 1) { askBard(forge); return; }
     if (errors.length) {
       const box = veil('<h2>Not quite ready</h2><ul class="errors"></ul><div class="acts"><button class="btn" type="button" data-close>Back to the story</button></div>');
       errors.forEach((m) => box.querySelector('.errors').append(el('li', '', m)));

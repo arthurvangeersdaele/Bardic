@@ -51,9 +51,15 @@ class AppSettings(context: Context) {
         private set
     var pins by mutableStateOf(prefs.getString("pins", "").orEmpty().split(',').filter { it.isNotBlank() })
         private set
-    /** Shared with BardSettings: signs every exported .bardic file. */
-    var bardName by mutableStateOf(prefs.getString(BardSettings.KEY_BARD_NAME, "").orEmpty().trim())
+    /** GitHub connection (optional): the sign-in token, the GitHub username and the registered bard name. */
+    var ghToken by mutableStateOf(prefs.getString(BardSettings.KEY_TOKEN, "").orEmpty())
         private set
+    var ghLogin by mutableStateOf(prefs.getString(BardSettings.KEY_LOGIN, "").orEmpty())
+        private set
+    var ghName by mutableStateOf(prefs.getString(BardSettings.KEY_NAME, "").orEmpty().trim())
+        private set
+    /** Signs every exported .bardic file: the registered bard name, else Forgotten Barde. */
+    val bardName: String get() = ghName.ifBlank { BardSettings.FORGOTTEN }
 
     fun changeTheme(v: ThemeName) { theme = v; prefs.edit().putString("theme", v.id).apply() }
     fun changeAppearance(v: Appearance) { appearance = v; prefs.edit().putString("mode", v.id).apply() }
@@ -64,10 +70,15 @@ class AppSettings(context: Context) {
     fun changeSoundboxVolume(v: Float) { soundboxVolume = v; prefs.edit().putFloat("sbVol", v).apply() }
     fun changeRandomMax(v: Int) { randomMax = v.coerceIn(1, 10); prefs.edit().putInt("randomMax", randomMax).apply() }
     fun changeSoundboxOpen(v: Boolean) { soundboxOpen = v; prefs.edit().putBoolean("sbOpen", v).apply() }
-    fun changeBardName(v: String) {
-        bardName = v.trim().take(BardSettings.MAX_BARD_NAME)
-        prefs.edit().putString(BardSettings.KEY_BARD_NAME, bardName).apply()
+    fun setAccount(token: String, login: String, name: String) {
+        ghToken = token
+        ghLogin = login
+        ghName = name.trim()
+        prefs.edit().putString(BardSettings.KEY_TOKEN, token).putString(BardSettings.KEY_LOGIN, login)
+            .putString(BardSettings.KEY_NAME, ghName).apply()
     }
+
+    fun clearAccount() = setAccount("", "", "")
 
     fun togglePin(uid: String) {
         pins = if (uid in pins) pins - uid else pins + uid
