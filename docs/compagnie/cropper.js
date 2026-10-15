@@ -278,14 +278,25 @@
     });
 
     /* --- YouTube --- */
+    // Recording the tab's own sound only works in Chrome, Edge and other Chromium browsers on a computer.
+    // Firefox and Safari have getDisplayMedia but never hand over an audio track, so the recording
+    // would always come back silent: say so before the browser even asks to share.
+    const NO_TAB_AUDIO = 'Recording a YouTube video needs Chrome or Edge on a computer: Firefox and Safari cannot share a tab\'s sound. You can still use an MP3 link or file.';
+    function canRecordTab() {
+      const md = navigator.mediaDevices;
+      if (!md || !md.getDisplayMedia || !window.MediaRecorder) return false;
+      const ua = navigator.userAgent;
+      if (/Android|iPhone|iPad|iPod/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua))) return false;
+      // navigator.userAgentData only exists in Chromium browsers.
+      return !!(navigator.userAgentData && navigator.userAgentData.brands.some((b) => /Chromium/i.test(b.brand)));
+    }
     async function openYouTube(id, start) {
       $('.cr-yt', box).hidden = false;
       $('.cr-ys', box).value = fmt(start);
       $('.cr-ye', box).value = fmt(start + 10);
-      status('Loading the YouTube player…');
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia || !window.MediaRecorder) {
-        status('Recording a YouTube video needs Chrome or Edge on a computer.', true);
-      }
+      const canRec = canRecordTab();
+      $('.cr-rec', box).disabled = !canRec;
+      status(canRec ? 'Loading the YouTube player…' : NO_TAB_AUDIO, !canRec);
       let YT;
       try { YT = await loadYouTubeApi(); } catch (e) { status(e.message, true); return; }
       if (closed) return;
@@ -297,7 +308,7 @@
           host: 'https://www.youtube-nocookie.com',
           playerVars: { start: Math.floor(start), rel: 0, modestbranding: 1, playsinline: 1 },
           events: {
-            onReady: () => { status('Play the video to find the part you want.'); yt.unMute(); yt.setVolume(100); },
+            onReady: () => { if (canRec) status('Play the video to find the part you want.'); yt.unMute(); yt.setVolume(100); },
             onError: (e) => status(e.data === 101 || e.data === 150 ? 'This video cannot be played outside YouTube, so it cannot be recorded here.' : 'This video could not be loaded.', true),
           },
         });
@@ -339,7 +350,7 @@
       if (b - a > 600) { status('Record 10 minutes at most at once.', true); return; }
       const total = yt.getDuration ? yt.getDuration() : 0;
       if (total && a >= total) { status(`The video is only ${fmt(total)} long.`, true); return; }
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia || !window.MediaRecorder) { status('Recording a YouTube video needs Chrome or Edge on a computer.', true); return; }
+      if (!canRecordTab()) { status(NO_TAB_AUDIO, true); return; }
       if (!live(capture)) {
         dropCapture();
         try {
