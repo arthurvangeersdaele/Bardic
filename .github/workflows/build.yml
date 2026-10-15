@@ -61,9 +61,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # The release is replaced on every build, which resets GitHub's download count.
+          # Carry the running total over in a hidden marker of the release notes (read by the project page).
+          BEFORE=0
+          if OLD="$(gh release view dev-latest --json body,assets 2>/dev/null)"; then
+            CARRIED="$(echo "$OLD" | jq -r '.body' | grep -o 'downloads-before: [0-9]*' | grep -o '[0-9]*$' || true)"
+            COUNT="$(echo "$OLD" | jq '[.assets[] | select(.name | endswith(".apk")) | .downloadCount] | add // 0')"
+            BEFORE=$(( ${CARRIED:-0} + ${COUNT:-0} ))
+          fi
           gh release delete dev-latest --yes --cleanup-tag || true
           gh release create dev-latest "${{ steps.apk.outputs.name }}" \
             --prerelease \
             --target "$GITHUB_SHA" \
             --title "Latest dev build" \
-            --notes "Automatic build of commit ${GITHUB_SHA::7}. Download the APK on your Android phone and open it to install (allow installs from your browser when asked)."
+            --notes "Automatic build of commit ${GITHUB_SHA::7}. Download the APK on your Android phone and open it to install (allow installs from your browser when asked).
+
+          <!-- downloads-before: $BEFORE -->"
