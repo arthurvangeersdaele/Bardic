@@ -103,6 +103,36 @@
       },
     });
   }
+  /* ---------- sounds of the Recueil (library.js) ---------- */
+  // A library sound comes with its file, its name and its duration; it keeps where it comes from
+  // (extra.recueil, written in the .bardic), so its tale can be credited.
+  async function addFromLibrary(libId, zone, beforeId) {
+    if (!window.BardicLibrary || !ZONE_INFO[zone]) return;
+    const list = listOf(zone);
+    const where = zone === 'soundbox' ? 'the Soundbox' : `${ZONE_INFO[zone].label} in ${state.chapters[current].title.trim() || `Chapter ${current + 1}`}`;
+    const slow = setTimeout(() => toast('Fetching the sound from the Recueil…'), 400);
+    try {
+      const { file, item } = await window.BardicLibrary.fileOf(libId);
+      const s = {
+        id: id(), name: item.name, blob: file, fileName: file.name, loop: ZONE_INFO[zone].loop, volume: 0.75,
+        duration: item.duration, extra: { recueil: { tale: item.tale, bard: item.bard } },
+      };
+      const at = beforeId ? list.findIndex((x) => x.id === beforeId) : -1;
+      if (at >= 0) list.splice(at, 0, s); else list.push(s);
+      probe(s);
+      renderAll();
+      toast(`“${item.name}” added to ${where}.`);
+    } catch (err) {
+      toast(err.message || 'This sound could not be fetched.');
+    } finally {
+      clearTimeout(slow);
+    }
+  }
+  window.BardicBuilder = {
+    /** Adds a sound of the Recueil to a row of the chapter on screen ("music", "ambience", "events") or the soundbox. */
+    addFromLibrary: (libId, zone) => addFromLibrary(libId, zone),
+  };
+
   /* ---------- reusing a sound already in the story ---------- */
   // Every distinct sound file of the story once, with the places it is used. A reused sound keeps the
   // same file (crop included), so it costs nothing more in the .bardic: the forge stores it once.
@@ -413,6 +443,12 @@
     e.preventDefault();
     if (!dz) return;
     const zone = dz.dataset.zone;
+    const lib = e.dataTransfer.getData('text/x-bardic-library');
+    if (lib) {
+      const before = e.target.closest('.sc');
+      addFromLibrary(lib, zone, before ? before.dataset.id : null);
+      return;
+    }
     const sid = e.dataTransfer.getData('text/x-bardic-sound');
     if (sid) {
       const f = findSound(sid);

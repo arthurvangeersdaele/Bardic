@@ -84,6 +84,10 @@ The JSON keys stay `music`, `ambience` and `events`; the apps show the rows as M
 
 Unknown fields must be kept when a tool re-saves a file, so later versions can add things without breaking older ones.
 
+Known optional extras: a sound taken from the Recueil's sound library by the Story builder carries `"recueil": { "tale": "Werewolf", "bard": "Bardic" }`, the tale it comes from, so it can be credited.
+
+The Recueil's sound library (`docs/recueil/sounds.json`) relies on stored entries: a sound's bytes are one contiguous range of the `.bardic` file, which the Story builder downloads on its own. Deflated entries still work, they are inflated after download.
+
 ## Versioning a story
 
 Every tool that writes a `.bardic` file (web Story builder, Android app, Bardic for iPhone) does the same thing when it forges:

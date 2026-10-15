@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Checks every .bardic file in docs/recueil/ and writes docs/recueil/index.json for the Recueil page.
+"""Checks every .bardic file in docs/recueil/ and writes docs/recueil/index.json for the Recueil page,
+and docs/recueil/sounds.json: every sound of every tale, for the Story builder's sound library.
 
     python3 .github/scripts/build_recueil_index.py          # rebuild index.json
     python3 .github/scripts/build_recueil_index.py --check  # only validate (pull requests)
@@ -11,8 +12,10 @@ a tale already in the Recueil keeps its bard, and an update must raise its revis
 
 Format: BARDIC_FORMAT.md at the repo root.
 """
+import hashlib
 import json
 import os
+import struct
 import subprocess
 import sys
 import unicodedata
@@ -22,7 +25,9 @@ from pathlib import Path
 
 RECUEIL = Path(__file__).resolve().parents[2] / "docs" / "recueil"
 ZONES = ("music", "ambience", "events")
-LOOPS = ("once", "twice", "infinite")
+LOOPS = ("once", "twice", "infinite", "random")
+# Rows of the builder's sound library: soundbox effects are listed with the events.
+LIBRARY_ROW = {"music": "music", "ambience": "ambience", "events": "events", "soundbox": "events"}
 LIMIT = 100 * 1024 * 1024
 FORGOTTEN = "Forgotten Barde"
 # Names kept for Bardic itself (same list as auth-worker/src/index.js); only the maintainer signs with them.
@@ -165,6 +170,88 @@ def check(path: Path):
     return entry, errors
 
 
+def data_span(path: Path, info: zipfile.ZipInfo):
+    """Byte offset and length of an entry's data inside the archive (its local header comes first)."""
+    with open(path, "rb") as f:
+        f.seek(info.header_offset)
+        header = f.read(30)
+    sig, _, _, _, _, _, _, _, _, name_len, extra_len = struct.unpack("<IHHHHHIIIHH", header)
+    if sig != 0x04034B50:
+        raise ValueError(f"bad local header for {info.filename}")
+    return info.header_offset + 30 + name_len + extra_len, info.compress_size
+
+
+def library(entries):
+    """sounds.json: each distinct sound file once, in the row it was used, with where to fetch its bytes.
+
+    The builder downloads only these bytes (an HTTP range of the .bardic file), so the sounds are not
+    stored twice in the repository.
+    """
+    seen = {}
+    for e in entries:
+        path = RECUEIL / e["file"]
+        zf = zipfile.ZipFile(path)
+        story = json.loads(zf.read("story.json").decode("utf-8"))
+        infos = {i.filename: i for i in zf.infolist()}
+        places = []
+        for ch in story.get("chapters", []):
+            for z in ZONES:
+                places += [(z, s) for s in ch.get(z, []) or []]
+        places += [("soundbox", s) for s in story.get("soundbox", []) or []]
+        for zone, s in places:
+            info = infos.get(s.get("file"))
+            if info is None or info.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
+                continue
+            row = LIBRARY_ROW[zone]
+            # Same audio (CRC and size) in the same row is one library entry, whichever tale it comes from.
+            key = (row, info.CRC, info.file_size)
+            if key in seen:
+                if e["title"] not in seen[key]["tales"]:
+                    seen[key]["tales"].append(e["title"])
+                continue
+            offset, length = data_span(path, info)
+            item = {
+                "id": hashlib.sha1(f"{row}:{info.CRC}:{info.file_size}".encode()).hexdigest()[:12],
+                "row": row,
+                "name": str(s.get("name") or Path(info.filename).stem).strip(),
+                "tale": e["title"],
+                "tales": [e["title"]],
+                "bard": e["bard"],
+                "file": e["file"],
+                "path": info.filename,
+                "offset": offset,
+                "length": length,
+                "size": info.file_size,
+                "deflated": info.compress_type == zipfile.ZIP_DEFLATED,
+            }
+            if isinstance(s.get("duration"), (int, float)) and s["duration"] > 0:
+                item["duration"] = round(float(s["duration"]), 1)
+            if zone == "soundbox":
+                item["effect"] = True
+            seen[key] = item
+    sounds = list(seen.values())
+    for item in sounds:
+        if len(item["tales"]) == 1:
+            del item["tales"]
+    sounds.sort(key=lambda x: (x["row"], x["name"].lower(), x["tale"].lower()))
+    return sounds
+
+
+def write_if_changed(name, key, value):
+    """Writes docs/recueil/<name> unless only its "updated" date would change."""
+    out = RECUEIL / name
+    if out.exists():
+        try:
+            if json.loads(out.read_text(encoding="utf-8")).get(key) == value:
+                print(f"{name} already up to date")
+                return
+        except ValueError:
+            pass
+    data = {"updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), key: value}
+    out.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"{name}: {len(value)} {key}")
+
+
 def main():
     only_check = "--check" in sys.argv
     files = sorted(RECUEIL.glob("*.bardic"))
@@ -188,15 +275,8 @@ def main():
                 print(f"ok  ownership: every tale may be sent by @{author}")
         sys.exit(1 if failed else 0)
     tales.sort(key=lambda t: t["title"].lower())
-    out = {"updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "tales": tales}
-    old = RECUEIL / "index.json"
-    if old.exists():
-        prev = json.loads(old.read_text(encoding="utf-8"))
-        if prev.get("tales") == tales:
-            print("index.json already up to date")
-            return
-    old.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"index.json: {len(tales)} tales")
+    write_if_changed("index.json", "tales", tales)
+    write_if_changed("sounds.json", "sounds", library(tales))
 
 
 if __name__ == "__main__":
