@@ -429,12 +429,11 @@
     $('#veil').dataset.busy = '1';
     try {
       const out = await pack(state, bard, (f) => { box.querySelector('.bar i').style.width = `${Math.round(f * 100)}%`; });
-      // The forged file is the new reference: the next forge makes the next revision.
-      state.id = out.story.id;
-      state.revision = out.story.revision;
-      state.created = out.story.created;
       lastForged = out;
       download(out);
+      // The forged file is now the story: the editor empties for the next one.
+      // To change this tale again, open its .bardic (that keeps its revision count going).
+      await clearEditor();
       showForged(out);
     } catch (err) {
       const b = veil('<h2>The forge failed</h2><p class="err"></p><div class="acts"><button class="btn" type="button" data-close>Close</button></div>');
@@ -458,17 +457,18 @@
     const heavy = out.blob.size > SHARE_LIMIT;
     const box = veil(`<h2>Your tale is forged</h2>
       <p><b class="fname"></b> (${formatSize(out.blob.size)}) is in your downloads, revision ${out.story.revision} signed by <b class="bname"></b>. Open it in the Bardic app, or keep it for your next session.</p>
+      <p>The builder is now empty, ready for a new tale. To change this one again, open its .bardic file with <b>Open a .bardic</b>.</p>
       ${heavy ? '<p class="errors" style="list-style:none;padding:0">It weighs more than 100 MB, the limit for the Recueil on GitHub. Lighter MP3s (128 kbps) will make it fit.</p>'
               : '<p>Want other bards to play it? Lay it in the Recueil: GitHub opens a pull request for you, and once accepted your tale appears in the book.</p>'}
       <div class="acts">
         ${heavy ? '' : `<a class="btn primary" href="${UPLOAD_URL}" target="_blank" rel="noopener">Lay it in the Recueil</a>`}
         <button class="btn" type="button" data-again>Download again</button>
-        <button class="btn" type="button" data-close>Keep editing</button>
+        <button class="btn" type="button" data-close>Forge a new tale</button>
       </div>`);
     box.querySelector('.fname').textContent = out.fileName;
     box.querySelector('.bname').textContent = out.story.bard;
     box.querySelector('[data-again]').onclick = () => download(lastForged);
-    box.querySelector('[data-close]').onclick = closeVeil;
+    box.querySelector('[data-close]').onclick = () => { closeVeil(); $('#f-title').focus(); };
   }
 
   /* ---------- open an existing .bardic ---------- */
@@ -581,16 +581,21 @@
     fillFields();
   }
 
-  $('#new-btn').addEventListener('click', async () => {
-    if (!isEmpty() && !confirm('Start a new story? The one in progress will be cleared from this browser (forge it first to keep it).')) return;
+  async function clearEditor() {
     stopPreview();
     state = { id: null, revision: 0, created: null, title: '', description: '', extra: {}, chapters: [newChapter(1)], soundbox: [] };
     current = 0;
     fillFields();
     pending = false;
+    clearTimeout(saveTimer);
+    if (saving) { try { await saving; } catch (e) { /* ignore */ } }
     try { await Draft.clear(); } catch (e) { /* nothing kept */ }
     renderAll();
     paintSaved('');
+  }
+  $('#new-btn').addEventListener('click', async () => {
+    if (!isEmpty() && !confirm('Start a new story? The one in progress will be cleared from this browser (forge it first to keep it).')) return;
+    await clearEditor();
     $('#f-title').focus();
   });
 
