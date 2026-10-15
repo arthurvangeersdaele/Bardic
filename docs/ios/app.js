@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261014.10';
+  const VERSION = '261015.1';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -24,8 +24,8 @@
   const ZONE = Object.fromEntries(ZONES.map((z) => [z.id, z]));
   const SOUNDBOX_ZONE = { id: 'soundbox', label: 'Soundbox', color: 'var(--accent)', loop: 0, hint: 'Add quick effects: critical hits, level ups' };
   const LOOP_LABELS = ['1×', '2×', '∞'];
-  const LOOP_NAMES = ['once', 'twice', 'infinite'];
-  const LOOP_INDEX = { once: 0, twice: 1, infinite: 2 };
+  const LOOP_NAMES = ['once', 'twice', 'infinite', 'random'];
+  const LOOP_INDEX = { once: 0, twice: 1, infinite: 2, random: 3 };
   const THEMES = [['obsidian', 'Obsidian'], ['parchment', 'Parchment'], ['blood', 'Blood'], ['divination', 'Divination']];
   const WIDE = matchMedia('(min-width: 1181px)');
 
@@ -38,6 +38,7 @@
     play: svg('<path d="M7 4.5v15a1 1 0 0 0 1.5.9l12-7.5a1 1 0 0 0 0-1.8l-12-7.5A1 1 0 0 0 7 4.5z"/>', 16, true),
     pause: svg('<rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/>', 16, true),
     stop: svg('<rect x="5.5" y="5.5" width="13" height="13" rx="2"/>', 14, true),
+    random: svg('<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>', 14),
     star: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>', 16),
     starFill: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>', 16, true),
     plus: svg('<path d="M12 5v14M5 12h14"/>', 16),
@@ -61,7 +62,7 @@
   const KEY = 'bardic.settings';
   const DEFAULTS = {
     theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, awake: true, silent: true,
-    master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], bardName: '',
+    master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], bardName: '', randomMax: 5,
   };
   const settings = Object.assign({}, DEFAULTS, readJSON(KEY));
   function readJSON(key) { try { return JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (e) { return {}; } }
@@ -860,10 +861,14 @@
     mv.append(l, r);
     const loop = el('button', 'loop');
     loop.type = 'button';
-    loop.title = 'Loop: once, twice, forever';
-    const paintLoop = () => { loop.textContent = LOOP_LABELS[LOOP_INDEX[s.loop] ?? 0]; loop.classList.toggle('inf', s.loop === 'infinite'); };
+    loop.title = zone.id === 'events' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
+    const paintLoop = () => {
+      if (s.loop === 'random') loop.innerHTML = ICON.random; else loop.textContent = LOOP_LABELS[LOOP_INDEX[s.loop] ?? 0];
+      loop.classList.toggle('inf', s.loop === 'infinite');
+      loop.classList.toggle('rnd', s.loop === 'random');
+    };
     paintLoop();
-    loop.onclick = () => { s.loop = LOOP_NAMES[((LOOP_INDEX[s.loop] ?? 0) + 1) % 3]; paintLoop(); dirty(); };
+    loop.onclick = () => { s.loop = LOOP_NAMES[((LOOP_INDEX[s.loop] ?? 0) + 1) % (zone.id === 'events' ? 4 : 3)]; paintLoop(); dirty(); };
     // Soundbox effects fire once per tap: no loop button for them.
     bottom.append(play, meta, mv);
     if (zone.id !== 'soundbox') bottom.append(loop);
@@ -1056,6 +1061,7 @@
   /* ================= Audio ================= */
   let ctx = null, masterGain = null, sbGain = null;
   const curve = (v) => v * v;
+  const randomPause = () => 500 + Math.random() * Math.max(1, (Math.min(10, Math.max(1, +settings.randomMax || 5))) * 1000 - 500);
   function applyAudioSession() {
     try { if (navigator.audioSession) navigator.audioSession.type = settings.silent ? 'playback' : 'auto'; } catch (e) { /* older iOS */ }
   }
@@ -1086,9 +1092,11 @@
     constructor(sound, zone, chapter) {
       this.sound = sound; this.zone = zone; this.chapter = chapter;
       this.loop = LOOP_INDEX[sound.loop] ?? zone.loop;
+      if (this.loop === 3 && zone.id !== 'events') this.loop = 0;
       this.vol = typeof sound.volume === 'number' ? sound.volume : 0.75;
       this.state = 'loading';
       this.plays = 0; this.el = null; this.url = null; this.env = null; this.vg = null; this.timer = 0; this.card = null;
+      this.next = 0; this.rtimer = 0; // random events: when the next play comes (ms), and its timer
     }
     attach(blob) {
       this.url = URL.createObjectURL(blob);
@@ -1116,8 +1124,9 @@
       if (!this.usable) return;
       this.graph();
       clearTimeout(this.timer);
+      clearTimeout(this.rtimer); this.next = 0;
       if (this.state === 'ending') { ramp(this.env.gain, 1, 0.15); this.set('playing'); return; }
-      if (this.state === 'ready') { this.el.currentTime = 0; this.plays = 0; }
+      if (this.state === 'ready' || this.state === 'waiting' || this.state === 'held') { this.el.currentTime = 0; this.plays = 0; }
       this.env.gain.cancelScheduledValues(ctx.currentTime);
       this.env.gain.setValueAtTime(0, ctx.currentTime);
       ramp(this.env.gain, 1, fadeIn);
@@ -1133,7 +1142,7 @@
       this.set('paused');
     }
     end(ms) {
-      if (this.state === 'paused') { this.reset(); return; }
+      if (this.state === 'paused' || this.state === 'waiting' || this.state === 'held') { this.reset(); return; }
       if (!this.active) return;
       clearTimeout(this.timer);
       ramp(this.env.gain, 0, ms / 1000);
@@ -1142,16 +1151,33 @@
     }
     reset() {
       clearTimeout(this.timer);
+      clearTimeout(this.rtimer); this.next = 0;
       if (this.el) { this.el.pause(); try { this.el.currentTime = 0; } catch (e) { /* not loaded */ } }
       this.plays = 0;
       this.set('ready');
     }
     ended() {
       this.plays += 1;
+      if (this.loop === 3 && this.state === 'playing') { this.wait(); return; }
       if (this.loop === 1 && this.plays < 2 && this.active) { this.el.currentTime = 0; this.el.play().catch(() => {}); return; }
       this.reset();
     }
+    /** Random event: silent for 0.5 s up to the longest pause set in Settings, then plays again. */
+    wait() {
+      clearTimeout(this.rtimer);
+      if (this.el) { this.el.pause(); try { this.el.currentTime = 0; } catch (e) { /* not loaded */ } }
+      const d = randomPause();
+      this.next = Date.now() + d;
+      this.set('waiting');
+      this.rtimer = setTimeout(() => { if (this.state === 'waiting') this.play(); }, d);
+    }
+    /** Pause all: a random event between two plays holds still until Resume all. */
+    hold() {
+      clearTimeout(this.rtimer); this.next = 0;
+      this.set('held');
+    }
     setLoop(l) {
+      if (l !== 3 && (this.state === 'waiting' || this.state === 'held')) this.reset();
       this.loop = l;
       if (this.el) this.el.loop = l === 2;
       if (l === 0 && this.plays > 0) this.plays = 0;
@@ -1166,7 +1192,7 @@
       if (this.vg) this.vg.gain.setTargetAtTime(curve(v), ctx.currentTime, 0.03);
     }
     progress() {
-      if (this.state === 'ready' || this.state === 'loading' || this.state === 'error') return 0;
+      if (this.state === 'ready' || this.state === 'loading' || this.state === 'error' || this.state === 'waiting' || this.state === 'held') return 0;
       if (this.loop === 2) return -1;
       const d = this.el.duration;
       if (!d || !isFinite(d)) return 0;
@@ -1316,8 +1342,8 @@
     const name = el('b', '', v.sound.name); name.title = v.sound.name;
     const rem = el('small');
     const loop = el('button', 'loop');
-    loop.type = 'button'; loop.title = 'Loop: once, twice, forever';
-    loop.addEventListener('click', () => v.setLoop((v.loop + 1) % 3));
+    loop.type = 'button'; loop.title = v.zone.id === 'events' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
+    loop.addEventListener('click', () => v.setLoop((v.loop + 1) % (v.zone.id === 'events' ? 4 : 3)));
     head.append(name, rem, loop);
     const track = el('div', 'track'); const fill = el('div', 'fill'); track.append(fill);
     const ctrl = el('div', 'ctrl');
@@ -1340,6 +1366,8 @@
 
   function toggleVoice(v) {
     audio();
+    // Between two plays, a tap stops the random event.
+    if (v.state === 'waiting' || v.state === 'held') { v.reset(); pausedByAll = pausedByAll.filter((o) => o !== v); paintMaster(); return; }
     acquireWake();
     if (v.state === 'playing') { v.pause(); return; }
     if (v.zone.id === 'music' && v.state !== 'ending') {
@@ -1356,23 +1384,31 @@
 
   function paintCard(v) {
     const k = v.card; if (!k) return;
-    const on = v.active;
+    const waiting = v.state === 'waiting' || v.state === 'held';
+    const on = v.active || waiting;
     k.root.classList.toggle('on', on);
     k.root.classList.toggle('loading', v.state === 'loading');
     k.root.classList.toggle('err', v.state === 'error');
-    const icon = v.state === 'playing' ? 'pause' : 'play';
+    const icon = v.state === 'playing' || v.state === 'waiting' ? 'pause' : 'play';
     if (k.icon !== icon) { k.play.innerHTML = ICON[icon]; k.icon = icon; }
-    k.play.setAttribute('aria-label', `${v.state === 'playing' ? 'Pause' : 'Play'} ${v.sound.name}`);
+    k.play.setAttribute('aria-label', `${v.state === 'playing' ? 'Pause' : v.state === 'waiting' ? 'Stop' : 'Play'} ${v.sound.name}`);
     k.play.disabled = !v.usable;
     k.end.disabled = !(on || v.state === 'paused');
-    if (k.loop.textContent !== LOOP_LABELS[v.loop]) k.loop.textContent = LOOP_LABELS[v.loop];
+    if (k.loopShown !== v.loop) {
+      if (v.loop === 3) { k.loop.innerHTML = ICON.random; k.loop.setAttribute('aria-label', 'Random: plays again after a short random pause'); }
+      else { k.loop.textContent = LOOP_LABELS[v.loop]; k.loop.removeAttribute('aria-label'); }
+      k.loopShown = v.loop;
+    }
     k.loop.classList.toggle('inf', v.loop === 2);
+    k.loop.classList.toggle('rnd', v.loop === 3);
     const p = v.progress();
     if (p < 0) { k.fill.style.width = on || v.state === 'paused' ? '100%' : '0'; k.fill.style.background = 'var(--blue)'; }
     else { k.fill.style.width = `${p * 100}%`; k.fill.style.background = `hsl(${Math.round(130 * (1 - p))},72%,50%)`; }
     let txt = '', warn = false;
     if (v.state === 'loading') txt = 'loading…';
     else if (v.state === 'error') txt = 'unavailable';
+    else if (v.state === 'waiting') txt = `next ${fmt(Math.max(0, (v.next - Date.now()) / 1000))}`;
+    else if (v.state === 'held') txt = 'held';
     else if (on || v.state === 'paused') {
       if (v.loop === 2) txt = '∞ loop';
       else { const r = v.remaining(); if (r != null) { txt = fmt(r); warn = r <= 10; } }
@@ -1385,11 +1421,11 @@
     if (!tbl) return;
     audio();
     if (pausedByAll.length) {
-      pausedByAll.forEach((v) => v.state === 'paused' && v.play());
+      pausedByAll.forEach((v) => { if (v.state === 'paused') v.play(); else if (v.state === 'held') v.wait(); });
       pausedByAll = [];
     } else {
-      pausedByAll = tbl.all.filter((v) => v.state === 'playing');
-      pausedByAll.forEach((v) => v.pause());
+      pausedByAll = tbl.all.filter((v) => v.state === 'playing' || v.state === 'waiting');
+      pausedByAll.forEach((v) => (v.state === 'waiting' ? v.hold() : v.pause()));
     }
     paintMaster();
   }
@@ -1512,9 +1548,9 @@
     if (!tbl || document.hidden || screen !== 'table') return;
     const ch = tbl.chapters[chapterIdx];
     if (!ch) return;
-    ZONES.forEach((z) => ch.voices[z.id].forEach((v) => (v.active || v.state === 'paused') && paintCard(v)));
-    tbl.chapters.forEach((c) => c.railBtn.classList.toggle('playing', ZONES.some((z) => c.voices[z.id].some((v) => v.active))));
-    if (pausedByAll.length && !pausedByAll.some((v) => v.state === 'paused')) { pausedByAll = []; paintMaster(); }
+    ZONES.forEach((z) => ch.voices[z.id].forEach((v) => (v.active || v.state === 'paused' || v.state === 'waiting' || v.state === 'held') && paintCard(v)));
+    tbl.chapters.forEach((c) => c.railBtn.classList.toggle('playing', ZONES.some((z) => c.voices[z.id].some((v) => v.active || v.state === 'waiting'))));
+    if (pausedByAll.length && !pausedByAll.some((v) => v.state === 'paused' || v.state === 'held')) { pausedByAll = []; paintMaster(); }
   }, 66);
 
   /* ================= Settings dialog ================= */
@@ -1533,6 +1569,7 @@
     });
     segment('#mode-pick', 'mode', (v) => v);
     segment('#fade-pick', 'fade', Number);
+    segment('#random-pick', 'randomMax', Number);
     $('#opt-crossfade').addEventListener('change', (e) => { settings.crossfade = e.target.checked; save(); });
     $('#opt-awake').addEventListener('change', (e) => { settings.awake = e.target.checked; save(); settings.awake ? acquireWake() : releaseWake(); });
     $('#opt-silent').addEventListener('change', (e) => { settings.silent = e.target.checked; save(); applyAudioSession(); });
@@ -1551,6 +1588,7 @@
     document.querySelectorAll('#theme-pick .theme').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.theme)));
     document.querySelectorAll('#mode-pick button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.mode)));
     document.querySelectorAll('#fade-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === settings.fade)));
+    document.querySelectorAll('#random-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === settings.randomMax)));
     $('#opt-crossfade').checked = settings.crossfade;
     $('#opt-awake').checked = settings.awake;
     $('#opt-silent').checked = settings.silent;

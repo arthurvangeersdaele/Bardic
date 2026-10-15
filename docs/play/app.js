@@ -26,12 +26,13 @@
     play: svg('<path d="M7 4.5v15a1 1 0 0 0 1.5.9l12-7.5a1 1 0 0 0 0-1.8l-12-7.5A1 1 0 0 0 7 4.5z"/>', 16, true),
     pause: svg('<rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/>', 16, true),
     stop: svg('<rect x="5.5" y="5.5" width="13" height="13" rx="2"/>', 14, true),
+    random: svg('<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>', 14),
     star: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>', 16),
     starFill: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>', 16, true),
   };
 
   /* ---------------- Settings ---------------- */
-  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, awake: false, master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], bardName: '' };
+  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, awake: false, master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], bardName: '', randomMax: 5 };
   const settings = Object.assign({}, DEFAULTS, readJSON('bardic.settings'));
   function readJSON(key) { try { return JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (e) { return {}; } }
   function save() { try { const cur = readJSON('bardic.settings'); localStorage.setItem('bardic.settings', JSON.stringify(Object.assign(cur, settings))); } catch (e) { /* private mode */ } }
@@ -50,7 +51,8 @@
 
   /* ---------------- Audio graph ---------------- */
   let ctx = null, masterGain = null, sbGain = null;
-  const curve = (v) => v * v; // perceptual volume
+  const curve = (v) => v * v;
+  const randomPause = () => 500 + Math.random() * Math.max(1, (Math.min(10, Math.max(1, +settings.randomMax || 5))) * 1000 - 500); // perceptual volume
   function audio() {
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -79,6 +81,7 @@
       this.loop = zone.loop; this.vol = 0.75;
       this.state = 'loading'; // loading | ready | playing | paused | ending | error
       this.plays = 0; this.el = null; this.url = null; this.env = null; this.vg = null; this.timer = 0; this.card = null;
+      this.next = 0; this.rtimer = 0; // random events: when the next play comes (ms), and its timer
     }
     attach(blob) {
       this.url = URL.createObjectURL(blob);
@@ -108,8 +111,9 @@
       if (!this.usable) return;
       this.graph();
       clearTimeout(this.timer);
+      clearTimeout(this.rtimer); this.next = 0;
       if (this.state === 'ending') { ramp(this.env.gain, 1, 0.15); this.set('playing'); return; }
-      if (this.state === 'ready') { this.el.currentTime = 0; this.plays = 0; }
+      if (this.state === 'ready' || this.state === 'waiting' || this.state === 'held') { this.el.currentTime = 0; this.plays = 0; }
       this.env.gain.cancelScheduledValues(ctx.currentTime);
       this.env.gain.setValueAtTime(0, ctx.currentTime);
       ramp(this.env.gain, 1, fadeIn);
@@ -125,7 +129,7 @@
       this.set('paused');
     }
     end(ms) {
-      if (this.state === 'paused') { this.reset(); return; }
+      if (this.state === 'paused' || this.state === 'waiting' || this.state === 'held') { this.reset(); return; }
       if (!this.active) return;
       clearTimeout(this.timer);
       ramp(this.env.gain, 0, ms / 1000);
@@ -134,16 +138,33 @@
     }
     reset() {
       clearTimeout(this.timer);
+      clearTimeout(this.rtimer); this.next = 0;
       if (this.el) { this.el.pause(); try { this.el.currentTime = 0; } catch (e) {} }
       this.plays = 0;
       this.set('ready');
     }
     ended() {
       this.plays += 1;
+      if (this.loop === 3 && this.state === 'playing') { this.wait(); return; }
       if (this.loop === 1 && this.plays < 2 && this.active) { this.el.currentTime = 0; this.el.play().catch(() => {}); return; }
       this.reset();
     }
+    /** Random event: silent for 0.5 s up to the longest pause set in Settings, then plays again. */
+    wait() {
+      clearTimeout(this.rtimer);
+      if (this.el) { this.el.pause(); try { this.el.currentTime = 0; } catch (e) { /* not loaded */ } }
+      const d = randomPause();
+      this.next = Date.now() + d;
+      this.set('waiting');
+      this.rtimer = setTimeout(() => { if (this.state === 'waiting') this.play(); }, d);
+    }
+    /** Pause all: a random event between two plays holds still until Resume all. */
+    hold() {
+      clearTimeout(this.rtimer); this.next = 0;
+      this.set('held');
+    }
     setLoop(l) {
+      if (l !== 3 && (this.state === 'waiting' || this.state === 'held')) this.reset();
       this.loop = l;
       if (this.el) this.el.loop = l === 2;
       if (l === 0 && this.plays > 0) this.plays = 0;
@@ -155,7 +176,7 @@
     }
     /** Absolute progress 0..1 including loops, or -1 for an infinite loop that is running. */
     progress() {
-      if (this.state === 'ready' || this.state === 'loading' || this.state === 'error') return 0;
+      if (this.state === 'ready' || this.state === 'loading' || this.state === 'error' || this.state === 'waiting' || this.state === 'held') return 0;
       if (this.loop === 2) return -1;
       const d = this.el.duration;
       if (!d || !isFinite(d)) return 0;
@@ -188,7 +209,7 @@
   // A .bardic file opened from this computer: { meta, chapters: [{ music|ambience|events: [sound] }], soundbox: [sound] }.
   // Its sounds carry their blob, so nothing is downloaded.
   let CUSTOM = null;
-  const LOOP_INDEX = { once: 0, twice: 1, infinite: 2 };
+  const LOOP_INDEX = { once: 0, twice: 1, infinite: 2, random: 3 };
 
   async function boot() {
     renderStaticIcons();
@@ -284,7 +305,7 @@
       ZONES.forEach((zone) => {
         ch.voices[zone.id] = (lib[zone.id] || []).map((s) => {
           const v = new Voice(s, zone, ch);
-          if (s.loop in LOOP_INDEX) v.loop = LOOP_INDEX[s.loop];
+          if (s.loop in LOOP_INDEX && (s.loop !== 'random' || zone.id === 'events')) v.loop = LOOP_INDEX[s.loop];
           if (typeof s.volume === 'number') v.vol = s.volume;
           story.all.push(v);
           return v;
@@ -515,8 +536,8 @@
     const name = el('b', '', v.sound.name); name.title = v.sound.name;
     const rem = el('small');
     const loop = el('button', 'loop');
-    loop.type = 'button'; loop.title = 'Loop: once, twice, forever';
-    loop.addEventListener('click', () => v.setLoop((v.loop + 1) % 3));
+    loop.type = 'button'; loop.title = v.zone.id === 'events' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
+    loop.addEventListener('click', () => v.setLoop((v.loop + 1) % (v.zone.id === 'events' ? 4 : 3)));
     head.append(name, rem, loop);
     const track = el('div', 'track'); const fill = el('div', 'fill'); track.append(fill);
     const ctrl = el('div', 'ctrl');
@@ -539,6 +560,8 @@
 
   function toggleVoice(v) {
     audio();
+    // Between two plays, a tap stops the random event.
+    if (v.state === 'waiting' || v.state === 'held') { v.reset(); pausedByAll = pausedByAll.filter((o) => o !== v); paintMaster(); return; }
     if (v.state === 'playing') { v.pause(); return; }
     if (v.zone.id === 'music' && v.state !== 'ending') {
       const others = story.all.filter((o) => o !== v && o.zone.id === 'music' && (o.active || o.state === 'paused'));
@@ -554,24 +577,32 @@
 
   function paintCard(v) {
     const k = v.card; if (!k) return;
-    const on = v.active;
+    const waiting = v.state === 'waiting' || v.state === 'held';
+    const on = v.active || waiting;
     k.root.classList.toggle('on', on);
     k.root.classList.toggle('loading', v.state === 'loading');
     k.root.classList.toggle('err', v.state === 'error');
     // Only swap the icon when it changes: replacing it on every tick swallowed clicks (the pause button seemed dead).
-    const icon = v.state === 'playing' ? 'pause' : 'play';
+    const icon = v.state === 'playing' || v.state === 'waiting' ? 'pause' : 'play';
     if (k.icon !== icon) { k.play.innerHTML = ICON[icon]; k.icon = icon; }
-    k.play.setAttribute('aria-label', `${v.state === 'playing' ? 'Pause' : 'Play'} ${v.sound.name}`);
+    k.play.setAttribute('aria-label', `${v.state === 'playing' ? 'Pause' : v.state === 'waiting' ? 'Stop' : 'Play'} ${v.sound.name}`);
     k.play.disabled = !v.usable;
     k.end.disabled = !(on || v.state === 'paused');
-    if (k.loop.textContent !== LOOP_LABELS[v.loop]) k.loop.textContent = LOOP_LABELS[v.loop];
+    if (k.loopShown !== v.loop) {
+      if (v.loop === 3) { k.loop.innerHTML = ICON.random; k.loop.setAttribute('aria-label', 'Random: plays again after a short random pause'); }
+      else { k.loop.textContent = LOOP_LABELS[v.loop]; k.loop.removeAttribute('aria-label'); }
+      k.loopShown = v.loop;
+    }
     k.loop.classList.toggle('inf', v.loop === 2);
+    k.loop.classList.toggle('rnd', v.loop === 3);
     const p = v.progress();
     if (p < 0) { k.fill.style.width = on || v.state === 'paused' ? '100%' : '0'; k.fill.style.background = 'var(--blue)'; }
     else { k.fill.style.width = `${p * 100}%`; k.fill.style.background = `hsl(${Math.round(130 * (1 - p))},72%,50%)`; }
     let txt = '', warn = false;
     if (v.state === 'loading') txt = 'loading…';
     else if (v.state === 'error') txt = 'unavailable';
+    else if (v.state === 'waiting') txt = `next ${fmt(Math.max(0, (v.next - Date.now()) / 1000))}`;
+    else if (v.state === 'held') txt = 'held';
     else if (on || v.state === 'paused') {
       if (v.loop === 2) txt = '∞ loop';
       else { const r = v.remaining(); if (r != null) { txt = fmt(r); warn = r <= 10; } }
@@ -585,11 +616,11 @@
     if (!story) return;
     audio();
     if (pausedByAll.length) {
-      pausedByAll.forEach((v) => v.state === 'paused' && v.play());
+      pausedByAll.forEach((v) => { if (v.state === 'paused') v.play(); else if (v.state === 'held') v.wait(); });
       pausedByAll = [];
     } else {
-      pausedByAll = story.all.filter((v) => v.state === 'playing');
-      pausedByAll.forEach((v) => v.pause());
+      pausedByAll = story.all.filter((v) => v.state === 'playing' || v.state === 'waiting');
+      pausedByAll.forEach((v) => (v.state === 'waiting' ? v.hold() : v.pause()));
     }
     paintMaster();
   }
@@ -684,6 +715,7 @@
     });
     segment('#mode-pick', 'mode', (v) => v);
     segment('#fade-pick', 'fade', Number);
+    segment('#random-pick', 'randomMax', Number);
     $('#opt-crossfade').addEventListener('change', (e) => { settings.crossfade = e.target.checked; save(); });
     $('#opt-bard').addEventListener('input', (e) => { settings.bardName = e.target.value.trim().slice(0, 60); save(); });
     $('#opt-awake').addEventListener('change', (e) => { settings.awake = e.target.checked; save(); settings.awake ? acquireWake() : releaseWake(); });
@@ -700,6 +732,7 @@
     document.querySelectorAll('#theme-pick .theme').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.theme)));
     document.querySelectorAll('#mode-pick button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.mode)));
     document.querySelectorAll('#fade-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === settings.fade)));
+    document.querySelectorAll('#random-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === settings.randomMax)));
     $('#opt-crossfade').checked = settings.crossfade;
     $('#opt-awake').checked = settings.awake;
     if (document.activeElement !== $('#opt-bard')) $('#opt-bard').value = settings.bardName || '';
@@ -771,9 +804,9 @@
   setInterval(() => {
     if (!story || document.hidden) return;
     const ch = story.chapters[chapterIdx];
-    ZONES.forEach((z) => ch.voices[z.id].forEach((v) => (v.active || v.state === 'paused') && paintCard(v)));
-    story.chapters.forEach((c) => c.railBtn.classList.toggle('playing', ZONES.some((z) => c.voices[z.id].some((v) => v.active))));
-    if (pausedByAll.length && !pausedByAll.some((v) => v.state === 'paused')) { pausedByAll = []; paintMaster(); }
+    ZONES.forEach((z) => ch.voices[z.id].forEach((v) => (v.active || v.state === 'paused' || v.state === 'waiting' || v.state === 'held') && paintCard(v)));
+    story.chapters.forEach((c) => c.railBtn.classList.toggle('playing', ZONES.some((z) => c.voices[z.id].some((v) => v.active || v.state === 'waiting'))));
+    if (pausedByAll.length && !pausedByAll.some((v) => v.state === 'paused' || v.state === 'held')) { pausedByAll = []; paintMaster(); }
   }, 66);
 
   /* ---------------- Helpers ---------------- */

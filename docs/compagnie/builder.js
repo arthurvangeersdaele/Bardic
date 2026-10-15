@@ -10,7 +10,8 @@
     soundbox: { label: 'Soundbox', color: 'var(--accent)', loop: 'once', hint: 'Drop quick effects here' },
   };
   const LOOP_LABEL = { once: '1×', twice: '2×', infinite: '∞' };
-  const NEXT_LOOP = { once: 'twice', twice: 'infinite', infinite: 'once' };
+  // Events can also come back at random (the table plays them again after a short random pause).
+  const nextLoop = (loop, zone) => ({ once: 'twice', twice: 'infinite', infinite: zone === 'events' ? 'random' : 'once', random: 'once' })[loop] || 'once';
   const UPLOAD_URL = 'https://github.com/arthurvangeersdaele/Bardic/upload/main/docs/recueil';
 
   const svg = (d, size = 16, fill = false) =>
@@ -24,6 +25,9 @@
     plus: svg('<path d="M12 5v14M5 12h14"/>', 16),
     trash: svg('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>', 16),
     drop: svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', 16),
+    link: svg('<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>', 15),
+    cut: svg('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/>', 14),
+    random: svg('<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>', 14),
   };
 
   let uid = 0;
@@ -72,6 +76,31 @@
     });
     if (skipped) toast(`${skipped} file${skipped > 1 ? 's were' : ' was'} not audio and stayed out.`);
     renderAll();
+  }
+  function addFromLink(zone) {
+    if (!window.BardicCrop) return;
+    stopPreview();
+    const list = listOf(zone);
+    window.BardicCrop.open({
+      zone,
+      onSave: (file, info) => {
+        list.push({ id: id(), name: info.name, blob: file, fileName: file.name, loop: ZONE_INFO[zone].loop, volume: 0.75, duration: info.duration, extra: {} });
+        renderAll();
+        toast(`“${info.name}” added to ${ZONE_INFO[zone].label}.`);
+      },
+    });
+  }
+  function cropSound(s, zone) {
+    if (!window.BardicCrop) return;
+    stopPreview();
+    window.BardicCrop.open({
+      zone, sound: s,
+      onSave: (file, info) => {
+        s.blob = file; s.fileName = file.name; s.duration = info.duration; s.name = info.name;
+        renderAll();
+        toast(`“${info.name}” cropped.`);
+      },
+    });
   }
   function probe(s) {
     if (s.duration) return;
@@ -208,7 +237,13 @@
     hint.type = 'button';
     hint.innerHTML = `${ICON.drop}<span>${listOf(zone).length ? 'Add more' : ZONE_INFO[zone].hint}, or <b>browse</b></span>`;
     hint.onclick = () => { pickTarget = zone; $('#pick').click(); };
-    dz.append(hint);
+    const link = el('button', 'link-btn');
+    link.type = 'button';
+    link.innerHTML = `${ICON.link}<span>From a link or YouTube</span>`;
+    link.onclick = () => addFromLink(zone);
+    const adds = el('div', 'adds');
+    adds.append(hint, link);
+    dz.append(adds);
   }
 
   function buildCard(s, zone) {
@@ -236,12 +271,23 @@
     const meta = el('span', 'meta');
     const loop = el('button', 'loop');
     loop.type = 'button';
-    loop.title = 'Loop: once, twice, forever';
-    const paintLoop = () => { loop.textContent = LOOP_LABEL[s.loop]; loop.classList.toggle('inf', s.loop === 'infinite'); };
+    loop.title = zone === 'events' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
+    const paintLoop = () => {
+      if (s.loop === 'random') { loop.innerHTML = ICON.random; loop.setAttribute('aria-label', 'Random: plays again after a short random pause'); }
+      else { loop.textContent = LOOP_LABEL[s.loop] || '1×'; loop.removeAttribute('aria-label'); }
+      loop.classList.toggle('inf', s.loop === 'infinite');
+      loop.classList.toggle('rnd', s.loop === 'random');
+    };
     paintLoop();
-    loop.onclick = () => { s.loop = NEXT_LOOP[s.loop]; paintLoop(); };
+    loop.onclick = () => { s.loop = nextLoop(s.loop, zone); paintLoop(); };
+    const cut = el('button', 'cut');
+    cut.type = 'button';
+    cut.innerHTML = ICON.cut;
+    cut.title = 'Crop';
+    cut.setAttribute('aria-label', `Crop ${s.name}`);
+    cut.onclick = () => cropSound(s, zone);
     // Soundbox effects fire once per tap: no loop button for them.
-    bottom.append(play, meta);
+    bottom.append(play, meta, cut);
     if (zone !== 'soundbox') bottom.append(loop);
     c.append(top, bottom);
     c.addEventListener('dragstart', (e) => {

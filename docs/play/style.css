@@ -164,6 +164,8 @@ svg { display: block; }
   font-size: 12px; font-weight: 600;
 }
 .loop.inf { color: var(--blue); border-color: color-mix(in srgb, var(--blue) 50%, var(--line)); }
+.loop.rnd { color: var(--evt); border-color: color-mix(in srgb, var(--evt) 55%, var(--line)); }
+.loop svg { display: block; }
 .track { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .fill { height: 100%; width: 0; border-radius: 3px; }
 .c.loading .track { background: linear-gradient(90deg, var(--line) 0 40%, var(--muted) 50%, var(--line) 60% 100%) 0 0 / 300% 100%; animation: shimmer 1.2s linear infinite; opacity: .6; }
