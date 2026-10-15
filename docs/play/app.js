@@ -116,9 +116,12 @@
       if (this.loop === 3) { this.rnd = true; this.next = 0; this.startedAt = Date.now(); }
       if (this.state === 'ending') { ramp(this.env.gain, 1, 0.15); this.set('playing'); return; }
       if (this.state === 'ready') { this.el.currentTime = 0; this.plays = 0; }
-      this.env.gain.cancelScheduledValues(ctx.currentTime);
-      this.env.gain.setValueAtTime(0, ctx.currentTime);
-      ramp(this.env.gain, 1, fadeIn);
+      // From silence, rise over fadeIn. ramp() would start from gain.value, which Safari still reports
+      // as the old level (1 after a sound ended), so the fade-in was lost there.
+      const t = ctx.currentTime;
+      this.env.gain.cancelScheduledValues(t);
+      this.env.gain.setValueAtTime(0, t);
+      this.env.gain.linearRampToValueAtTime(1, t + Math.max(fadeIn, 0.012));
       const p = this.el.play();
       if (p) p.catch(() => this.set('ready'));
       this.set('playing');
