@@ -6,9 +6,19 @@
 <link rel="icon" type="image/svg+xml" href="icons/261013_bardic_icon.svg">
 <link rel="apple-touch-icon" href="icons/261013_bardic_apple_touch_icon.png">
 <meta name="theme-color" content="#0F0F13">
-<script>try{document.documentElement.classList.toggle('pc',matchMedia('(hover: hover) and (pointer: fine) and (min-width: 900px)').matches)}catch(e){}try{document.documentElement.classList.toggle('iphone',/iPhone|iPod/.test(navigator.userAgent))}catch(e){}</script>
+<script>
+(function(){
+  var h=document.documentElement, ua=navigator.userAgent;
+  try{h.classList.toggle('pc',matchMedia('(hover: hover) and (pointer: fine) and (min-width: 900px)').matches)}catch(e){}
+  // iPhone, iPad (iPadOS reports a Mac with a touch screen) or Android: the download button picks the right app.
+  var ios=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+  h.classList.toggle('ios',ios);
+  h.classList.toggle('iphone',/iPhone|iPod/.test(ua));
+  h.classList.toggle('android',!ios&&/Android/i.test(ua));
+})();
+</script>
 <title>Bardic, the sound table for game masters</title>
-<meta name="description" content="Bardic is an Android app that lets tabletop RPG game masters run music, ambience and sound effects from their phone.">
+<meta name="description" content="Bardic turns your phone into a sound desk for tabletop RPGs: music, ambience and events for each chapter of your story, played live. Android and iPhone.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
@@ -17,51 +27,86 @@
   --bg:#0F0F13; --bar:#15151B; --card:#1C1C24; --line:#2E2E39; --text:#ECE8DE; --muted:#A29FAE; --accent:#E0A84B;
   --music:#E0A84B; --amb:#4FB3A5; --evt:#E06A63; --blue:#2F8BFF;
 }
-:root[data-theme="parchment"]{ --bg:#1E1912; --bar:#251F16; --card:#30281D; --line:#4A3D2B; --text:#F1E6CF; --muted:#BBA987; --accent:#E0B062; }
-:root[data-theme="blood"]{ --bg:#140B0C; --bar:#1A0E10; --card:#261517; --line:#43242A; --text:#F2E4E2; --muted:#B79A9D; --accent:#F0606A; }
-:root[data-theme="divination"]{ --bg:#0B1020; --bar:#0F1529; --card:#18213D; --line:#2B3762; --text:#E6E9F8; --muted:#9EA6C8; --accent:#C9A7F5; }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--text);font-family:'Barlow Semi Condensed',system-ui,sans-serif;font-size:18px;line-height:1.5;transition:background .4s,color .4s}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Barlow Semi Condensed',system-ui,sans-serif;font-size:18px;line-height:1.5}
 a{color:var(--accent)}
 .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
 h1,h2,h3{font-family:'Cormorant SC',serif;font-weight:700;line-height:1.05;margin:0}
+html:not(.pc) .pc-only{display:none!important}
+html.pc .phone-only{display:none!important}
+
+/* nav + hero */
 nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 0}
 .logo{font-family:'Cormorant SC',serif;font-weight:700;font-size:28px;letter-spacing:1px;color:var(--text);text-decoration:none}
 .navlinks{display:flex;gap:20px;font-size:16px}
 .navlinks a{color:var(--muted);text-decoration:none}.navlinks a:hover{color:var(--text)}
-.hero{padding:40px 0 24px;display:grid;gap:36px}
+.hero{padding:40px 0 8px}
 .badge{display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--muted)}
 .badge i{width:8px;height:8px;border-radius:50%;background:var(--accent);display:block}
-.hero h1{font-size:clamp(44px,8vw,88px);margin:16px 0 12px}
-.hero p.lead{font-size:clamp(19px,2.2vw,23px);color:var(--muted);max-width:640px;margin:0 0 24px}
-.ctas{display:flex;flex-wrap:wrap;gap:12px}
-.btn{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 20px;border-radius:12px;font-weight:600;font-size:17px;text-decoration:none;border:1px solid var(--line)}
-.btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
-.btn.ghost{color:var(--text)}
-.btn[aria-disabled="true"]{opacity:.55;cursor:default}
-.btn.big{height:56px;padding:0 26px;font-size:19px}
-.ctas{align-items:center}
-.d20{display:inline-flex;color:var(--muted);transition:color .2s,transform .4s}.d20:hover{color:var(--accent);transform:rotate(-12deg)}.d20 .gh{fill:currentColor}
-html:not(.pc) .pc-only{display:none!important}
 html:not(.iphone) .iphone-only{display:none!important}
 html.iphone .not-iphone{display:none!important}
-.cta-ios{display:flex;align-items:center;gap:14px;margin-top:16px;padding:12px 16px;border-radius:14px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--text);text-decoration:none;font-size:16px;max-width:620px}
-.cta-ios img{width:48px;height:48px;border-radius:11px;flex:none}
-.cta-ios b{display:block;font-family:'Cormorant SC',serif;font-size:24px;line-height:1.05;color:var(--accent)}
-.cta-ios span span{color:var(--muted)}
-.cta-ios svg{flex:none;color:var(--accent);margin-left:auto}
-.cta-pc{display:inline-flex;align-items:center;gap:12px;margin-top:14px;padding:10px 16px;border-radius:12px;border:1px solid var(--line);color:var(--text);text-decoration:none;font-size:16px;max-width:620px;transition:border-color .2s,background .2s}
-.cta-pc:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
-.cta-pc b{color:var(--accent);font-weight:600}
-.cta-pc svg{flex:none;color:var(--accent)}
-.cta-note{font-size:15px;color:var(--muted);max-width:560px;margin:12px 0 0}.cta-note a{color:var(--muted)}.cta-note a:hover{color:var(--text)}
-.themes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:20px;font-size:15px;color:var(--muted)}
-.themes button{height:36px;padding:0 14px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
-.themes button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.hero h1{font-size:clamp(44px,8vw,88px);margin:16px 0 12px}
+.hero p.lead{font-size:clamp(19px,2.2vw,23px);color:var(--muted);max-width:640px;margin:0 0 24px}
+.ctas{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 20px;border-radius:12px;font-weight:600;font-size:17px;text-decoration:none;border:1px solid var(--line);color:var(--text)}
+.btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn.big{height:56px;padding:0 26px;font-size:19px}
+.d20{display:inline-flex;color:var(--muted);transition:color .2s,transform .4s}.d20:hover{color:var(--accent);transform:rotate(-12deg)}.d20 .gh{fill:currentColor}
 
-/* phone mock */
-.phone{width:100%;max-width:960px;margin:0 auto;border-radius:34px;padding:12px;background:#050507;box-shadow:0 30px 80px rgba(0,0,0,.45),0 0 0 1px #2a2a30}
+/* smart download */
+.get{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+.get a{display:flex;align-items:center;gap:14px;padding:12px 20px 12px 14px;border-radius:14px;text-decoration:none;color:var(--text);border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);transition:background .2s,transform .2s;min-width:260px}
+.get a:hover{background:color-mix(in srgb,var(--accent) 18%,transparent);transform:translateY(-2px)}
+.get .gi{width:44px;height:44px;border-radius:11px;background:var(--accent);color:var(--bg);display:grid;place-items:center;flex:none}
+.get small{display:block;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);font-weight:600}
+.get b{display:block;font-family:'Cormorant SC',serif;font-size:25px;line-height:1.05}
+html.android .get .for-ios, html.ios .get .for-android{display:none}
+html.android .get a, html.ios .get a{min-width:min(100%,380px)}
+.get-note{font-size:15px;color:var(--muted);max-width:620px;margin:12px 0 0}
+
+/* sections */
+section{padding:72px 0 0}
+.kicker{font-size:15px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 8px}
+section h2{font-size:clamp(34px,5vw,52px);margin-bottom:16px}
+.intro{color:var(--muted);max-width:680px;margin:0 0 32px}
+
+/* tutorial: the video's dark ground melts into the page */
+.film{position:relative;max-width:1080px;margin:0 auto;cursor:pointer;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%),linear-gradient(180deg,transparent 0,#000 10%,#000 90%,transparent 100%);
+  -webkit-mask-composite:source-in;
+  mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%),linear-gradient(180deg,transparent 0,#000 10%,#000 90%,transparent 100%);
+  mask-composite:intersect}
+.film video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:transparent}
+.film .big-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:50%;border:0;background:var(--accent);color:var(--bg);display:grid;place-items:center;box-shadow:0 12px 40px rgba(0,0,0,.5);cursor:pointer;transition:transform .2s,opacity .25s}
+.film .big-play:hover{transform:translate(-50%,-50%) scale(1.06)}
+.film.playing .big-play{opacity:0;pointer-events:none}
+.vbar{display:flex;align-items:center;gap:12px;max-width:860px;margin:4px auto 0;padding:0 8px}
+.vbar button{height:36px;min-width:36px;padding:0 10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-weight:600;font-size:14px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.vbar button:hover{border-color:var(--muted)}
+.vbar .time{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.vbar input{flex:1;min-width:60px;accent-color:var(--accent);height:24px}
+.vbar .lang{display:inline-flex;border:1px solid var(--line);border-radius:9px;padding:2px;gap:2px;background:var(--card)}
+.vbar .lang button{height:30px;border:0;background:transparent;color:var(--muted);min-width:34px}
+.vbar .lang button[aria-pressed="true"]{background:var(--text);color:var(--bg)}
+.video-note{font-size:15px;color:var(--muted);margin:14px auto 0;max-width:860px;padding:0 8px}.video-note a{color:var(--muted)}
+
+/* structure */
+.levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:28px;counter-reset:lv}
+.lv{position:relative;padding:18px 18px 16px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.lv .n{position:absolute;top:-13px;left:16px}
+.lv h3{font-size:26px;margin:4px 0 6px}
+.lv p{margin:0;color:var(--muted);font-size:16px}
+.lv .cats{display:grid;gap:6px;margin-top:8px}
+.lv .cats span{font-size:15px;color:var(--muted)}.lv .cats b{font-weight:600;color:var(--z)}
+.lv:not(:last-child)::after{content:"";position:absolute;right:-12px;top:50%;width:10px;height:10px;border-top:2px solid var(--line);border-right:2px solid var(--line);transform:translateY(-50%) rotate(45deg)}
+@media (max-width:860px){.levels{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:26px}.lv::after{display:none}}
+@media (max-width:520px){.levels{grid-template-columns:minmax(0,1fr)}}
+.n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--bg);font-weight:700;font-size:14px;line-height:1;font-family:'Barlow Semi Condensed',sans-serif;box-shadow:0 0 0 4px var(--bg)}
+.mock-cap{text-align:center;color:var(--muted);font-size:15px;margin:14px 0 0}
+
+/* phone mock (a chapter at the table) */
+.phone{width:100%;max-width:960px;margin:40px auto 0;border-radius:34px;padding:12px;background:#050507;box-shadow:0 30px 80px rgba(0,0,0,.45),0 0 0 1px #2a2a30}
 .screen{position:relative;width:100%;aspect-ratio:844/390;border-radius:24px;overflow:hidden;background:var(--bg)}
 .table{position:absolute;left:0;top:0;width:844px;height:390px;transform-origin:0 0;display:flex;flex-direction:column;background:var(--bg);font-size:14px;line-height:1.2}
 .tbar{height:52px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--bar)}
@@ -82,23 +127,68 @@ html.iphone .not-iphone{display:none!important}
 .pb{width:38px;height:38px;border-radius:10px;background:var(--line);flex:none;display:flex;align-items:center;justify-content:center;color:var(--text)}
 .c.on .pb{background:var(--z);color:var(--bg)}
 .vol{flex:1;height:4px;border-radius:2px;background:var(--line);position:relative}.vol i{position:absolute;left:0;top:0;height:4px;border-radius:2px;background:var(--z)}
+.table .n{position:absolute;z-index:2;width:24px;height:24px;font-size:13px;box-shadow:0 0 0 3px var(--bg)}
 
-section{padding:64px 0}
-.kicker{font-size:15px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 8px}
-section h2{font-size:clamp(34px,5vw,52px);margin-bottom:16px}
-.intro{color:var(--muted);max-width:680px;margin:0 0 32px}
-.zones{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
-.zone{padding:22px;border-radius:16px;background:var(--card);border:1px solid var(--line);border-top:4px solid var(--z)}
-.zone h3{font-size:28px;color:var(--z);margin-bottom:8px}.zone p{margin:0;color:var(--muted)}
-.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px 40px}
-.feat div h3{font-size:24px;margin-bottom:6px}.feat div p{margin:0;color:var(--muted)}
-.gradient{height:10px;border-radius:5px;background:linear-gradient(90deg,hsl(130,72%,50%),hsl(65,72%,50%),hsl(0,72%,50%));margin:10px 0 4px;max-width:280px}
-.tree{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;background:var(--bar);border:1px solid var(--line);border-radius:12px;padding:16px 20px;color:var(--text);overflow-x:auto;margin:0}
-.video{position:relative;border-radius:22px;overflow:hidden;background:#000;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.45)}
-.video video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#000}
-.video-note{font-size:15px;color:var(--muted);margin:14px 0 0}.video-note a{color:var(--muted)}.video-note a:hover{color:var(--text)}
-footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);font-size:15px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
-@media (max-width:640px){.navlinks{display:none}section{padding:44px 0}body{font-size:17px}}
+/* sound card anatomy */
+.anat{position:relative;width:100%;max-width:1000px;margin:0 auto;aspect-ratio:1000/480}
+.stage{position:absolute;left:0;top:0;width:1000px;height:480px;transform-origin:0 0}
+.stage svg.leads{position:absolute;inset:0;overflow:visible}
+.stage svg.leads path{fill:none;stroke:var(--muted);stroke-width:1.2;opacity:.7}
+.acard{position:absolute;left:290px;top:110px;width:420px;height:230px;border-radius:22px;background:var(--card);border:2px solid var(--evt);box-shadow:0 0 0 1px var(--evt) inset,0 0 60px color-mix(in srgb,var(--evt) 22%,transparent)}
+.acard > *{position:absolute}
+.acard .nm{left:20px;top:22px;width:250px;font-weight:600;font-size:28px;white-space:nowrap}
+.acard .tm{left:282px;top:30px;font-size:19px;font-weight:600;color:var(--evt);font-variant-numeric:tabular-nums}
+.acard .lp{left:358px;top:22px;width:44px;height:36px;border-radius:9px;border:1px solid var(--line);display:grid;place-items:center;font-weight:600;font-size:17px}
+.acard .tr{left:20px;top:86px;width:380px;height:12px;border-radius:6px;background:var(--line);overflow:hidden}
+.acard .tr i{display:block;height:100%;width:86%;border-radius:6px;background:linear-gradient(90deg,hsl(130,72%,50%),hsl(65,72%,50%) 55%,hsl(18,72%,50%))}
+.acard .pl{left:20px;top:140px;width:64px;height:64px;border-radius:16px;background:var(--evt);color:var(--bg);display:grid;place-items:center}
+.acard .en{left:96px;top:140px;width:64px;height:64px;border-radius:16px;border:1px solid var(--line);display:grid;place-items:center;color:var(--text)}
+.acard .vl{left:180px;top:169px;width:220px;height:6px;border-radius:3px;background:var(--line)}
+.acard .vl i{position:absolute;left:0;top:0;height:6px;width:68%;border-radius:3px;background:var(--evt)}
+.acard .vl b{position:absolute;left:68%;top:50%;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:var(--evt);border:3px solid var(--card)}
+.lbl{position:absolute;width:250px;font-size:15px;color:var(--muted);line-height:1.35}
+.lbl b{display:flex;align-items:center;gap:8px;color:var(--text);font-size:17px;font-weight:600;margin-bottom:2px}
+.lbl.right{text-align:right}.lbl.right b{justify-content:flex-end}
+.lbl.center{text-align:center}.lbl.center b{justify-content:center}
+.pin{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;font-size:12px;box-shadow:0 0 0 3px var(--card)}
+.anat-list{display:none;margin:24px 0 0;padding:0;list-style:none;gap:12px}
+.anat-list li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px;color:var(--muted);font-size:16px}
+.anat-list li b{color:var(--text);font-weight:600}
+@media (max-width:760px){.stage .lbl, .stage svg.leads{display:none}.anat-list{display:grid}.anat{aspect-ratio:1000/480}}
+
+/* compagnie */
+.comp{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:40px;align-items:center}
+.comp .sigil{display:block;margin:0 0 18px}
+.doors{display:grid;gap:12px}
+.door{position:relative;display:block;padding:16px 46px 16px 18px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-decoration:none;color:var(--text);transition:border-color .2s,transform .2s}
+.door:hover{border-color:var(--z,var(--accent));transform:translateX(4px)}
+.door b{display:block;font-family:'Cormorant SC',serif;font-size:26px;line-height:1.1;color:var(--z,var(--text))}
+.door span{color:var(--muted);font-size:15px}
+.door svg{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--z,var(--accent))}
+.comp-note{font-size:15px;color:var(--muted);margin:4px 0 0}
+@media (max-width:820px){.comp{grid-template-columns:minmax(0,1fr)}}
+
+/* github and geek stuff */
+.geek-head{display:flex;flex-wrap:wrap;align-items:center;gap:18px 28px;margin-bottom:28px}
+.geek-head .intro{margin:0;flex:1 1 420px}
+.repo{display:flex;align-items:center;gap:14px;padding:10px 18px 10px 10px;border-radius:14px;border:1px solid var(--line);color:var(--text);text-decoration:none;transition:border-color .2s}
+.repo:hover{border-color:var(--accent)}.repo:hover .d20{color:var(--accent);transform:rotate(-12deg)}
+.repo b{display:block;font-weight:600}.repo span{font-size:14px;color:var(--muted)}
+.stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.stack{grid-template-columns:minmax(0,1fr)}}
+.tech{padding:18px 20px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.tech h3{font-size:24px;margin-bottom:8px;display:flex;align-items:baseline;gap:10px}
+.tech h3 small{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0}
+.tech ul{margin:0;padding-left:18px;color:var(--muted);font-size:16px;display:grid;gap:4px}
+.tech code,.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88em;color:var(--text)}
+.code{display:block;white-space:pre;overflow-x:auto;background:var(--bar);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:13.5px;line-height:1.5;margin-top:10px}
+.code .k{color:var(--amb)}.code .s{color:var(--music)}.code .v{color:var(--evt)}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.links a{font-size:15px;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+.links a:hover{color:var(--text);border-color:var(--muted)}
+
+footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);font-size:15px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
+@media (max-width:640px){.navlinks{display:none}section{padding-top:52px}body{font-size:17px}.get a{min-width:100%}}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
 </style>
 </head>
@@ -106,31 +196,82 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
 <div class="wrap">
   <nav>
     <a class="logo" href="#">Bardic</a>
-    <div class="navlinks"><a href="play/" style="color:var(--accent);font-weight:600">Test it online</a><a href="compagnie/">Compagnie des bardes</a><a href="#table">The table</a><a href="#features">Features</a><a href="#tutorial">Tutorial</a><a href="https://github.com/arthurvangeersdaele/Bardic">GitHub</a></div>
+    <div class="navlinks"><a href="play/" style="color:var(--accent);font-weight:600">Test it online</a><a href="#get">Get the app</a><a href="#tutorial">Tutorial</a><a href="#table">How it plays</a><a href="compagnie/">Compagnie des bardes</a><a href="#geek">GitHub</a></div>
   </nav>
 
+  <!-- 1. Name and title -->
   <header class="hero">
-    <div>
-      <span class="badge not-iphone"><i></i>Android beta available</span><span class="badge iphone-only"><i></i>Now on iPhone</span>
-      <h1>Your table deserves a soundtrack.</h1>
-      <p class="lead">Bardic turns your phone into a sound desk for tabletop RPGs. Prepare music, ambience and events for each chapter of your story, then play them live with one hand while you run the game.</p>
-      <div class="ctas">
-        <a class="btn primary big" href="play/">Test it quick</a>
-        <a class="d20" href="https://github.com/arthurvangeersdaele/Bardic" aria-label="Bardic on GitHub" title="Bardic on GitHub"><svg viewBox="0 0 48 48" width="56" height="56" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M24 2 43 13v22L24 46 5 35V13Z"/><path d="M24 9 9 34h30Z"/><path d="M24 2v7M43 13 24 9M5 13l19-4M5 13l4 21M43 13l-4 21M5 35l4-1M43 35l-4-1M24 46 9 34M24 46l15-12"/></g><path class="gh" transform="translate(16 17.7)" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg></a>
-      </div>
-      <a class="cta-pc pc-only" href="compagnie/"><span>On a computer, join the <b>Compagnie des bardes</b> and play online: tales from the Recueil, your own .bardic files, and a builder to forge new ones.</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-      <a class="cta-ios iphone-only" href="ios/"><img src="ios/icons/261014_bardic_ios_180.png" alt=""><span><b>Bardic for iPhone</b><span>Installs on your Home Screen. Your own stories and sounds, kept on the phone, with .bardic import and export.</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-      <p class="cta-note">The web version is a discovery edition: three ready-made stories, nothing to install. The Android app, now in beta, is the one built for real sessions: your own sounds and stories, a low-latency engine, the soundbox, .bardic import and export, and playback with the screen off. <a href="https://github.com/arthurvangeersdaele/Bardic/releases/tag/dev-latest">Download the Android beta (APK)</a></p>
-      <div class="themes" role="group" aria-label="Preview a theme">Try a theme:
-        <button data-t="obsidian" aria-pressed="true">Obsidian</button>
-        <button data-t="parchment" aria-pressed="false">Parchment</button>
-        <button data-t="blood" aria-pressed="false">Blood</button>
-        <button data-t="divination" aria-pressed="false">Divination</button>
-      </div>
+    <span class="badge not-iphone"><i></i>Android beta available</span><span class="badge iphone-only"><i></i>Now on iPhone</span>
+    <h1>Your table deserves a soundtrack.</h1>
+    <p class="lead">Bardic turns your phone into a sound desk for tabletop RPGs. Prepare music, ambience and events for each chapter of your story, then play them live with one hand while you run the game.</p>
+
+    <!-- 2. Test it quick -->
+    <div class="ctas">
+      <a class="btn primary big" href="play/">Test it quick</a>
+      <a class="d20" href="https://github.com/arthurvangeersdaele/Bardic" aria-label="Bardic on GitHub" title="Bardic on GitHub"><svg viewBox="0 0 48 48" width="56" height="56" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M24 2 43 13v22L24 46 5 35V13Z"/><path d="M24 9 9 34h30Z"/><path d="M24 2v7M43 13 24 9M5 13l19-4M5 13l4 21M43 13l-4 21M5 35l4-1M43 35l-4-1M24 46 9 34M24 46l15-12"/></g><path class="gh" transform="translate(16 17.7)" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg></a>
     </div>
 
-    <div class="phone" id="table" aria-label="Preview of the Bardic mixing table" role="img">
+    <!-- 3. Get the app: picks Android or iPhone on a phone, shows both elsewhere -->
+    <div class="get" id="get">
+      <a class="for-android" id="get-android" href="https://github.com/arthurvangeersdaele/Bardic/releases/tag/dev-latest">
+        <span class="gi"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7v7M9 11l3 3 3-3"/></svg></span>
+        <span><small>Free, beta</small><b>Get Bardic for Android</b></span>
+      </a>
+      <a class="for-ios" href="ios/">
+        <span class="gi"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8v6M9 11h6"/></svg></span>
+        <span><small>Free, on your Home Screen</small><b>Get Bardic for iPhone</b></span>
+      </a>
+    </div>
+    <p class="get-note">The web test plays three ready-made stories. The app is the one built for real sessions: your own stories and sounds, kept on the phone, the soundbox, .bardic files, and playback with the screen off.</p>
+  </header>
+
+  <!-- 4. Tutorial -->
+  <section id="tutorial">
+    <p class="kicker">Tutorial</p>
+    <h2>Three minutes at the table.</h2>
+    <p class="intro">What Bardic is, a chapter of Underwater Adventure layered sound by sound (put your headphones on), how to forge and share your own story, the Compagnie des bardes, and where to get Bardic. Subtitled, no voice over.</p>
+    <div class="film" id="film">
+      <video id="tuto" playsinline preload="metadata" poster="tutorial/261015_bardic_tutorial_poster.jpg">
+        <source src="tutorial/261015_bardic_tutorial_en.mp4" type="video/mp4">
+      </video>
+      <button class="big-play" id="big-play" type="button" aria-label="Play the tutorial"><svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 4.8v14.4a1 1 0 0 0 1.5.86l11.6-7.2a1 1 0 0 0 0-1.72L9.5 3.94A1 1 0 0 0 8 4.8z"/></svg></button>
+    </div>
+    <div class="vbar" id="vbar">
+      <button type="button" id="v-play" aria-label="Play"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.9l12-7.5a1 1 0 0 0 0-1.8l-12-7.5A1 1 0 0 0 7 4.5z"/></svg></button>
+      <span class="time" id="v-time">0:00 / 3:18</span>
+      <input type="range" id="v-seek" min="0" max="1000" value="0" aria-label="Position in the tutorial">
+      <span class="lang" role="group" aria-label="Subtitles language">
+        <button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="fr" aria-pressed="false">FR</button>
+      </span>
+      <button type="button" id="v-full" aria-label="Full screen" title="Full screen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+    <p class="video-note">Sound credits: <a href="https://github.com/arthurvangeersdaele/Bardic/blob/main/docs/tutorial/261015_bardic_tutorial_credits.md">tutorial credits</a>.</p>
+  </section>
+
+  <!-- 5. How a game is built -->
+  <section id="table">
+    <p class="kicker">How it plays</p>
+    <h2>A story, its chapters, three rows of sounds.</h2>
+    <p class="intro">You prepare a story before the session. At the table, each chapter opens its own mixing table, and every sound waits on a card, ready to fire.</p>
+    <div class="levels">
+      <div class="lv"><span class="n">1</span><h3>Story</h3><p>One adventure: The Drowned Abbey. It holds its chapters and its own soundbox of quick effects.</p></div>
+      <div class="lv"><span class="n">2</span><h3>Chapter</h3><p>One scene: the flooded nave, the crypt, the abbot's fury. Open a chapter and its sounds load at once.</p></div>
+      <div class="lv"><span class="n">3</span><h3>Three rows</h3>
+        <div class="cats">
+          <span style="--z:var(--music)"><b>Music</b>: one track at a time, crossfading.</span>
+          <span style="--z:var(--amb)"><b>Ambience</b>: rain, fire, crowds, layered on loop.</span>
+          <span style="--z:var(--evt)"><b>Events</b>: bells, roars, explosions, on cue or at random.</span>
+        </div>
+      </div>
+      <div class="lv"><span class="n">4</span><h3>Sound card</h3><p>One sound with its own controls. Play, pause, fade it out, loop it. Its anatomy is just below.</p></div>
+    </div>
+
+    <div class="phone" aria-label="A chapter at the table: The Drowned Abbey, chapter 2, with Music, Ambience and Events rows of sound cards" role="img">
       <div class="screen"><div class="table" id="mock">
+        <span class="n" style="left:244px;top:4px">1</span>
+        <span class="n" style="left:236px;top:30px">2</span>
+        <span class="n" style="left:6px;top:66px">3</span>
+        <span class="n" style="left:266px;top:98px">4</span>
         <div class="tbar">
           <div class="ico">‹</div>
           <div class="ttl"><b>The Drowned Abbey</b><span>Chapter 2: The Flooded Nave</span></div>
@@ -141,61 +282,150 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
         <div class="rows" id="rows"></div>
       </div></div>
     </div>
-  </header>
-
-  <section id="tutorial">
-    <p class="kicker">Tutorial</p>
-    <h2>Three minutes at the table.</h2>
-    <p class="intro">What Bardic is, a chapter of Underwater Adventure layered sound by sound (put your headphones on), how to forge and share your own story, the Compagnie des bardes, and where to get Bardic. Subtitled, no voice over.</p>
-    <div class="video">
-      <video controls playsinline preload="metadata" poster="tutorial/261015_bardic_tutorial_poster.jpg">
-        <source src="tutorial/261015_bardic_tutorial_en.mp4" type="video/mp4">
-        <a href="tutorial/261015_bardic_tutorial_en.mp4">Watch the tutorial (MP4)</a>
-      </video>
-    </div>
-    <p class="video-note">Version française : <a href="tutorial/261015_bardic_tutorial_fr.mp4">regarder le tutoriel en français</a>. Sound credits: <a href="https://github.com/arthurvangeersdaele/Bardic/blob/main/docs/tutorial/261015_bardic_tutorial_credits.md">tutorial credits</a>.</p>
+    <p class="mock-cap">A chapter at the table: (1) the story, (2) the chapter, (3) one row per category, (4) a sound card.</p>
   </section>
 
-  <section>
-    <p class="kicker">Three zones</p>
-    <h2>Everything a scene needs, stacked.</h2>
-    <p class="intro">Each chapter opens on a landscape mixing table split into three rows. Scroll each row sideways to reach its sound cards.</p>
-    <div class="zones">
-      <div class="zone" style="--z:var(--music)"><h3>Music</h3><p>One track at a time. Starting a new one crossfades from the current track automatically.</p></div>
-      <div class="zone" style="--z:var(--amb)"><h3>Ambience</h3><p>Rain, fire, wind, crowds. Layer as many as you like, usually on infinite loop.</p></div>
-      <div class="zone" style="--z:var(--evt)"><h3>Events</h3><p>Church bells, a full battle, a volcano erupting. Short or long, triggered when the story calls for it.</p></div>
+  <!-- 6. Anatomy of a sound card -->
+  <section id="card">
+    <p class="kicker">Anatomy</p>
+    <h2>Inside a sound card.</h2>
+    <p class="intro">Everything a sound needs during the game, within reach of a thumb.</p>
+    <div class="anat" id="anat">
+      <div class="stage" id="stage">
+        <svg class="leads" viewBox="0 0 1000 480" aria-hidden="true">
+          <path d="M262 150H290"/>
+          <path d="M612 72V110"/>
+          <path d="M760 150H710"/>
+          <path d="M262 202H290"/>
+          <path d="M262 282H290"/>
+          <path d="M418 384V340"/>
+          <path d="M760 282H710"/>
+          <path d="M650 384V340"/>
+        </svg>
+        <div class="acard" aria-hidden="true">
+          <span class="nm">Church bells</span>
+          <span class="tm">0:08</span>
+          <span class="lp">1×</span>
+          <span class="tr"><i></i></span>
+          <span class="pl"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/></svg></span>
+          <span class="en"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5.5" y="5.5" width="13" height="13" rx="2"/></svg></span>
+          <span class="vl"><i></i><b></b></span>
+        </div>
+        <span class="n pin" style="left:290px;top:150px">1</span>
+        <span class="n pin" style="left:612px;top:110px">2</span>
+        <span class="n pin" style="left:710px;top:150px">3</span>
+        <span class="n pin" style="left:290px;top:202px">4</span>
+        <span class="n pin" style="left:290px;top:282px">5</span>
+        <span class="n pin" style="left:418px;top:340px">6</span>
+        <span class="n pin" style="left:710px;top:282px">7</span>
+        <span class="n pin" style="left:650px;top:340px">8</span>
+
+        <div class="lbl right" style="left:4px;top:98px"><b>Name <span class="n">1</span></b>The sound, as it shows at the table.</div>
+        <div class="lbl center" style="left:487px;top:0px"><b><span class="n">2</span> Time left</b>Turns red in the last ten seconds. Endless sounds say ∞ loop.</div>
+        <div class="lbl" style="left:770px;top:110px"><b><span class="n">3</span> Loop</b>1× once, 2× twice, ∞ forever. Events can also come back at random.</div>
+        <div class="lbl right" style="left:4px;top:180px"><b>Progress <span class="n">4</span></b>Green to red as the end comes. Full blue for an endless loop.</div>
+        <div class="lbl right" style="left:4px;top:262px"><b>Play / Pause <span class="n">5</span></b>Starts at once, pauses without a click.</div>
+        <div class="lbl center" style="left:293px;top:392px"><b><span class="n">6</span> Fade out</b>Ends the sound softly instead of cutting it.</div>
+        <div class="lbl" style="left:770px;top:262px"><b><span class="n">7</span> Volume</b>Its own level, under the master volume.</div>
+        <div class="lbl center" style="left:525px;top:392px"><b><span class="n">8</span> Glow</b>The card lights up in its row's colour while it plays.</div>
+      </div>
+    </div>
+    <ol class="anat-list">
+      <li><span class="n">1</span><span><b>Name</b>: the sound, as it shows at the table.</span></li>
+      <li><span class="n">2</span><span><b>Time left</b>: turns red in the last ten seconds. Endless sounds say ∞ loop.</span></li>
+      <li><span class="n">3</span><span><b>Loop</b>: 1× once, 2× twice, ∞ forever. Events can also come back at random.</span></li>
+      <li><span class="n">4</span><span><b>Progress</b>: green to red as the end comes. Full blue for an endless loop.</span></li>
+      <li><span class="n">5</span><span><b>Play / Pause</b>: starts at once, pauses without a click.</span></li>
+      <li><span class="n">6</span><span><b>Fade out</b>: ends the sound softly instead of cutting it.</span></li>
+      <li><span class="n">7</span><span><b>Volume</b>: its own level, under the master volume.</span></li>
+      <li><span class="n">8</span><span><b>Glow</b>: the card lights up in its row's colour while it plays.</span></li>
+    </ol>
+  </section>
+
+  <!-- 7. Compagnie des bardes -->
+  <section id="compagnie">
+    <div class="comp">
+      <div>
+        <svg class="sigil" id="sigil" width="84" height="73" viewBox="200 232 624 540" role="img" aria-label="Three bars that become three heads, a company of bards"><rect x="224" y="416" width="128" height="320" rx="64" fill="var(--music)"><animate attributeName="y" values="416;416;520;520;416" keyTimes="0;0.36;0.5;0.86;1" calcMode="spline" keySplines="0 0 1 1;.65 0 .35 1;0 0 1 1;.65 0 .35 1" dur="7s" repeatCount="indefinite"/><animate attributeName="height" values="320;320;128;128;320" keyTimes="0;0.36;0.5;0.86;1" calcMode="spline" keySplines="0 0 1 1;.65 0 .35 1;0 0 1 1;.65 0 .35 1" dur="7s" repeatCount="indefinite"/><animate attributeName="x" values="224;224;262;262;224" keyTimes="0;0.36;0.5;0.86;1" calcMode="spline" keySplines="0 0 1 1;.65 0 .35 1;0 0 1 1;.65 0 .35 1" dur="7s" repeatCount="indefinite"/></rect><rect x="448" y="256" width="128" height="512" rx="64" fill="var(--amb)"><animate attributeName="y" values="256;256;420;420;256" keyTimes="0;0.36;0.5;0.86;1" calcMode="spline" keySplines="0 0 1 1;.65 0 .35 1;0 0 1 1;.65 0 .35 1" dur="7s" repeatCount="indefinite"/><animate attributeName="height" values="512;512;128;128;512" keyTimes="0;0.36;0.5;0.86;1" calcMode="spline" keySplines="0 0 1 1;.65 0 .35 1;0 0 1 1;.65 0 .35 1" dur="7s" repeatCount="indefinite"/></rect><rect x="672" y="352" width="128" height="384" rx="64" fill="var(--evt)"><animate attributeName="y" values="352;352;520;520;352" keyTimes="0;0.36;0.5;0.86;1" calcMode="spline" keySplines="0 0 1 1;.65 0 .35 1;0 0 1 1;.65 0 .35 1" dur="7s" repeatCount="indefinite"/><animate attributeName="height" values="384;384;128;128;384" keyTimes="0;0.36;0.5;0.86;1" calcMode="spline" keySplines="0 0 1 1;.65 0 .35 1;0 0 1 1;.65 0 .35 1" dur="7s" repeatCount="indefinite"/><animate attributeName="x" values="672;672;634;634;672" keyTimes="0;0.36;0.5;0.86;1" calcMode="spline" keySplines="0 0 1 1;.65 0 .35 1;0 0 1 1;.65 0 .35 1" dur="7s" repeatCount="indefinite"/></rect></svg>
+        <p class="kicker">Community</p>
+        <h2>The Compagnie des bardes.</h2>
+        <p class="intro" style="margin-bottom:0">Every table has its tales, and some of them deserve to travel. Forge your story into a .bardic file, with its music, its ambiences and its thunderclaps, and lay it in the Recueil for every game master to find. Then bring one of theirs home to your table tonight.</p>
+      </div>
+      <div class="doors">
+        <a class="door" href="compagnie/recueil.html" style="--z:var(--accent)"><b>Recueil</b><span>The book of tales shared by the bards. Download one, or play it right away.</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="door pc-only" href="play/#/bardic" style="--z:var(--evt)"><b>Play a tale</b><span>Open a .bardic file from your computer on the mixing table.</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="door pc-only" href="compagnie/builder.html" style="--z:var(--amb)"><b>Story builder</b><span>Name your chapters, drop your MP3s or a YouTube clip, and forge a .bardic file.</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <p class="comp-note phone-only">On your phone, the Bardic app is your forge and your table. The builder and Play a tale wait for you on a computer.</p>
+      </div>
     </div>
   </section>
 
-  <section id="features">
-    <p class="kicker">Features</p>
-    <h2>Built for the heat of the game.</h2>
-    <div class="feat">
-      <div><h3>Sound cards</h3><p>Play, pause, fade-out end, volume, and a loop mode per card: once, twice or forever. Events can also come back at random, after a pause you set.</p></div>
-      <div><h3>See the end coming</h3><p>Progress bars shift from green to red, with a countdown in the last stretch, so a sound never cuts out by surprise.</p><div class="gradient" aria-hidden="true"></div></div>
-      <div><h3>Up to 20 sounds at once</h3><p>A low-latency native audio engine (Oboe) mixes everything into one stream, without lag.</p></div>
-      <div><h3>Soundbox</h3><p>Level-ups, explosions, critical hits: a shared pad of quick effects, reachable from every table. Pin your favorites.</p></div>
-      <div><h3>Master controls</h3><p>One volume, one play/pause and one stop for the whole table. Keeps playing with the screen off.</p></div>
-      <div><h3>Stories &amp; chapters</h3><p>Prepare each session ahead of time. Chapters are locked during play, so nothing moves by accident.</p></div>
-      <div><h3>Share your campaigns</h3><p>Export a story as a single .bardic file, sounds included, and import it on another phone.</p></div>
-      <div><h3>Four themes</h3><p>Parchment, Obsidian, Blood and Divination, each in light and dark.</p></div>
+  <!-- 8. GitHub and geek stuff -->
+  <section id="geek">
+    <p class="kicker">Under the hood</p>
+    <h2>Open source, all the way down.</h2>
+    <div class="geek-head">
+      <p class="intro">Every line of Bardic lives on GitHub: the Android app, the iPhone web app, this site, the file format and the build pipeline. Read it, fork it, open an issue, or send a tale to the Recueil.</p>
+      <a class="repo" href="https://github.com/arthurvangeersdaele/Bardic"><span class="d20"><svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M24 2 43 13v22L24 46 5 35V13Z"/><path d="M24 9 9 34h30Z"/><path d="M24 2v7M43 13 24 9M5 13l19-4M5 13l4 21M43 13l-4 21M5 35l4-1M43 35l-4-1M24 46 9 34M24 46l15-12"/></g><path class="gh" transform="translate(16 17.7)" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg></span><span><b>arthurvangeersdaele/Bardic</b><span>Source, issues and releases</span></span></a>
     </div>
-  </section>
-
-  <section>
-    <p class="kicker">Your sounds</p>
-    <h2>Bring your own library.</h2>
-    <p class="intro">Bardic plays your own sound files: MP3, M4A, WAV or OGG. Pick them from the phone or a cloud folder while you build a chapter, or reuse a sound you already added to another story. Bardic keeps its own copy, so a story never breaks when you tidy up your files, and a whole story travels as one .bardic file.</p>
+    <div class="stack">
+      <div class="tech">
+        <h3>Android <small>Kotlin, C++</small></h3>
+        <ul>
+          <li>Jetpack Compose UI, landscape only.</li>
+          <li>C++ mixer on <a href="https://github.com/google/oboe">Oboe</a> (AAudio, OpenSL ES): one low-latency stream, up to 20 voices, no locks or allocation on the audio thread.</li>
+          <li>NDK <code>AMediaCodec</code> decoding into lock-free ring buffers: every loaded sound starts instantly, loops are gapless.</li>
+          <li>Soundbox effects decoded in memory, up to 24 one-shots on top.</li>
+        </ul>
+      </div>
+      <div class="tech">
+        <h3>iPhone and web <small>JavaScript</small></h3>
+        <ul>
+          <li>iPhone: a Home Screen web app, stories in IndexedDB, offline thanks to a service worker.</li>
+          <li>Web player on the Web Audio API, sounds preloaded as blobs.</li>
+          <li>Story builder: everything in the browser, MP3 encoding with LAME, a YouTube clip recorded from the tab's own sound.</li>
+        </ul>
+      </div>
+      <div class="tech">
+        <h3>.bardic <small>format 2</small></h3>
+        <ul>
+          <li>A stored ZIP: <code>story.json</code> and the audio files.</li>
+          <li>Signed with a bard name, versioned by a hidden revision counter.</li>
+        </ul>
+<span class="code">{ <span class="k">"format"</span>: <span class="s">"bardic"</span>, <span class="k">"version"</span>: <span class="v">2</span>,
+  <span class="k">"bard"</span>: <span class="s">"Arthur"</span>, <span class="k">"revision"</span>: <span class="v">3</span>,
+  <span class="k">"chapters"</span>: [ { <span class="k">"title"</span>: <span class="s">"The flooded nave"</span>,
+    <span class="k">"music"</span>: [...], <span class="k">"ambience"</span>: [...], <span class="k">"events"</span>: [...] } ],
+  <span class="k">"soundbox"</span>: [...] }</span>
+      </div>
+      <div class="tech">
+        <h3>Pipeline <small>GitHub Actions</small></h3>
+        <ul>
+          <li>Every push to <code>main</code> builds the APK and publishes it as the latest beta; the app offers the update itself.</li>
+          <li>Tales sent to the Recueil are checked on their pull request, then indexed automatically.</li>
+          <li>Sounds of the web stories come from open source games (Battle for Wesnoth, 0 A.D., Flare, Stendhal), <a href="https://github.com/arthurvangeersdaele/Bardic/blob/main/docs/play/sounds/CREDITS.md">credited file by file</a>.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="links">
+      <a href="https://github.com/arthurvangeersdaele/Bardic#readme">README</a>
+      <a href="https://github.com/arthurvangeersdaele/Bardic/blob/main/BARDIC_FORMAT.md">.bardic format</a>
+      <a href="https://github.com/arthurvangeersdaele/Bardic/releases/tag/dev-latest">Latest APK</a>
+      <a href="https://github.com/arthurvangeersdaele/Bardic/actions">Builds</a>
+      <a href="https://github.com/arthurvangeersdaele/Bardic/issues">Issues</a>
+      <a href="https://github.com/arthurvangeersdaele/Bardic/tree/main/docs/recueil">Recueil on GitHub</a>
+    </div>
   </section>
 
   <footer>
-    <span>Bardic, an Android app for game masters. Try the <a href="play/">web discovery edition</a> or join the <a href="compagnie/">Compagnie des bardes</a>.</span>
+    <span>Bardic, the sound table for game masters. <a href="play/">Test it online</a> or join the <a href="compagnie/">Compagnie des bardes</a>.</span>
     <a href="https://github.com/arthurvangeersdaele/Bardic">github.com/arthurvangeersdaele/Bardic</a>
   </footer>
 </div>
 
 <script>
 (function(){
+  /* Mixing table mock */
   var zones=[
     {name:'Music',v:'--music',cards:[['Tavern Hearth',0,true,38,70],['Abbey Organ',2,false,0,65],['Storm at Sea',0,false,0,80],['Final Duel',1,false,0,85]]},
     {name:'Ambience',v:'--amb',cards:[['Rain on Stone',2,true,100,55],['Crackling Fire',2,true,100,40],['Distant Gulls',1,true,62,30],['Wind Howl',2,false,0,50]]},
@@ -214,20 +444,61 @@ footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);f
       var d=document.createElement('div');d.className='c'+(c[2]?' on':'');d.style.setProperty('--z','var('+z.v+')');
       d.innerHTML='<div class="ch"><b>'+c[0]+'</b>'+(inf&&c[2]?'<small>∞ loop</small>':'')+'<em style="color:'+(inf?'var(--blue)':'inherit')+'">'+L[c[1]]+'</em></div>'+
         '<div class="track"><div class="fill" style="width:'+pct+'%;background:'+col+'"></div></div>'+
-        '<div class="ctrl"><div class="pb">'+(c[2]?'❚❚':'▶')+'</div><div class="pb" style="background:transparent;border:1px solid var(--line);color:var(--text)">≡</div><div class="vol"><i style="width:'+c[4]+'%"></i></div></div>';
+        '<div class="ctrl"><div class="pb">'+(c[2]?'❚❚':'▶')+'</div><div class="pb" style="background:transparent;border:1px solid var(--line);color:var(--text)">■</div><div class="vol"><i style="width:'+c[4]+'%"></i></div></div>';
       cs.appendChild(d);
     });
     r.appendChild(lab);r.appendChild(cs);rows.appendChild(r);
   });
-  var mock=document.getElementById('mock'), screen=mock.parentNode;
-  function fit(){mock.style.transform='scale('+(screen.clientWidth/844)+')';}
+  /* Scale the fixed-size drawings to their box */
+  var mock=document.getElementById('mock'), stage=document.getElementById('stage');
+  function fit(){
+    mock.style.transform='scale('+(mock.parentNode.clientWidth/844)+')';
+    stage.style.transform='scale('+(stage.parentNode.clientWidth/1000)+')';
+  }
   window.addEventListener('resize',fit);fit();
-  var btns=document.querySelectorAll('.themes button');
-  btns.forEach(function(b){b.addEventListener('click',function(){
-    var t=b.getAttribute('data-t');
-    if(t==='obsidian')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);
-    btns.forEach(function(o){o.setAttribute('aria-pressed',o===b?'true':'false');});
-  });});
+
+  /* Android: point the button straight at the latest APK */
+  if(document.documentElement.classList.contains('android')){
+    fetch('https://api.github.com/repos/arthurvangeersdaele/Bardic/releases/tags/dev-latest').then(function(r){return r.ok?r.json():null}).then(function(j){
+      var a=j&&(j.assets||[]).filter(function(x){return /\.apk$/i.test(x.name)})[0];
+      if(a)document.getElementById('get-android').href=a.browser_download_url;
+    }).catch(function(){});
+  }
+
+  /* Reduced motion: keep the Compagnie logo still */
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)document.getElementById('sigil').pauseAnimations();
+
+  /* Tutorial player: the frame melts into the page, so the controls sit below it */
+  var v=document.getElementById('tuto'), film=document.getElementById('film'), playB=document.getElementById('v-play'),
+      seek=document.getElementById('v-seek'), time=document.getElementById('v-time'), seeking=false;
+  var PLAY='<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.9l12-7.5a1 1 0 0 0 0-1.8l-12-7.5A1 1 0 0 0 7 4.5z"/></svg>',
+      PAUSE='<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/></svg>';
+  function fmt(s){s=Math.max(0,Math.floor(s||0));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+  function toggle(){ if(v.paused) v.play(); else v.pause(); }
+  function paint(){
+    var on=!v.paused&&!v.ended;
+    film.classList.toggle('playing',on);
+    playB.innerHTML=on?PAUSE:PLAY; playB.setAttribute('aria-label',on?'Pause':'Play');
+    if(!seeking&&v.duration) seek.value=Math.round(v.currentTime/v.duration*1000);
+    time.textContent=fmt(v.currentTime)+' / '+fmt(v.duration||198);
+  }
+  ['play','pause','ended','timeupdate','loadedmetadata'].forEach(function(e){v.addEventListener(e,paint)});
+  film.addEventListener('click',toggle);
+  playB.addEventListener('click',toggle);
+  seek.addEventListener('input',function(){seeking=true;if(v.duration){time.textContent=fmt(seek.value/1000*v.duration)+' / '+fmt(v.duration)}});
+  seek.addEventListener('change',function(){if(v.duration)v.currentTime=seek.value/1000*v.duration;seeking=false});
+  document.getElementById('v-full').addEventListener('click',function(){
+    if(v.requestFullscreen)v.requestFullscreen();else if(v.webkitEnterFullscreen)v.webkitEnterFullscreen();
+  });
+  document.querySelectorAll('.lang button').forEach(function(b){b.addEventListener('click',function(){
+    var lang=b.getAttribute('data-lang'), at=v.currentTime, wasPlaying=!v.paused;
+    document.querySelectorAll('.lang button').forEach(function(o){o.setAttribute('aria-pressed',String(o===b))});
+    v.src='tutorial/261015_bardic_tutorial_'+lang+'.mp4';
+    v.addEventListener('loadedmetadata',function once(){v.removeEventListener('loadedmetadata',once);v.currentTime=Math.min(at,v.duration||at);if(wasPlaying)v.play()});
+    v.load();
+  })});
+  if(/^fr\b/i.test(navigator.language||''))document.querySelector('.lang button[data-lang="fr"]').click();
+  paint();
 })();
 </script>
 </body>
