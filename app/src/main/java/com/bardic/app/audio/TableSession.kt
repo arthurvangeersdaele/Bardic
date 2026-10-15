@@ -201,12 +201,12 @@ class TableSession(
             return
         }
         val fade = settings.fadeMs
-        var fadeIn = fadeInMs()
+        var fadeIn = 30
         if (card.zone == Zone.MUSIC && st != NativeEngine.ENDING) {
             val others = cards.filter { it !== card && it.zone == Zone.MUSIC && (isActive(it) || stateOf(it) == NativeEngine.PAUSED) }
             val crossing = others.any { isActive(it) }
             others.forEach { end(it, if (settings.crossfade) fade else 150) }
-            if (crossing && settings.crossfade && st != NativeEngine.PAUSED) fadeIn = maxOf(fade, fadeIn)
+            if (crossing && settings.crossfade && st != NativeEngine.PAUSED) fadeIn = fade
         }
         if (card.sound.loop == LoopMode.RANDOM) {
             card.randomOn = true
@@ -232,14 +232,11 @@ class TableSession(
                 } else if (now >= c.nextAt) {
                     c.nextAt = 0L
                     c.startedAt = now
-                    play(c, fadeInMs())
+                    play(c, 30)
                 }
             }
         }
     }
-
-    /** Fade-in when Play is tapped (and when a random event comes back), from the settings. */
-    private fun fadeInMs() = settings.fadeInMs.coerceAtLeast(30)
 
     private fun randomPause(): Long {
         val max = settings.randomMax * 1000L

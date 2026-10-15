@@ -376,9 +376,6 @@ private fun SettingsPanel(m: AppModel) {
         SetRow("Fade-out on stop", null) {
             Segmented(listOf(500 to "0.5 s", 1000 to "1 s", 2000 to "2 s", 4000 to "4 s"), st.fadeMs) { st.changeFade(it) }
         }
-        SetRow("Fade-in on play", "When you tap Play, not between loops") {
-            Segmented(listOf(0 to "Off", 500 to "0.5 s", 1000 to "1 s", 2000 to "2 s"), st.fadeInMs) { st.changeFadeIn(it) }
-        }
         SetRow("Crossfade music tracks", "Starting a track fades out the one playing") {
             Toggle(st.crossfade) { st.changeCrossfade(it) }
         }
