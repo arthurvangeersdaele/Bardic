@@ -23,6 +23,8 @@ object BardicIO {
 
     /** The Bardic site, where the Discovery stories and the Recueil live. */
     const val SITE = "https://arthurvangeersdaele.github.io/Bardic/"
+    /** The Bardic Discord server, open to every bard. */
+    const val DISCORD = "https://discord.gg/EkcyrgKQT"
     const val SHARE_LIMIT = 100L * 1024 * 1024
 
     private val AUDIO_EXT = setOf("mp3", "m4a", "aac", "wav", "ogg", "oga", "opus", "flac")

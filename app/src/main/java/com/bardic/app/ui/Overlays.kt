@@ -413,9 +413,13 @@ private fun SettingsPanel(m: AppModel) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Btn("Check for updates", kind = BtnKind.PRIMARY) { m.checkForUpdate(manual = true) }
             Btn("Bardic page") { m.openLink(BardicIO.SITE) }
-            Btn("The Recueil") { m.openLink("${BardicIO.SITE}compagnie/recueil.html") }
             Btn("Engine test") { m.goEngineTest() }
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Btn("The Recueil") { m.openLink("${BardicIO.SITE}compagnie/recueil.html") }
+            Btn("Discord", kind = BtnKind.PRIMARY) { m.openLink(BardicIO.DISCORD) }
+        }
+        Muted("Join the bards on Discord: share your tales, ask for sounds, tell us what Bardic should do next.", 13)
     }
 }
 

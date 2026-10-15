@@ -300,3 +300,13 @@ html:not(.pc) .tale .dl { background: var(--accent); border-color: var(--accent)
   body.lib-open .bld > .lib { grid-column: 3; grid-row: 2 / span 2; position: sticky; top: 56px; height: calc(100dvh - 56px); align-self: start; }
   body.lib-open .bld .soundbox { grid-column: 1 / 3; }
 }
+
+/* Discord, under the doors of the Compagnie */
+.discord-bar { display: flex; align-items: center; gap: 14px; width: min(100%, 360px); margin: 22px auto 0; padding: 14px 18px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); color: var(--text); text-decoration: none; text-align: left; transition: border-color .15s, transform .15s; }
+html.pc .discord-bar { width: min(100%, 906px); }
+.discord-bar:hover { border-color: #5865F2; transform: translateY(-2px); }
+.discord-bar > svg:first-child { flex: none; color: #8C96FF; }
+.discord-bar > span { flex: 1; min-width: 0; }
+.discord-bar b { display: block; font-family: 'Cormorant SC', serif; font-size: 24px; line-height: 1.1; }
+.discord-bar span span { color: var(--muted); font-size: 15px; }
+.discord-bar .go { flex: none; color: #8C96FF; }
