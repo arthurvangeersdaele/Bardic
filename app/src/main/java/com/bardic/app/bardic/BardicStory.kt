@@ -10,7 +10,7 @@ import java.util.UUID
 
 enum class LoopMode(val json: String) {
     ONCE("once"), TWICE("twice"), INFINITE("infinite"),
-    /** Events only: plays once, then again and again after a random pause (0.5 s to the maximum set in the settings). */
+    /** Events and ambiances: plays once, then again and again after a random pause (0.5 s to the maximum set in the settings). */
     RANDOM("random");
 
     /** Loop mode handed to the audio engine: a random event is played once at a time. */

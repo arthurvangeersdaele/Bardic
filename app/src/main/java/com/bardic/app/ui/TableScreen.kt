@@ -238,7 +238,7 @@ private fun PlayCard(m: AppModel, s: TableSession, c: Card, z: Color) {
                     st == NativeEngine.LOADING -> info = "loading…"
                 }
                 if (info.isNotEmpty()) T(info, color = if (warn) C.evt else C.muted, size = 12.sp, weight = if (warn) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1)
-                LoopChip(loop, height = 22.dp) { s.setLoop(c, loop.next(allowRandom = c.zone == Zone.EVENTS)) }
+                LoopChip(loop, height = 22.dp) { s.setLoop(c, loop.next(allowRandom = c.zone != Zone.MUSIC)) }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 val playing = st == NativeEngine.PLAYING || waiting

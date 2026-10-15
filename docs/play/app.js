@@ -1,5 +1,5 @@
 /* Bardic web edition.
- * Fixed stories, a live mixing table (Music / Ambience / Events) and a soundbox.
+ * Fixed stories, a live mixing table (Music / Ambiances / Events) and a soundbox.
  * Opening a story downloads every MP3 of every chapter into memory, so any sound starts instantly.
  * Long sounds play through <audio> elements fed from in-memory blobs (low RAM, gapless enough);
  * soundbox effects are fully decoded (AudioBuffer) so they fire with zero delay and can overlap.
@@ -10,7 +10,7 @@
   const $ = (s) => document.querySelector(s);
   const ZONES = [
     { id: 'music', label: 'Music', color: 'var(--music)', loop: 2, empty: 'No music in this chapter yet.' },
-    { id: 'ambience', label: 'Ambience', color: 'var(--amb)', loop: 2, empty: 'No ambience in this chapter yet.' },
+    { id: 'ambience', label: 'Ambiances', color: 'var(--amb)', loop: 2, empty: 'No ambiances in this chapter yet.' },
     { id: 'events', label: 'Events', color: 'var(--evt)', loop: 0, empty: 'No events in this chapter yet.' },
   ];
   const LOOP_LABELS = ['1×', '2×', '∞'];
@@ -297,7 +297,7 @@
       ZONES.forEach((zone) => {
         ch.voices[zone.id] = (lib[zone.id] || []).map((s) => {
           const v = new Voice(s, zone, ch);
-          if (s.loop in LOOP_INDEX && (s.loop !== 'random' || zone.id === 'events')) v.loop = LOOP_INDEX[s.loop];
+          if (s.loop in LOOP_INDEX && (s.loop !== 'random' || zone.id !== 'music')) v.loop = LOOP_INDEX[s.loop];
           if (typeof s.volume === 'number') v.vol = s.volume;
           story.all.push(v);
           return v;
@@ -528,8 +528,8 @@
     const name = el('b', '', v.sound.name); name.title = v.sound.name;
     const rem = el('small');
     const loop = el('button', 'loop');
-    loop.type = 'button'; loop.title = v.zone.id === 'events' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
-    loop.addEventListener('click', () => v.setLoop((v.loop + 1) % (v.zone.id === 'events' ? 4 : 3)));
+    loop.type = 'button'; loop.title = v.zone.id !== 'music' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
+    loop.addEventListener('click', () => v.setLoop((v.loop + 1) % (v.zone.id !== 'music' ? 4 : 3)));
     head.append(name, rem, loop);
     const track = el('div', 'track'); const fill = el('div', 'fill'); track.append(fill);
     const ctrl = el('div', 'ctrl');

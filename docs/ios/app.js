@@ -1,12 +1,12 @@
 /* Bardic for iPhone.
  * A Home Screen web app that follows the Android app: a library of stories kept on the phone (IndexedDB),
- * a story editor (chapters, Music / Ambience / Events, the story's soundbox), the live mixing table,
+ * a story editor (chapters, Music / Ambiances / Events, the story's soundbox), the live mixing table,
  * a shared soundbox, settings, and .bardic import and export (the format of BARDIC_FORMAT.md).
  */
 (() => {
   'use strict';
 
-  const VERSION = '261015.3';
+  const VERSION = '261015.5';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -18,7 +18,7 @@
   const FMT = window.Bardic;
   const ZONES = [
     { id: 'music', label: 'Music', color: 'var(--music)', loop: 2, empty: 'No music in this chapter yet.', hint: 'Add music: one track plays at a time' },
-    { id: 'ambience', label: 'Ambience', color: 'var(--amb)', loop: 2, empty: 'No ambience in this chapter yet.', hint: 'Add ambiences: rain, fire, crowds' },
+    { id: 'ambience', label: 'Ambiances', color: 'var(--amb)', loop: 2, empty: 'No ambiances in this chapter yet.', hint: 'Add ambiances: rain, fire, crowds' },
     { id: 'events', label: 'Events', color: 'var(--evt)', loop: 0, empty: 'No events in this chapter yet.', hint: 'Add events: bells, roars, explosions' },
   ];
   const ZONE = Object.fromEntries(ZONES.map((z) => [z.id, z]));
@@ -854,14 +854,14 @@
     mv.append(l, r);
     const loop = el('button', 'loop');
     loop.type = 'button';
-    loop.title = zone.id === 'events' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
+    loop.title = zone.id !== 'music' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
     const paintLoop = () => {
       if (s.loop === 'random') loop.innerHTML = ICON.random; else loop.textContent = LOOP_LABELS[LOOP_INDEX[s.loop] ?? 0];
       loop.classList.toggle('inf', s.loop === 'infinite');
       loop.classList.toggle('rnd', s.loop === 'random');
     };
     paintLoop();
-    loop.onclick = () => { s.loop = LOOP_NAMES[((LOOP_INDEX[s.loop] ?? 0) + 1) % (zone.id === 'events' ? 4 : 3)]; paintLoop(); dirty(); };
+    loop.onclick = () => { s.loop = LOOP_NAMES[((LOOP_INDEX[s.loop] ?? 0) + 1) % (zone.id !== 'music' ? 4 : 3)]; paintLoop(); dirty(); };
     // Soundbox effects fire once per tap: no loop button for them.
     bottom.append(play, meta, mv);
     if (zone.id !== 'soundbox') bottom.append(loop);
@@ -1086,7 +1086,7 @@
     constructor(sound, zone, chapter) {
       this.sound = sound; this.zone = zone; this.chapter = chapter;
       this.loop = LOOP_INDEX[sound.loop] ?? zone.loop;
-      if (this.loop === 3 && zone.id !== 'events') this.loop = 0;
+      if (this.loop === 3 && zone.id === 'music') this.loop = 0;
       this.vol = typeof sound.volume === 'number' ? sound.volume : 0.75;
       this.state = 'loading';
       this.plays = 0; this.el = null; this.url = null; this.env = null; this.vg = null; this.timer = 0; this.card = null;
@@ -1327,8 +1327,8 @@
     const name = el('b', '', v.sound.name); name.title = v.sound.name;
     const rem = el('small');
     const loop = el('button', 'loop');
-    loop.type = 'button'; loop.title = v.zone.id === 'events' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
-    loop.addEventListener('click', () => v.setLoop((v.loop + 1) % (v.zone.id === 'events' ? 4 : 3)));
+    loop.type = 'button'; loop.title = v.zone.id !== 'music' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
+    loop.addEventListener('click', () => v.setLoop((v.loop + 1) % (v.zone.id !== 'music' ? 4 : 3)));
     head.append(name, rem, loop);
     const track = el('div', 'track'); const fill = el('div', 'fill'); track.append(fill);
     const ctrl = el('div', 'ctrl');

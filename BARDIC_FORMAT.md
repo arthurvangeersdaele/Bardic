@@ -65,7 +65,7 @@ The folder layout above is what the builder writes, but readers find sounds **on
 | `generator` | string | no | Tool that wrote the file. |
 | `chapters` | array | yes | At least one chapter, in play order. |
 | `chapters[].title` | string | yes | Chapter title. |
-| `chapters[].music` / `ambience` / `events` | array of sounds | yes | The three zones of the mixing table. May be empty. |
+| `chapters[].music` / `ambience` / `events` | array of sounds | yes | The three rows of the mixing table: Music, Ambiances, Events. May be empty. |
 | `soundbox` | array of sounds | yes | Quick effects for this story. May be empty. |
 
 A **sound**:
@@ -74,11 +74,13 @@ A **sound**:
 | --- | --- | --- | --- |
 | `name` | string | yes | Card title. |
 | `file` | string | yes | Path of the audio entry inside the archive. MP3 recommended; OGG, M4A and WAV are accepted. |
-| `loop` | string | yes | `"once"`, `"twice"` or `"infinite"` (the 1×, 2× and ∞ of the app). Events may also use `"random"`: the sound plays again and again, after a random pause of 0.5 s up to a maximum set in the player's settings (1 to 10 s). A reader that does not know `"random"` plays the sound once, and keeps the value when it re-saves the file. |
+| `loop` | string | yes | `"once"`, `"twice"` or `"infinite"` (the 1×, 2× and ∞ of the app). Events and ambiances may also use `"random"` (not music): the sound plays again and again, after a random pause of 0.5 s up to a maximum set in the player's settings (1 to 10 s). A reader that does not know `"random"` plays the sound once, and keeps the value when it re-saves the file. |
 | `volume` | number | no | 0 to 1, default 0.75. |
 | `duration` | number | no | Seconds, informative only. |
 
-Default loop modes used by the builder: Music and Ambience `infinite`, Events and Soundbox `once`.
+Default loop modes used by the builder: Music and Ambiances `infinite`, Events and Soundbox `once`. Soundbox effects fire once per tap: players ignore their `loop`, and the editors show no loop button for them.
+
+The JSON keys stay `music`, `ambience` and `events`; the apps show the rows as Music, Ambiances and Events.
 
 Unknown fields must be kept when a tool re-saves a file, so later versions can add things without breaking older ones.
 

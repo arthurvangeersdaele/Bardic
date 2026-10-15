@@ -5,13 +5,13 @@
   const { ZONES, pack, unpack, validate, isAudio, formatSize, SHARE_LIMIT, bardName } = window.Bardic;
   const ZONE_INFO = {
     music: { label: 'Music', color: 'var(--music)', loop: 'infinite', hint: 'Drop music here, one track plays at a time' },
-    ambience: { label: 'Ambience', color: 'var(--amb)', loop: 'infinite', hint: 'Drop ambiences here: rain, fire, crowds' },
+    ambience: { label: 'Ambiances', color: 'var(--amb)', loop: 'infinite', hint: 'Drop ambiances here: rain, fire, crowds' },
     events: { label: 'Events', color: 'var(--evt)', loop: 'once', hint: 'Drop events here: bells, roars, explosions' },
     soundbox: { label: 'Soundbox', color: 'var(--accent)', loop: 'once', hint: 'Drop quick effects here' },
   };
   const LOOP_LABEL = { once: '1×', twice: '2×', infinite: '∞' };
-  // Events can also come back at random (the table plays them again after a short random pause).
-  const nextLoop = (loop, zone) => ({ once: 'twice', twice: 'infinite', infinite: zone === 'events' ? 'random' : 'once', random: 'once' })[loop] || 'once';
+  // Events and ambiances can also come back at random (the table plays them again after a short random pause).
+  const nextLoop = (loop, zone) => ({ once: 'twice', twice: 'infinite', infinite: zone === 'events' || zone === 'ambience' ? 'random' : 'once', random: 'once' })[loop] || 'once';
   const UPLOAD_URL = 'https://github.com/arthurvangeersdaele/Bardic/upload/main/docs/recueil';
 
   const svg = (d, size = 16, fill = false) =>
@@ -349,7 +349,7 @@
     const meta = el('span', 'meta');
     const loop = el('button', 'loop');
     loop.type = 'button';
-    loop.title = zone === 'events' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
+    loop.title = zone === 'events' || zone === 'ambience' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
     const paintLoop = () => {
       if (s.loop === 'random') { loop.innerHTML = ICON.random; loop.setAttribute('aria-label', 'Random: plays again after a short random pause'); }
       else { loop.textContent = LOOP_LABEL[s.loop] || '1×'; loop.removeAttribute('aria-label'); }

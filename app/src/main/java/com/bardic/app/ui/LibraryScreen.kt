@@ -293,7 +293,7 @@ fun EditCard(m: AppModel, t: Target, s: Sound, index: Int, count: Int, z: Color,
             IconBtn(BIcons.left, "Move earlier", size = 28.dp, iconSize = 12.dp, enabled = index > 0) { m.moveSound(t, index, -1) }
             IconBtn(BIcons.right, "Move later", size = 28.dp, iconSize = 12.dp, enabled = index < count - 1) { m.moveSound(t, index, 1) }
             // Soundbox effects fire once per tap: no loop button for them.
-            if (t is Target.ChapterZone) LoopChip(s.loop, height = 24.dp) { m.updateSound(t, s.uid) { x -> x.copy(loop = x.loop.next(allowRandom = (t as? Target.ChapterZone)?.zone == Zone.EVENTS)) } }
+            if (t is Target.ChapterZone) LoopChip(s.loop, height = 24.dp) { m.updateSound(t, s.uid) { x -> x.copy(loop = x.loop.next(allowRandom = t.zone != Zone.MUSIC)) } }
         }
     }
 }

@@ -382,7 +382,7 @@ private fun SettingsPanel(m: AppModel) {
         SetRow("Keep screen awake", "While a story is open, so the screen stays on at the table") {
             Toggle(st.keepAwake) { st.changeKeepAwake(it) }
         }
-        SetRow("Random events", "An event set to random plays again after a pause of 0.5 s to ${st.randomMax} s") {
+        SetRow("Random sounds", "Events and ambiances set to random play again after a pause of 0.5 s to ${st.randomMax} s") {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 IconBtn(BIcons.left, "Shorter", size = 34.dp, iconSize = 13.dp, enabled = st.randomMax > 1) { st.changeRandomMax(st.randomMax - 1) }
                 T("${st.randomMax} s", weight = FontWeight.SemiBold, size = 16.sp, align = TextAlign.Center, modifier = Modifier.width(40.dp))

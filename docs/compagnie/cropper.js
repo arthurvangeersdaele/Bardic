@@ -18,7 +18,7 @@
     stop: svg('<rect x="5.5" y="5.5" width="13" height="13" rx="2"/>', 12, true),
     rec: svg('<circle cx="12" cy="12" r="7"/>', 14, true),
   };
-  const ZONE_LABEL = { music: 'Music', ambience: 'Ambience', events: 'Events', soundbox: 'Soundbox' };
+  const ZONE_LABEL = { music: 'Music', ambience: 'Ambiances', events: 'Events', soundbox: 'Soundbox' };
 
   function fmt(t) {
     if (!isFinite(t)) return '0:00.0';

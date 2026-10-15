@@ -12,7 +12,7 @@ enum class Zone(
     val hint: String,
 ) {
     MUSIC("music", "Music", LoopMode.INFINITE, "No music in this chapter yet.", "Add music: one track plays at a time"),
-    AMBIENCE("ambience", "Ambience", LoopMode.INFINITE, "No ambience in this chapter yet.", "Add ambiences: rain, fire, crowds"),
+    AMBIENCE("ambience", "Ambiances", LoopMode.INFINITE, "No ambiances in this chapter yet.", "Add ambiances: rain, fire, crowds"),
     EVENTS("events", "Events", LoopMode.ONCE, "No events in this chapter yet.", "Add events: bells, roars, explosions"),
 }
 

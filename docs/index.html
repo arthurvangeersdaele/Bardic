@@ -18,7 +18,7 @@
 })();
 </script>
 <title>Bardic, the sound table for game masters</title>
-<meta name="description" content="Bardic turns your phone into a sound desk for tabletop RPGs: music, ambience and events for each chapter of your story, played live. Android and iPhone.">
+<meta name="description" content="Bardic turns your phone into a sound desk for tabletop RPGs: music, ambiances and events for each chapter of your story, played live. Android and iPhone.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
@@ -207,7 +207,7 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
   <header class="hero">
     <span class="badge not-iphone"><i></i>Android beta available</span><span class="badge iphone-only"><i></i>Now on iPhone</span>
     <h1>Your table deserves a soundtrack.</h1>
-    <p class="lead">Bardic turns your phone into a sound desk for tabletop RPGs. Prepare music, ambience and events for each chapter of your story, then play them live with one hand while you run the game.</p>
+    <p class="lead">Bardic turns your phone into a sound desk for tabletop RPGs. Prepare music, ambiances and events for each chapter of your story, then play them live with one hand while you run the game.</p>
 
     <!-- 2. Test it quick -->
     <div class="ctas">
@@ -265,14 +265,14 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
       <div class="lv"><span class="n">3</span><h3>3 sort of Sounds</h3>
         <div class="cats">
           <span style="--z:var(--music)"><b>Music</b>: one track at a time, crossfading.</span>
-          <span style="--z:var(--amb)"><b>Ambience</b>: rain, fire, crowds, layered on loop.</span>
+          <span style="--z:var(--amb)"><b>Ambiances</b>: rain, fire, crowds, layered on loop.</span>
           <span style="--z:var(--evt)"><b>Events</b>: bells, roars, explosions, on cue or at random.</span>
         </div>
       </div>
       <div class="lv"><span class="n">4</span><h3>Sound card</h3><p>One sound with its own controls. Play, pause, fade it out, loop it. Its anatomy is just below.</p></div>
     </div>
 
-    <div class="phone" aria-label="A chapter at the table: The Drowned Abbey, chapter 2, with Music, Ambience and Events rows of sound cards" role="img">
+    <div class="phone" aria-label="A chapter at the table: The Drowned Abbey, chapter 2, with Music, Ambiances and Events rows of sound cards" role="img">
       <div class="screen"><div class="table" id="mock">
         <span class="n" style="left:244px;top:4px">1</span>
         <span class="n" style="left:236px;top:30px">2</span>
@@ -327,7 +327,7 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
 
         <div class="lbl right" style="left:4px;top:98px"><b>Name <span class="n">1</span></b>The sound, as it shows at the table.</div>
         <div class="lbl center" style="left:487px;top:0px"><b><span class="n">2</span> Time left</b>Turns red in the last ten seconds. Endless sounds say ∞ loop.</div>
-        <div class="lbl" style="left:770px;top:110px"><b><span class="n">3</span> Loop</b>1× once, 2× twice, ∞ forever. Events can also come back at random.</div>
+        <div class="lbl" style="left:770px;top:110px"><b><span class="n">3</span> Loop</b>1× once, 2× twice, ∞ forever. Events and ambiances can also come back at random.</div>
         <div class="lbl right" style="left:4px;top:180px"><b>Progress <span class="n">4</span></b>Green to red as the end comes. Full blue for an endless loop.</div>
         <div class="lbl right" style="left:4px;top:262px"><b>Play / Pause <span class="n">5</span></b>Starts at once, pauses without a click.</div>
         <div class="lbl center" style="left:293px;top:392px"><b><span class="n">6</span> Fade out</b>Ends the sound softly instead of cutting it.</div>
@@ -338,7 +338,7 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
     <ol class="anat-list">
       <li><span class="n">1</span><span><b>Name</b>: the sound, as it shows at the table.</span></li>
       <li><span class="n">2</span><span><b>Time left</b>: turns red in the last ten seconds. Endless sounds say ∞ loop.</span></li>
-      <li><span class="n">3</span><span><b>Loop</b>: 1× once, 2× twice, ∞ forever. Events can also come back at random.</span></li>
+      <li><span class="n">3</span><span><b>Loop</b>: 1× once, 2× twice, ∞ forever. Events and ambiances can also come back at random.</span></li>
       <li><span class="n">4</span><span><b>Progress</b>: green to red as the end comes. Full blue for an endless loop.</span></li>
       <li><span class="n">5</span><span><b>Play / Pause</b>: starts at once, pauses without a click.</span></li>
       <li><span class="n">6</span><span><b>Fade out</b>: ends the sound softly instead of cutting it.</span></li>
@@ -434,7 +434,7 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
   /* Mixing table mock */
   var zones=[
     {name:'Music',v:'--music',cards:[['Tavern Hearth',0,true,38,70],['Abbey Organ',2,false,0,65],['Storm at Sea',0,false,0,80],['Final Duel',1,false,0,85]]},
-    {name:'Ambience',v:'--amb',cards:[['Rain on Stone',2,true,100,55],['Crackling Fire',2,true,100,40],['Distant Gulls',1,true,62,30],['Wind Howl',2,false,0,50]]},
+    {name:'Ambiances',v:'--amb',cards:[['Rain on Stone',2,true,100,55],['Crackling Fire',2,true,100,40],['Distant Gulls',1,true,62,30],['Wind Howl',2,false,0,50]]},
     {name:'Events',v:'--evt',cards:[['Church Bells',1,true,88,75],['Battle Melee',0,false,0,80],['Volcano Eruption',0,false,0,90],['Door Creak',0,false,0,60]]}
   ];
   var L=['1×','2×','∞'];
