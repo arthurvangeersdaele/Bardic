@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261016.1';
+  const VERSION = '261016.2';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -327,6 +327,13 @@
     const meta = el('div', 'meta');
     meta.append(el('span', '', `${plural(s.chapters.length, 'chapter')}, ${plural(soundCount(s), 'sound')}, ${size(storyBytes(s))}`));
     c.append(meta);
+    if (s.damaged) {
+      // Imported by an older version: its sounds all play the first one. Offer to load the file again.
+      c.classList.add('damaged');
+      const fix = btn('btn repair', '<span>Repair the sounds</span>', null, () => repairStory(s));
+      c.append(fix);
+      return c;
+    }
     const acts = el('div', 'acts');
     const play = btn('btn primary', `${ICON.play}<span>Play</span>`, null, () => { audio(); location.hash = `#/play/${encodeURIComponent(s.uid)}/1`; });
     const edit = btn('ico small', ICON.edit, `Edit ${s.title}`, () => { location.hash = `#/edit/${encodeURIComponent(s.uid)}/1`; });
@@ -384,15 +391,18 @@
       toast('Choose a .bardic file.');
       return;
     }
-    await importFile(f, f.name);
+    const r = repairUid;
+    repairUid = null;
+    await importFile(f, f.name, r);
   });
 
-  async function importFile(blob, label) {
+  async function importFile(blob, label, repairUid = null) {
     try {
       busy('Opening the tale', label, 0);
       const d = await FMT.unpack(blob, (done, total) => busy('Opening the tale', `Reading sound ${done} of ${total}`, done / total));
       idle();
-      const added = await importDraft(d);
+      const added = await importDraft(d, {}, repairUid);
+      if (added && repairUid) { await DB.collect(); toast(`“${added.title}” is repaired.`); }
       if (added) { await refresh(); if (screen === 'library') renderLibrary(); toast(`“${added.title}” is on your table.`); }
       return added;
     } catch (err) {
@@ -403,13 +413,15 @@
   }
 
   /** Stores an unpacked .bardic draft (see bardic-format.js unpack). Asks before replacing a story it already has. */
-  async function importDraft(d, extra = {}) {
+  async function importDraft(d, extra = {}, repairUid = null) {
     if (!d.chapters.length) throw new Error('This tale has no chapter.');
     const stories = await DB.listStories();
     const twin = stories.find((s) => s.id && s.id === d.id);
     let uid = DB.uid();
     let id = d.id;
-    if (twin) {
+    if (repairUid) {
+      uid = repairUid; // repairing a damaged story: replace it without asking
+    } else if (twin) {
       const newer = d.revision > (twin.revision || 0);
       const v = await ask(`You already have “${twin.title}”`, newer
         ? `Yours is revision ${twin.revision}, this file is revision ${d.revision}. Replace yours with it?`
@@ -440,6 +452,7 @@
       const soundbox = [];
       for (const s of d.soundbox) soundbox.push(await store(s));
       const story = Object.assign({
+        audioChecked: true, damaged: false,
         uid, id, revision: id ? d.revision : 0, created: id ? d.created : null, bard: d.bard || '',
         title: d.title || 'Untitled tale', description: d.description || '', extra: d.extra || {}, chapters, soundbox, source: 'import',
       }, extra);
@@ -459,6 +472,62 @@
       return new Error('Your iPhone has no room left for these sounds. Free some space, or delete a story you no longer play.');
     }
     return err;
+  }
+
+  /* ---------- Repairing stories imported before 261016.2 ---------- */
+  // A sound stored by those versions may give back the start of its .bardic archive: its first bytes are then
+  // the ZIP signature "PK\x03\x04" instead of audio. Each story is checked once, by reading 4 bytes per sound.
+  async function scanDamage() {
+    let found = false;
+    for (const s of await DB.listStories()) {
+      if (s.audioChecked) continue;
+      let bad = false;
+      for (const x of DB.soundsOf(s)) {
+        try {
+          const b = await DB.getBlob(x.blob);
+          if (!b) continue;
+          const h = new Uint8Array(await b.slice(0, 4).arrayBuffer());
+          if (h[0] === 0x50 && h[1] === 0x4B && h[2] === 0x03 && h[3] === 0x04) { bad = true; break; }
+        } catch (e) { /* unreadable: leave it */ }
+      }
+      s.audioChecked = true;
+      s.damaged = bad;
+      found = found || bad;
+      await DB.putStory(s, false);
+    }
+    if (found) { await refresh(); if (screen === 'library') renderLibrary(); }
+  }
+
+  let repairUid = null;
+  async function repairStory(s) {
+    // A tale of the Recueil downloads again by itself; any other story needs its .bardic file.
+    let tale = null;
+    if (s.id) {
+      try {
+        const data = await fetch('../recueil/index.json', { cache: 'no-cache' }).then((r) => r.json());
+        tale = (data.tales || []).find((t) => t.id === s.id) || null;
+      } catch (e) { /* offline */ }
+    }
+    const v = await ask(`Repair “${s.title}”`, tale
+      ? 'An older version of Bardic stored its sounds wrongly: they all play the first sound. Bardic downloads this tale from the Recueil again. Changes you made to it on this iPhone are lost.'
+      : 'An older version of Bardic stored its sounds wrongly: they all play the first sound. Choose its .bardic file again (from Files or iCloud Drive) to repair it. Changes you made to it on this iPhone are lost.', [
+      { label: 'Cancel', value: null }, { label: tale ? 'Download again' : 'Choose the file', value: 'go', cls: 'primary' },
+    ]);
+    if (!v) return;
+    if (tale) {
+      try {
+        let got = 0;
+        busy('Fetching the tale', tale.title, 0);
+        const blob = await download(`../recueil/${encodeURIComponent(tale.file)}`, (n) => { got += n; busy('Fetching the tale', `${tale.title}, ${size(got)}`, tale.size ? Math.min(1, got / tale.size) : null); });
+        await importFile(blob, tale.title, s.uid);
+      } catch (e) {
+        idle();
+        ask('The tale could not be downloaded', 'Check your connection and try again.', [{ label: 'OK', value: 'ok', cls: 'primary' }]);
+      }
+      return;
+    }
+    repairUid = s.uid;
+    pickBardic();
   }
 
   /* ---------- The Recueil ---------- */
@@ -1830,6 +1899,7 @@
       return;
     }
     await route();
+    scanDamage().catch(() => {});
   }
   boot();
 })();

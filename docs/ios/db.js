@@ -82,8 +82,13 @@
 
   /* ---------- blobs ---------- */
   async function putBlob(blob, key = uid()) {
+    // Store a standalone copy of the bytes. Safari keeps a sound cut out of a .bardic archive (a Blob slice)
+    // as a pointer to the whole archive, and after a relaunch gives back the start of the archive instead:
+    // every sound then played the first sound of the file.
+    const type = blob.type || 'audio/mpeg';
+    const own = new Blob([await blob.arrayBuffer()], { type });
     const { tx, os } = await store('blobs', 'readwrite');
-    os.put({ key, blob, size: blob.size, type: blob.type || 'audio/mpeg' });
+    os.put({ key, blob: own, size: own.size, type });
     await done(tx);
     return key;
   }

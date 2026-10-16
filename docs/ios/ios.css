@@ -395,3 +395,8 @@ html.mode-app input[type="range"].dragging::-webkit-slider-thumb { transform: sc
   .sp-go .sp-word { animation: none; opacity: 1; transform: none; color: #FFFFFF; text-shadow: 0 0 .06em rgba(255, 255, 255, .55), 0 0 .35em rgba(255, 255, 255, .22); }
   .sp-go .sp-word::before, .sp-go .sp-word::after { animation: none; opacity: 0; }
 }
+
+/* A story imported by an older version, whose sounds need loading again. */
+.scard.damaged { border-top-color: var(--evt); }
+.scard.damaged .meta::after { content: "Its sounds all play the first one. Repair them to play this story."; display: block; white-space: normal; color: var(--evt); margin-top: 4px; }
+.scard .btn.repair { height: 38px; justify-content: center; background: var(--evt); border-color: var(--evt); color: var(--on-z); }
