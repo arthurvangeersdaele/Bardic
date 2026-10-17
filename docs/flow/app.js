@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '261017.2';
+  const VERSION = '261017.3';
   const { $, el, ICON, settings, saveSettings, applyTheme, toast, busy, idle, ask, deliver, audio, decode, applyAudioSession } = window.FlowUI;
   const F = window.BardicFlow;
   const DB = window.FlowDB;
@@ -20,7 +20,7 @@
     list.textContent = '';
     if (!recs.length) {
       const e = el('div', 'fl-welcome');
-      e.innerHTML = `<span class="fl-wire-art" aria-hidden="true"><i></i><i></i><i></i></span>
+      e.innerHTML = `<svg class="fl-wire-art" viewBox="290 120 444 770" aria-hidden="true"><path d="M512 196V500C512 630 352 640 352 812M512 500C512 630 672 640 672 812"/><circle cx="512" cy="176" r="38"/><circle cx="352" cy="826" r="46"/><circle cx="672" cy="826" r="46"/></svg>
         <h1>Follow the golden wire.</h1>
         <p>Bardic Flow plays your story on time: every sound of a chapter waits on a wire running down the screen, and lights up when its moment comes. You only tap Go at the gates.</p>
         <p class="muted">${pc()
@@ -31,6 +31,7 @@
       b.addEventListener('click', pickFile);
       e.append(b);
       list.append(e);
+      list.append(discoveryCard());
       return;
     }
     recs.forEach((r) => {
@@ -67,6 +68,39 @@
       card.append(main, acts);
       list.append(card);
     });
+    if (!recs.some((r) => r.flow.id === DISCOVERY.id)) list.append(discoveryCard());
+  }
+
+  /* ================= Discovery tale ================= */
+  const DISCOVERY = { id: '3c9a6e2f-81d4-4b7a-a5e2-6f0b9d4c2a17', file: 'discovery/261017_underwater-adventure.bardic-flow', title: 'Underwater Adventure' };
+  function discoveryCard() {
+    const b = el('button', 'fl-discovery');
+    b.type = 'button';
+    b.innerHTML = `<span>Discovery tale</span><b>${DISCOVERY.title}</b><small>Five chapters already timed, from a lazy beach to the Kraken. About 32 MB.</small>`;
+    b.addEventListener('click', addDiscovery);
+    return b;
+  }
+  async function addDiscovery() {
+    try {
+      busy(`Downloading ${DISCOVERY.title}`, '', 0);
+      const res = await fetch(DISCOVERY.file);
+      if (!res.ok) throw new Error(`the server answered ${res.status}`);
+      const total = Number(res.headers.get('content-length')) || 0;
+      const reader = res.body.getReader();
+      const parts = [];
+      let got = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        parts.push(value);
+        got += value.length;
+        busy(`Downloading ${DISCOVERY.title}`, total ? `${window.Bardic.formatSize(got)} of ${window.Bardic.formatSize(total)}` : window.Bardic.formatSize(got), total ? got / total : null);
+      }
+      await importFile(new File(parts, DISCOVERY.file.split('/').pop()));
+    } catch (e) {
+      idle();
+      toast(`${DISCOVERY.title} could not be downloaded (${e.message || e}). Check your connection and try again.`, 5200);
+    }
   }
 
   function storyMenu(r) {

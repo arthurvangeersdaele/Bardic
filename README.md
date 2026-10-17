@@ -104,6 +104,8 @@ Bardic Flow is for bards who prepare the exact timing of their sounds before the
 - **Editor** (computer only for now): steps, gates, when the next step starts, and for each card its offset, length, trim, repeat, fades and volume; sounds dragged from the chapter, another chapter or the soundbox. Importing a `.bardic` builds a first Flow to start from. **Forge .bardic-flow** writes the file for the phone, **Export .bardic** gives the story back without its Flow.
 - Same themes and bard name as Bardic. Home Screen web app on iPhone (`sw.js` keeps it offline; bump `VERSION` there and in `app.js` when shipping a change). The Android build comes next.
 
+- **Discovery tale**: Underwater Adventure, timed chapter by chapter (`docs/flow/discovery/261017_underwater-adventure.bardic-flow`), offered in the library until it is added. Rebuilt from the web edition's sounds by `python3 .github/scripts/build_flow_discovery.py`.
+
 The `.bardic-flow` format (a `.bardic` plus `flow.json`) is specified in [BARDIC_FLOW_FORMAT.md](BARDIC_FLOW_FORMAT.md).
 
 ## Icons

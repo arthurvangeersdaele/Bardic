@@ -2,13 +2,13 @@
  *   html.mode-app      the app: from the Home Screen on an iPhone, or on a computer (the editor lives there)
  *   html.mode-install  an iPhone, in a browser tab: this page is the app, add it to the Home Screen
  *   html.mode-other    any other device */
-.gate, .app { display: none; }
+main.gate, .app { display: none; }
 html.mode-other .gate-other, html.mode-install .gate-install { display: flex; }
 html.mode-app .app { display: block; }
 html:not(.mode-app) .rotate { display: none !important; }
 
 /* ---------- Gates (browser tab, other devices) ---------- */
-.gate { min-height: 100dvh; align-items: center; justify-content: center; padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom)); }
+main.gate { min-height: 100dvh; align-items: center; justify-content: center; padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom)); }
 .gate-card { width: min(460px, 100%); text-align: center; }
 .gate-card h1 { font-size: clamp(40px, 11vw, 56px); line-height: 1; margin: 0 0 14px; }
 .gate-card > p { color: var(--muted); font-size: 18px; margin: 0 0 18px; }
@@ -16,7 +16,7 @@ html:not(.mode-app) .rotate { display: none !important; }
 .gate-card .btn { margin-top: 6px; }
 .gate-icon { width: 84px; height: 84px; border-radius: 19px; display: block; margin: 0 auto 18px; box-shadow: 0 10px 30px var(--shadow); }
 .back-link { color: var(--muted); font-size: 15px; }
-.gate .eq { margin-bottom: 18px; }
+main.gate .eq { margin-bottom: 18px; }
 
 
 /* ---------- Install page ---------- */

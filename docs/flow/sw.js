@@ -1,6 +1,6 @@
 /* Bardic Flow: keeps the app itself on the device so it opens without a connection.
  * Flows and sounds live in IndexedDB, not here. Bump VERSION (and VERSION in app.js) to ship an update. */
-const VERSION = '261017.2';
+const VERSION = '261017.3';
 const SHELL = `bardic-flow-${VERSION}`;
 const FONTS = 'bardic-flow-fonts';
 const FILES = [

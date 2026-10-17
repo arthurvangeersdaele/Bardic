@@ -59,13 +59,16 @@ html[data-screen="library"] .toast, html[data-screen="editor"] .toast { bottom: 
 .fl-welcome p { color: var(--text); margin: 0 auto 12px; max-width: 460px; }
 .fl-welcome p.muted { color: var(--muted); }
 .fl-welcome .btn { margin-top: 8px; height: 48px; padding: 0 22px; font-size: 17px; }
-.fl-wire-art { display: block; position: relative; width: 120px; height: 110px; margin: 0 auto; }
-.fl-wire-art::before { content: ""; position: absolute; left: 50%; top: 10px; height: 46px; width: 3px; margin-left: -1.5px; background: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
-.fl-wire-art::after { content: ""; position: absolute; left: 22px; right: 22px; top: 54px; height: 46px; border: 3px solid var(--gold); border-bottom: 0; border-radius: 40px 40px 0 0; filter: drop-shadow(0 0 5px var(--gold-glow)); }
-.fl-wire-art i { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 12px var(--gold-glow); }
-.fl-wire-art i:nth-child(1) { left: 53px; top: 2px; }
-.fl-wire-art i:nth-child(2) { left: 15px; top: 94px; }
-.fl-wire-art i:nth-child(3) { right: 15px; top: 94px; }
+.fl-discovery { display: grid; gap: 2px; width: 100%; text-align: left; margin-top: 6px; padding: 16px 18px; border-radius: 16px; border: 1px dashed color-mix(in srgb, var(--gold) 55%, var(--line)); background: linear-gradient(120deg, color-mix(in srgb, var(--gold) 9%, transparent), transparent 60%); }
+.fl-discovery span { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+.fl-discovery b { font-family: 'Cormorant SC', serif; font-size: 26px; line-height: 1.1; }
+.fl-discovery small { color: var(--muted); font-size: 14px; }
+.fl-discovery:hover { border-color: var(--gold); }
+/* The wire of the icon (branding/261017_bardic_flow_icon.svg), same path and dots. */
+.fl-wire-art { display: block; height: 150px; width: auto; margin: 0 auto; overflow: visible; filter: drop-shadow(0 0 10px var(--gold-glow)); }
+.fl-wire-art path { fill: none; stroke: var(--gold); stroke-width: 26; stroke-linecap: round; }
+.fl-wire-art circle { fill: var(--gold-hot); }
+[data-mode="light"] .fl-wire-art circle { fill: var(--gold); }
 .fl-menu { display: grid; gap: 6px; padding: 4px 0 6px; }
 .fl-menu-item { display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); }
 .fl-menu-item:hover { border-color: var(--muted); }
@@ -74,7 +77,7 @@ html[data-screen="library"] .toast, html[data-screen="editor"] .toast { bottom: 
 .fl-menu-item.danger { color: var(--evt); }
 
 /* ---------- Player ---------- */
-.fl-player { height: 100dvh; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; max-width: 620px; margin: 0 auto; position: relative; overflow: hidden; }
+.fl-player { height: 100dvh; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 620px; margin: 0 auto; position: relative; overflow: hidden; }
 html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 .fl-top {
   display: flex; align-items: center; gap: 8px;
@@ -161,7 +164,7 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-nextch.ready:not(:disabled) b { color: #1A1206; }
 
 /* Dock: everything under the thumb */
-.fl-dock { background: var(--bar); border-top: 1px solid var(--line); padding: 10px max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); display: grid; gap: 6px; z-index: 3; }
+.fl-dock { background: var(--bar); border-top: 1px solid var(--line); padding: 10px max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; z-index: 3; }
 .fl-dock-row { display: flex; align-items: center; gap: 10px; }
 .fl-dock-row.slim { gap: 12px; font-size: 13px; color: var(--muted); padding: 0 4px; }
 .fl-dock-row.slim input { --z: var(--gold); }

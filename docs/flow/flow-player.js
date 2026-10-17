@@ -261,7 +261,8 @@
     const paths = [];
     for (let k = 0; k < n; k++) {
       const x = ((k + 0.5) / n) * 100;
-      paths.push(join ? `M${x} 0 C${x} 22 50 18 50 40` : `M50 0 C50 22 ${x} 18 ${x} 40`);
+      // The same bend as the wire of the app icon.
+      paths.push(join ? `M${x} 0 C${x} 22.1 50 23.3 50 40` : `M50 0 C50 16.7 ${x} 17.9 ${x} 40`);
     }
     return `<svg class="fl-wsvg" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">${paths.map((d, k) => `<path class="w" data-k="${k}" d="${d}"/>`).join('')}</svg>`;
   }
