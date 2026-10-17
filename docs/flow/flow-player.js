@@ -350,24 +350,36 @@
     return { items, lanes: Math.max(1, lanes.length), end, pps, height, map, y: (t) => t * pps };
   }
 
+  /* The whole chapter shares one golden wire, drawn as a single SVG over the cascade: the spine runs
+   * through every gate down to Next chapter, a bus under each gate feeds the lanes, and every card's
+   * frame melts into its wire by a rounded corner. Lighting is one clip that grows down, so the gold
+   * flows like a liquid: no seams between pieces, no glow doubled where two strokes meet. */
+  const BUS = 12;      // the bus sits this far under a gate
+  const FILLET = 10;   // radius of every bend of the wire
+  const GAP = 14;      // between a card and the next lane's wire
+
   function renderCascade() {
     const box = $('#fl-cascade');
     box.textContent = '';
-    P.dom = { runs: [], end: null, cards: new Map(), dots: [] };
+    P.dom = { runs: [], end: null, cards: new Map(), dots: [], shown: 0, last: 0 };
     if (!P.steps.length) box.append(el('p', 'fl-empty', 'This chapter has no steps yet. Shape it in the Flow editor, on a computer.'));
     P.offsets = F.runOffsets(P.steps);
     const runs = runsOf(P.steps);
     const cs = getComputedStyle(box);
     const width = Math.max(240, (box.clientWidth || 360) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight));
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'fl-flow');
+    svg.setAttribute('aria-hidden', 'true');
+    box.append(svg);
     runs.forEach((run, r) => {
       const L = layoutRun(run, P.offsets, r === runs.length - 1);
       const sec = el('section', 'fl-run');
-      if (r > 0) sec.append(el('div', 'fl-link'));
       const g = P.steps[run.gate];
       const row = el('div', 'fl-node-row');
       const node = el('button', 'fl-node gate');
       node.type = 'button';
-      node.innerHTML = ICON.play;
+      node.innerHTML = ICON.go;
       node.setAttribute('aria-label', `Go: ${stepLabel(g, run.gate)}`);
       node.addEventListener('click', () => go(run.gate));
       const meta = el('div', 'fl-meta');
@@ -380,112 +392,164 @@
       const area = el('div', 'fl-area');
       const H = L.height + PAD + 9;
       area.style.height = `${H}px`;
-      // Lanes side by side; each has its own wire on its left, branching from the main wire like the icon.
+      // Lanes side by side; each card's left edge is its lane's wire.
       const laneW = (width - 8) / L.lanes;
       const wx = (l) => l * laneW + WIRE_X;
-      const cardW = laneW - 16;
-      if (laneW < 118) area.classList.add('narrow');
-      const NS = 'http://www.w3.org/2000/svg';
-      const svg = document.createElementNS(NS, 'svg');
-      svg.setAttribute('class', 'fl-threads');
-      svg.setAttribute('width', width); svg.setAttribute('height', H);
-      const top0 = (x) => x.y0 + PAD;
-      const d = [`M${wx(0)} 0V${H}`];
-      for (let l = 1; l < L.lanes; l++) {
-        const inLane = L.items.filter((x) => x.lane === l);
-        if (!inLane.length) continue;
-        const y1 = Math.min(...inLane.map(top0));
-        const y2 = Math.max(...inLane.map(top0));
-        // The bend of the icon: the wire splits under the gate, each lane wire runs down its own rail
-        // (between the lanes, never behind a card) to the elbow of its last card.
-        const ys = 0;
-        void y1;
-        d.push(`M${wx(0)} ${ys}C${wx(0)} ${ys + 15} ${wx(l)} ${ys + 15} ${wx(l)} ${ys + 30}V${Math.max(ys + 30, y2 - 10)}`);
-      }
-      // Each card hangs from its lane wire: a soft elbow that becomes the card's top edge.
+      const narrow = laneW < 118;
+      const cardW = laneW - (narrow ? 10 : GAP);
+      if (narrow) area.classList.add('narrow');
+      const cards = [];
       L.items.forEach((x) => {
-        const top = top0(x) + 0.5;
-        const xw = wx(x.lane);
-        d.push(`M${xw} ${Math.max(0, top - 10)}Q${xw} ${top} ${xw + 10} ${top}H${xw + 12}`);
-      });
-      const clipId = `fl-clip-${P.chapterToken}-${r}`;
-      svg.innerHTML = `<defs><clipPath id="${clipId}"><rect x="0" y="0" width="${width}" height="0"/></clipPath></defs>`
-        + `<g class="base">${d.map((p) => `<path class="w" d="${p}"/>`).join('')}</g>`
-        + `<g class="gilt" clip-path="url(#${clipId})">${d.map((p) => `<path class="w lit" d="${p}"/>`).join('')}</g>`;
-      const lit = svg.querySelector('clipPath rect');
-      area.append(svg);
-      L.items.forEach((x) => {
-        const top = top0(x);
+        const top = x.y0 + PAD;
         const h = x.y1 - x.y0;
-        const left = wx(x.lane) + 10;
-        const thread = null;
+        const ch = Math.max(24, h - 4);
+        const left = wx(x.lane);
+        const rad = Math.min(12, ch / 2);
         const c = x.c;
-        const card = el('button', `fl-card${x.cont ? ' cont' : ''}`);
+        const card = el('button', `fl-card${x.cont ? ' cont' : ''}${ch < 58 ? ' short' : ''}`);
         card.type = 'button';
-        card.style.cssText = `top:${top}px;left:${left}px;width:${cardW}px;height:${Math.max(24, h - 4)}px`;
+        card.style.cssText = `top:${top}px;left:${left}px;width:${cardW}px;height:${ch}px;border-radius:${rad}px${x.cont ? ` ${rad}px 0 0` : ''}`;
         card.style.setProperty('--z', ZCOL[c.zone] || 'var(--accent)');
-        const stub = el('i', 'fl-stub');
         const head = el('div', 'fl-ch');
         head.append(el('b', '', c.name));
         const tags = el('div', 'fl-tags');
         tags.append(el('span', 'fl-zone', ZNAME[c.zone] || ''));
         if (c.repeat) { const rp = el('span', 'fl-rep'); rp.innerHTML = ICON.repeat; tags.append(rp); }
-        const pb = el('span', 'fl-force');
-        pb.setAttribute('role', 'button');
-        pb.setAttribute('aria-label', `Start ${c.name} now`);
-        pb.innerHTML = ICON.play;
-        pb.addEventListener('click', (e) => { e.stopPropagation(); force(x.i, x.k); });
         const time = el('span', 'fl-time', F.clock(c.duration));
-        tags.append(time, pb);
+        tags.append(time);
         const track = el('div', 'fl-track');
         const fill = el('i');
         track.append(fill);
-        // The wire, once it touches the card's top, comes down both its sides with the time line.
-        const ch = Math.max(24, h - 4);
-        if (ch < 58) card.classList.add('short');
-        const gold = el('i', 'fl-gold');
         // The name, time and bar stay in sight while a tall card scrolls by.
         const stick = el('div', 'fl-stick');
         stick.append(head, tags, track);
-        card.append(gold, stub, stick);
+        card.append(stick);
         card.addEventListener('click', () => {
           const v = voiceOf(x.i, x.k);
           if (v && !v.done && v.cut == null && v.t0 <= now()) { fadeVoice(v, settings.fade); toast(`Fading out ${c.name}.`, 1600); }
         });
         area.append(card);
-        P.dom.cards.set(`${x.i}:${x.k}`, { card, fill, time, thread, c, gold, pb, top, ch, run: r, g: -1, s0: x.s0, e: x.e, cont: x.cont, span: (x.y1 - x.y0) / L.pps });
+        // Start now: a bead on the wire, at the card's top corner, where the gold will flow in.
+        const size = ch < 40 ? 22 : narrow ? 23 : 26;
+        const cy = top + Math.min(rad + 4, ch / 2);
+        const pb = el('button', 'fl-force');
+        pb.type = 'button';
+        pb.style.cssText = `left:${left - size / 2}px;top:${cy - size / 2}px;width:${size}px;height:${size}px`;
+        pb.setAttribute('aria-label', `Start ${c.name} now`);
+        pb.innerHTML = ICON.go;
+        pb.addEventListener('click', (e) => { e.stopPropagation(); force(x.i, x.k); });
+        area.append(pb);
+        const info = { card, fill, time, c, pb, top, left, w: cardW, ch, rad, lane: x.lane, run: r, s0: x.s0, e: x.e, cont: x.cont, span: (x.y1 - x.y0) / L.pps, extra: -1, spent: false, path: null };
+        cards.push(info);
+        P.dom.cards.set(`${x.i}:${x.k}`, info);
       });
       // The steps that follow on their own: a dot on the wire, tap to jump there.
       run.steps.slice(1).forEach((i) => {
         const d = el('button', 'fl-dot');
         d.type = 'button';
-        d.style.top = `${L.y(P.offsets[i]) + PAD}px`;
+        const y = L.y(P.offsets[i]) + PAD;
+        d.style.top = `${y}px`;
         d.style.left = `${WIRE_X}px`;
         d.title = stepLabel(P.steps[i], i);
         d.setAttribute('aria-label', `Jump to ${stepLabel(P.steps[i], i)}`);
         d.addEventListener('click', () => go(i));
         area.append(d);
-        P.dom.dots.push({ d, i });
+        P.dom.dots.push({ d, i, run: r, y });
       });
       const head = el('div', 'fl-playhead');
       head.hidden = true;
       area.append(head);
       sec.append(area);
       box.append(sec);
-      P.dom.runs.push({ run, L, sec, node, sub, area, lit, head, total: H });
+      P.dom.runs.push({ run, L, sec, node, sub, area, head, total: H, cards, wx, top: 0, cy: 0 });
     });
     const end = el('div', 'fl-end');
-    end.append(el('div', 'fl-link'));
     const btn = el('button', 'fl-nextch');
     btn.type = 'button';
     const last = P.ch + 1 >= P.rec.story.chapters.length;
-    btn.innerHTML = last ? '<b>End of the story</b>' : `<span>Next chapter</span><b>${escapeHtml(P.rec.story.chapters[P.ch + 1].title || `Chapter ${P.ch + 2}`)}</b>`;
+    const enode = el('span', 'fl-node gate');
+    enode.innerHTML = last ? ICON.stop : ICON.next;
+    const label = el('span', 'fl-meta');
+    if (last) label.append(el('b', '', 'End of the story'));
+    else label.append(el('span', 'k', 'Next chapter'), el('b', '', P.rec.story.chapters[P.ch + 1].title || `Chapter ${P.ch + 2}`));
+    btn.append(enode, label);
     btn.disabled = last;
     btn.addEventListener('click', () => { if (!last) openChapter(P.ch + 1, true); });
     end.append(btn);
     box.append(end);
-    P.dom.end = { end, btn };
+    P.dom.end = { end, btn, node: enode, cy: 0 };
     P.dom.width = width;
+    P.dom.svg = svg;
+    measure();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => measure());
+  }
+
+  /** Draws the wire from where things actually sit on the page (text may wrap, fonts may load late). */
+  function measure() {
+    const D = P.dom;
+    if (!D || !D.svg || !D.runs.length) { if (D && D.svg) D.svg.innerHTML = ''; return; }
+    const box = $('#fl-cascade');
+    const b = box.getBoundingClientRect();
+    const rel = (e) => { const r = e.getBoundingClientRect(); return { x: r.left - b.left, y: r.top - b.top, w: r.width, h: r.height }; };
+    const W = Math.ceil(box.clientWidth);
+    const Ht = Math.ceil(box.scrollHeight);
+    const f = (n) => Math.round(n * 10) / 10;
+    const wires = [];
+    const frames = [];
+    let X = 0;
+    D.runs.forEach((R, r) => {
+      const a = rel(R.area);
+      const n = rel(R.node);
+      R.top = a.y; R.left = a.x; R.cy = n.y + n.h / 2;
+      if (r === 0) X = a.x + R.wx(0);
+      D.dots.forEach((o) => { if (o.run === r) o.gy = a.y + o.y; });
+      // Lanes beyond the first: one bus leaves the spine under the gate, each lane drops off it to its last card.
+      const ends = new Map();
+      R.cards.forEach((c) => { if (c.lane > 0) ends.set(c.lane, Math.max(ends.get(c.lane) || 0, c.top + c.rad)); });
+      const lanes = [...ends.keys()].sort((p, q) => p - q);
+      if (lanes.length) {
+        const by = a.y + BUS;
+        const xl = (l) => a.x + R.wx(l);
+        const last = lanes[lanes.length - 1];
+        wires.push(`M${f(X)} ${f(by - FILLET)}Q${f(X)} ${f(by)} ${f(X + FILLET)} ${f(by)}H${f(xl(last) - FILLET)}Q${f(xl(last))} ${f(by)} ${f(xl(last))} ${f(by + FILLET)}V${f(a.y + ends.get(last))}`);
+        lanes.slice(0, -1).forEach((l) => wires.push(`M${f(xl(l) - FILLET)} ${f(by)}Q${f(xl(l))} ${f(by)} ${f(xl(l))} ${f(by + FILLET)}V${f(a.y + ends.get(l))}`));
+      }
+      // Each card's frame: its left edge is the wire, its rounded corners melt into it.
+      R.cards.forEach((c) => {
+        const x = a.x + c.left, y = a.y + c.top, w = c.w, h = c.ch, q = c.rad;
+        c.gy = y; c.gx = x;
+        const d = c.cont
+          ? `M${f(x)} ${f(y + q)}A${q} ${q} 0 0 1 ${f(x + q)} ${f(y)}H${f(x + w - q)}A${q} ${q} 0 0 1 ${f(x + w)} ${f(y + q)}V${f(y + h)}M${f(x)} ${f(y + q)}V${f(y + h)}`
+          : `M${f(x)} ${f(y + q)}A${q} ${q} 0 0 1 ${f(x + q)} ${f(y)}H${f(x + w - q)}A${q} ${q} 0 0 1 ${f(x + w)} ${f(y + q)}V${f(y + h - q)}A${q} ${q} 0 0 1 ${f(x + w - q)} ${f(y + h)}H${f(x + q)}A${q} ${q} 0 0 1 ${f(x)} ${f(y + h - q)}Z`;
+        frames.push({ c, d });
+      });
+    });
+    const en = rel(D.end.node);
+    D.end.cy = en.y + en.h / 2;
+    // The spine: one straight stroke from the first gate to Next chapter, through every gate.
+    wires.unshift(`M${f(X)} ${f(D.runs[0].cy)}V${f(D.end.cy)}`);
+    const id = `fl-${P.chapterToken}`;
+    const svg = D.svg;
+    svg.setAttribute('width', W); svg.setAttribute('height', Ht);
+    svg.setAttribute('viewBox', `0 0 ${W} ${Ht}`);
+    svg.innerHTML = `<defs>`
+      + `<g id="${id}-w">${wires.map((d) => `<path d="${d}"/>`).join('')}</g>`
+      + `<g id="${id}-f">${frames.map((o, k) => `<path data-k="${k}" d="${o.d}"/>`).join('')}</g>`
+      + `<clipPath id="${id}-c" clipPathUnits="userSpaceOnUse"><rect x="-20" y="0" width="${W + 40}" height="0"/>${frames.map((o) => `<rect x="${f(o.c.gx - 8)}" y="${f(o.c.gy - 8)}" width="${f(o.c.w + 16)}" height="0"/>`).join('')}</clipPath>`
+      + `</defs>`
+      + `<g class="base"><use class="bf" href="#${id}-f"/><use class="bw" href="#${id}-w"/></g>`
+      + `<g class="gilt" clip-path="url(#${id}-c)">`
+      + `<g class="halo"><use href="#${id}-w"/><use href="#${id}-f"/></g>`
+      + `<g class="halo2"><use href="#${id}-w"/><use href="#${id}-f"/></g>`
+      + `<g class="core"><use href="#${id}-w"/><use href="#${id}-f"/></g>`
+      + `<g class="shine"><use href="#${id}-w"/><use href="#${id}-f"/></g>`
+      + `</g>`;
+    const rects = svg.querySelectorAll('clipPath rect');
+    D.clip = rects[0];
+    const fpaths = svg.querySelectorAll(`#${id}-f path`);
+    frames.forEach((o, k) => { o.c.rect = rects[k + 1]; o.c.path = fpaths[k]; o.c.extra = -1; o.c.spent = false; });
+    D.lit = -1;
+    D.H = Ht;
   }
 
   function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -505,95 +569,117 @@
     return P.offsets[cur] + (t - P.starts[cur]);
   }
 
-  /** One frame: lights the wire, the threads and the cards, moves the playhead and the countdowns. */
+  /** One frame: pours the gold down the wire, lights the cards, moves the playhead and the countdowns. */
   function frame() {
     if (!P.rec || !P.dom) return;
+    const D = P.dom;
     const s = state();
     const t = s.t;
     P.voices = P.voices.filter((v) => !(v.done && (v.cut ?? v.end) < t - 2));
-    let focusY = null;
-    const curRun = P.dom.runs.findIndex((R) => R.run.steps.includes(s.cur));
-    P.dom.runs.forEach((R, r) => {
-      // A run left behind by a later gate counts as played to its end.
+    const curRun = D.runs.findIndex((R) => R.run.steps.includes(s.cur));
+    // Where the gold should be: the playhead inside the run that plays, a waiting gate, or Next chapter.
+    let target = 0;
+    D.runs.forEach((R, r) => {
       const rt = curRun > r && runTime(R, t) != null ? Math.max(runTime(R, t), R.L.end + 1) : runTime(R, t);
-      const started = rt != null;
-      const waiting = (s.mode === 'wait' && s.gate === R.run.gate) || (s.mode === 'idle' && r === 0);
-      setCls(R.sec, 'lit', started);
-      setCls(R.sec, 'waiting', waiting);
-      setCls(R.sec, 'past', started && rt >= R.L.end);
-      // The link to a gate fills once the run above has reached its end (the wire runs down into the gate).
-      if (r > 0) R.sec.style.setProperty('--link', started || waiting ? '1' : '0');
-      // Once the run has reached its end, its wire is gold all the way down to the next gate.
-      const y = !started ? 0 : rt >= R.L.end ? R.total : Math.min(R.L.map(rt) + PAD, R.total);
-      R.y = y;
       R.rt = rt;
-      R.lit.setAttribute('height', String(y));
-      const show = started && r === curRun && rt < R.L.end + 0.5 && s.mode !== 'idle';
-      R.head.hidden = !show;
-      if (show) { R.head.style.transform = `translateY(${y}px)`; focusY = R.sec.offsetTop + R.area.offsetTop + y; }
-      if (waiting) focusY = R.sec.offsetTop + 10;
+      if (rt != null) target = Math.max(target, rt >= R.L.end ? R.top + R.total : R.top + PAD + R.L.map(rt));
+      if (s.mode === 'wait' && s.gate === R.run.gate) target = Math.max(target, R.cy);
     });
-    P.dom.cards.forEach((x, key) => {
+    if (s.mode === 'idle') target = 0;
+    if (s.mode === 'done') target = D.end.cy;
+    // The gold flows: it follows the playhead exactly, and pours down at a steady pace when the wire jumps ahead.
+    const ms = performance.now();
+    const dt = D.last ? Math.min(0.1, (ms - D.last) / 1000) : 0;
+    D.last = ms;
+    if (target <= D.shown || target - D.shown < 6) D.shown = target;
+    else D.shown += Math.max(6, Math.min(target - D.shown, (380 + (target - D.shown) * 2.5) * dt));
+    const Y = D.shown;
+    const yr = Math.round(Y * 2) / 2;
+    if (D.clip && yr !== D.lit) { D.lit = yr; D.clip.setAttribute('height', String(yr)); }
+    let focusY = null;
+    D.runs.forEach((R, r) => {
+      const started = R.rt != null;
+      const waiting = (s.mode === 'wait' && s.gate === R.run.gate) || (s.mode === 'idle' && r === 0);
+      setCls(R.sec, 'lit', started && Y >= R.cy - 2);
+      setCls(R.sec, 'waiting', waiting && !started);
+      setCls(R.sec, 'past', started && R.rt >= R.L.end);
+      const local = Y - R.top;
+      const show = started && r === curRun && R.rt < R.L.end + 0.5 && s.mode !== 'idle' && local > 0 && local < R.total;
+      R.head.hidden = !show;
+      if (show) { R.head.style.transform = `translateY(${local}px)`; focusY = Y; }
+      if (waiting) focusY = R.cy - 30;
+    });
+    D.cards.forEach((x, key) => {
       const [i, k] = key.split(':').map(Number);
       const st = P.starts[i];
       const v = voiceOf(i, k);
       const c = x.c;
-      let on = false, done = false, frac = 0, left = c.duration, stub = 0;
+      let on = false, done = false, frac = 0, left = c.duration, started = false;
       if (v) {
         const end = v.cut ?? v.end;
         on = t >= v.t0 && t < end;
         done = t >= end;
         frac = Math.min(1, Math.max(0, (t - v.t0) / Math.max(0.01, v.end - v.t0)));
         left = Math.max(0, v.end - Math.max(t, v.t0));
-        stub = t >= v.t0 ? 1 : 0;
-      } else if (st != null && st <= t) { done = true; stub = 1; }
+        started = t >= v.t0;
+      } else if (st != null && st <= t) { done = true; started = true; }
+      const forced = P.forced.has(key);
+      const reached = !!(on || done || forced || (st != null && st + c.offset <= t) || (s.cur >= 0 && runIndex(i) < runIndex(s.cur)));
       setCls(x.card, 'on', on);
       setCls(x.card, 'done', done && !on);
       setCls(x.card, 'warn', on && left <= 10);
-      setCls(x.card, 'spent', P.forced.has(key) && done);
-      setCls(x.card, 'reached', !!(on || done || P.forced.has(key) || (st != null && st + c.offset <= t) || (s.cur >= 0 && runIndex(i) < runIndex(s.cur))));
-      // One time for everything: the card's gold, its progress bar and the time line move together,
-      // at the run's speed (a card started by hand, off the wire, follows its own sound).
-      const R = P.dom.runs[x.run];
+      setCls(x.card, 'reached', reached);
+      setCls(x.pb, 'gone', reached);
+      const spent = forced && done;
+      setCls(x.card, 'spent', spent);
+      if (x.path && spent !== x.spent) { x.spent = spent; x.path.style.display = spent ? 'none' : ''; }
+      // The bar moves with the wire (a card started by hand, off the wire, follows its own sound).
+      const R = D.runs[x.run];
       let p = frac;
-      if (!P.forced.has(key) && R.rt != null && !(done && !x.cont)) p = Math.min(1, Math.max(0, (R.rt - x.s0) / Math.max(0.01, x.span)));
+      if (!forced && R.rt != null && !(done && !x.cont)) p = Math.min(1, Math.max(0, (R.rt - x.s0) / Math.max(0.01, x.span)));
       if (done) p = 1;
-      let g = 0;
-      if (stub > 0) g = Math.max(3, p * x.ch);
-      frac = p;
       if (x.cont && on) left = Math.max(0, x.s0 + x.span - R.rt);
       x.fill.style.width = `${p * 100}%`;
-      g = Math.round(g);
-      if (g !== x.g) { x.g = g; x.gold.style.setProperty('--g', `${g}px`); setCls(x.gold, 'on', g > 0); }
+      // A card lights with the wire; one started by hand, or a sound already over, has its own gold.
+      let extra = 0;
+      if (forced && started) extra = Math.max(3, p * x.ch) + 8;
+      else if (done && !x.cont && Y >= x.gy) extra = x.ch + 16;
+      extra = Math.round(extra);
+      if (x.rect && extra !== x.extra) { x.extra = extra; x.rect.setAttribute('height', String(extra)); }
       const txt = on ? (x.cont && left <= 0 ? 'till Go' : F.clock(left)) : F.clock(c.duration);
       if (x.time.textContent !== txt) x.time.textContent = txt;
     });
-    P.dom.dots.forEach(({ d, i }) => setCls(d, 'lit', P.starts[i] != null && P.starts[i] <= t));
-    setCls(P.dom.end.end, 'lit', s.mode === 'done');
-    setCls(P.dom.end.btn, 'ready', s.mode === 'done' || (s.mode === 'run' && P.end != null && P.end - t < 5));
-    const lastR = P.dom.runs[P.dom.runs.length - 1];
-    if (lastR) {
-      P.dom.end.end.style.setProperty('--link', s.mode === 'done' ? '1' : '0');
-    }
-    if (s.mode === 'done') focusY = P.dom.end.end.offsetTop;
+    D.dots.forEach(({ d, i, gy }) => setCls(d, 'lit', P.starts[i] != null && P.starts[i] <= t && Y >= (gy || 0) - 1));
+    const arrived = s.mode === 'done' && Y >= D.end.cy - 2;
+    setCls(D.end.end, 'lit', arrived);
+    setCls(D.end.btn, 'ready', arrived || (s.mode === 'run' && P.end != null && P.end - t < 5));
+    if (s.mode === 'done') focusY = D.end.cy - 40;
     follow(focusY);
     paintDock(s);
   }
 
-  /** A new chapter opens at its top: any scroll still gliding is stopped. */
+  /** A new chapter opens at its top. A glide still running (iOS keeps them going) is cut first. */
   function toTop() {
     const sc = $('#fl-scroll');
-    sc.scrollTo({ top: 0, behavior: 'auto' });
+    sc.style.overflowY = 'hidden';
     sc.scrollTop = 0;
+    void sc.offsetHeight;
+    sc.style.overflowY = '';
+    sc.scrollTop = 0;
+    requestAnimationFrame(() => { sc.scrollTop = 0; });
     P.scrolling = Date.now();
     P.touched = 0;
   }
 
-  /** Keeps the playhead (or the gate that waits) near the top of the screen, the coming sounds below it. */
+  /** Keeps the wire in sight without chasing it: the page turns only when the gold nears the bottom
+   * (or leaves the top), so a chapter that starts keeps its title on screen. */
   function follow(y) {
     if (y == null || Date.now() - P.touched < 5000) return;
     const sc = $('#fl-scroll');
-    const want = Math.max(0, y - sc.clientHeight * 0.22);
+    const h = sc.clientHeight;
+    const pos = y - sc.scrollTop;
+    if (pos >= h * 0.1 && pos <= h * 0.62) return;
+    const want = Math.max(0, y - h * 0.25);
     if (Math.abs(sc.scrollTop - want) < 48) return;
     if (P.scrolling && Date.now() - P.scrolling < 700) return;
     P.scrolling = Date.now();
@@ -686,6 +772,11 @@
       clearTimeout(resizeT);
       resizeT = setTimeout(() => { if (P.rec && P.dom && P.dom.width !== null) renderCascade(); }, 150);
     });
+    // Text that wraps differently (a font arriving late) moves the gates: the wire is redrawn to follow.
+    if ('ResizeObserver' in window) {
+      let mt = 0;
+      new ResizeObserver(() => { cancelAnimationFrame(mt); mt = requestAnimationFrame(() => { if (P.rec && P.dom) measure(); }); }).observe($('#fl-cascade'));
+    }
     const sc = $('#fl-scroll');
     ['touchstart', 'wheel', 'mousedown'].forEach((ev) => sc.addEventListener(ev, () => { P.touched = Date.now(); }, { passive: true }));
     $('#fl-back').innerHTML = ICON.back;
