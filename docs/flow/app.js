@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '261017.15';
+  const VERSION = '261017.16';
   const { $, el, ICON, settings, saveSettings, applyTheme, toast, busy, idle, ask, deliver, audio, decode, applyAudioSession } = window.FlowUI;
   const F = window.BardicFlow;
   const DB = window.FlowDB;
@@ -36,7 +36,7 @@
     }
     recs.forEach((r) => {
       const card = el('article', 'fl-item');
-      const steps = r.flow.chapters.reduce((a, c) => a + c.steps.length, 0);
+      const steps = r.flow.chapters.reduce((a, c) => a + F.allSteps(c).length, 0);
       const main = el('button', 'fl-item-main');
       main.type = 'button';
       main.append(el('h2', '', r.story.title || 'Story'));

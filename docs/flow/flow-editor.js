@@ -10,11 +10,12 @@
   const ZCOL = { music: 'var(--music)', ambience: 'var(--amb)', events: 'var(--evt)', soundbox: 'var(--accent)' };
   const ZNAME = { music: 'Music', ambience: 'Ambiances', events: 'Events', soundbox: 'Soundbox' };
 
-  const E = { rec: null, ch: 0, sel: null, tab: 'chapter', buffers: new Map(), blobs: null, preview: null, onLeave: null, onPlay: null, saveT: 0 };
+  const E = { rec: null, ch: 0, way: null, sel: null, tab: 'chapter', buffers: new Map(), blobs: null, preview: null, onLeave: null, onPlay: null, saveT: 0 };
 
   async function open(rec, opts = {}) {
     E.rec = rec;
     E.ch = Math.min(opts.chapter || 0, rec.story.chapters.length - 1);
+    E.way = null;
     E.sel = null;
     E.onLeave = opts.onLeave; E.onPlay = opts.onPlay;
     E.blobs = await global.FlowDB.filesOf(rec);
@@ -26,7 +27,13 @@
   function close() { stopPreview(); flush(); E.rec = null; E.buffers.clear(); E.blobs = null; }
 
   const chapter = () => E.rec.flow.chapters[E.ch];
-  const steps = () => chapter().steps;
+  const choice = () => { const c = chapter().choice; return c && Array.isArray(c.answers) && c.answers.length ? c : null; };
+  /** The steps being edited: the chapter's trunk, or one way of its choice (E.way). */
+  const steps = () => {
+    const c = choice();
+    if (c && E.way != null && c.answers[E.way]) { c.answers[E.way].steps = c.answers[E.way].steps || []; return c.answers[E.way].steps; }
+    return chapter().steps;
+  };
 
   /* ---------- Saving ---------- */
   function changed(redraw = true) {
@@ -142,9 +149,9 @@
       const b = el('button', 'chap');
       b.type = 'button';
       b.setAttribute('aria-current', String(i === E.ch));
-      const n = E.rec.flow.chapters[i].steps.length;
+      const n = F.allSteps(E.rec.flow.chapters[i]).length;
       b.append(el('span', 'n', String(i + 1)), el('span', 't', c.title || `Chapter ${i + 1}`), el('small', 'fe-count', `${n}`));
-      b.addEventListener('click', () => { E.ch = i; E.sel = null; stopPreview(); renderAll(); $('#fe-main').scrollTop = 0; });
+      b.addEventListener('click', () => { E.ch = i; E.way = null; E.sel = null; stopPreview(); renderAll(); $('#fe-main').scrollTop = 0; });
       nav.append(b);
     });
     const tools = el('div', 'fe-tools');
@@ -184,6 +191,74 @@
     return g;
   }
 
+  /** The silver choice of the chapter: its question, its ways, and which list of steps is being edited. */
+  function choicePanel() {
+    const box = el('div', 'fe-choice');
+    const c = choice();
+    if (!c) {
+      const add = el('button', 'btn small fe-silver', 'Add a choice at the end of this chapter');
+      add.type = 'button';
+      add.title = 'A silver gate with a question: each answer leads to its own end of the chapter';
+      add.addEventListener('click', () => {
+        chapter().choice = { question: '', answers: [{ label: 'Yes', steps: [] }, { label: 'No', steps: [] }] };
+        E.way = null; E.sel = null; changed();
+      });
+      box.append(add);
+      return box;
+    }
+    const q = el('input', 'fe-question');
+    q.value = c.question || ''; q.placeholder = 'The question, e.g. Did the boy survive?'; q.maxLength = 140;
+    q.setAttribute('aria-label', 'Question of the choice');
+    q.addEventListener('input', () => { c.question = q.value; changed(false); });
+    const qrow = el('div', 'fe-qrow');
+    const icon = el('span', 'fe-fork'); icon.innerHTML = ICON.fork || '';
+    const del = el('button', 'ico small'); del.type = 'button'; del.innerHTML = ICON.trash; del.title = 'Remove the choice and its ways';
+    del.addEventListener('click', async () => {
+      const ok = await ask('Remove this choice?', 'Its question and every way after it leave the chapter, with their steps.', [{ label: 'Cancel', value: false }, { label: 'Remove', value: true, cls: 'danger' }]);
+      if (!ok) return;
+      delete chapter().choice; E.way = null; E.sel = null; changed();
+    });
+    qrow.append(icon, q, del);
+    box.append(qrow);
+    // Which steps the cascade below shows.
+    const ways = el('div', 'fe-ways');
+    const tab = (label, way, n) => {
+      const b = el('button', `fe-way${E.way === way ? ' on' : ''}${way != null ? ' silver' : ''}`);
+      b.type = 'button';
+      b.append(el('span', '', label), el('small', '', `${n} step${n === 1 ? '' : 's'}`));
+      b.addEventListener('click', () => { E.way = way; E.sel = null; renderSteps(); renderInspector(); renderSounds(); });
+      return b;
+    };
+    ways.append(tab('Before the choice', null, (chapter().steps || []).length));
+    c.answers.forEach((a, k) => {
+      const w = el('div', 'fe-answer');
+      w.append(tab(a.label || `Way ${k + 1}`, k, (a.steps || []).length));
+      if (E.way === k) {
+        const name = el('input', 'fe-alabel'); name.value = a.label || ''; name.maxLength = 40; name.placeholder = 'Answer';
+        name.setAttribute('aria-label', 'Answer');
+        name.addEventListener('input', () => { a.label = name.value; changed(false); });
+        name.addEventListener('change', () => renderSteps());
+        w.append(name);
+        if (c.answers.length > 2) {
+          const x = el('button', 'fe-x'); x.type = 'button'; x.innerHTML = ICON.x; x.title = 'Remove this way';
+          x.addEventListener('click', () => { c.answers.splice(k, 1); E.way = null; E.sel = null; changed(); });
+          w.append(x);
+        }
+      }
+      ways.append(w);
+    });
+    if (c.answers.length < F.MAX_ANSWERS) {
+      const more = el('button', 'btn small fe-silver', '+ Answer'); more.type = 'button';
+      more.addEventListener('click', () => { c.answers.push({ label: `Way ${c.answers.length + 1}`, steps: [] }); E.way = c.answers.length - 1; E.sel = null; changed(); });
+      ways.append(more);
+    }
+    box.append(ways);
+    box.append(el('p', 'muted small', E.way == null
+      ? 'These steps play first. When they end, the wire stops at the silver gate and asks the question.'
+      : `The way "${c.answers[E.way].label}": it starts on its own gate when you pick this answer, and ends the chapter.`));
+    return box;
+  }
+
   function renderSteps() {
     const main = $('#fe-main');
     const keep = main.scrollTop;
@@ -192,6 +267,7 @@
     const t = E.rec.story.chapters[E.ch].title || `Chapter ${E.ch + 1}`;
     head.append(el('p', 'kicker', `Chapter ${E.ch + 1}`), el('h2', '', t));
     const total = F.runOffsets(steps());
+    head.append(choicePanel());
     head.append(el('p', 'muted', steps().length ? 'Steps run from top to bottom. A gate waits for your tap; the other steps follow on their own when the one above ends.' : 'Drag sounds from the right into the cascade to make the first step.'));
     main.append(head);
     const col = el('div', 'fe-cascade');
@@ -208,7 +284,7 @@
       const gateL = el('label', 'fe-gate');
       const gateI = el('input'); gateI.type = 'checkbox'; gateI.checked = s.gate; gateI.disabled = i === 0;
       gateI.addEventListener('change', () => { s.gate = gateI.checked; changed(); });
-      gateL.append(gateI, el('span', '', i === 0 ? 'Starts on my tap' : 'Wait for my tap'));
+      gateL.append(gateI, el('span', '', i === 0 ? (E.way != null ? 'Starts when picked' : 'Starts on my tap') : 'Wait for my tap'));
       gateL.title = 'A gate: the wire stops before this step until you tap Go';
       const nextL = el('label', 'fe-next');
       const sel = el('select');
@@ -279,7 +355,7 @@
         art.append(ruler);
       }
       const foot = el('div', 'fe-foot');
-      foot.textContent = i === 0 ? 'Opens the chapter on your tap' : s.gate ? 'Waits for your tap' : `Follows on its own, ${F.clock(total[i])} after the last gate`;
+      foot.textContent = i === 0 ? (E.way != null ? 'Starts when you pick this answer' : 'Opens the chapter on your tap') : s.gate ? 'Waits for your tap' : `Follows on its own, ${F.clock(total[i])} after the last gate`;
       art.append(foot);
       col.append(art);
     });

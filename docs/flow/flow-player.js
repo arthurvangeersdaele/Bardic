@@ -16,7 +16,22 @@
     rec: null, ch: 0, steps: [], buffers: new Map(), blobs: null, loading: 0,
     voices: [], starts: [], gate: null, end: null, forced: new Set(), paused: false, bus: null, sbBus: null,
     dom: null, raf: 0, focus: -1, touched: 0, onLeave: null, chapterToken: 0,
+    // A chapter may end on a choice (silver): its trunk plays first, then the way the bard picks.
+    chapter: null, trunk: [], answer: null, choiceAt: null,
   };
+
+  /** The chapter's choice, if it has one worth asking (two answers or more). */
+  const choiceOf = () => {
+    const c = P.chapter && P.chapter.choice;
+    return c && Array.isArray(c.answers) && c.answers.length >= 2 ? c : null;
+  };
+  /** The steps on the wire: the trunk, then the chosen way (whose first step is always a gate). */
+  function pathSteps() {
+    const ch = choiceOf();
+    if (!ch || P.answer == null) return P.trunk;
+    const way = (ch.answers[P.answer].steps || []).map((s, k) => (k === 0 ? Object.assign({}, s, { gate: true }) : s));
+    return P.trunk.concat(way);
+  }
 
   /* ---------- Opening and closing ---------- */
 
@@ -48,7 +63,10 @@
     const token = ++P.chapterToken;
     if (P.voices.length || P.starts.length) stopAll();
     P.ch = i;
-    P.steps = (P.rec.flow.chapters[i] || { steps: [] }).steps;
+    P.chapter = P.rec.flow.chapters[i] || { steps: [] };
+    P.trunk = P.chapter.steps || [];
+    P.answer = null; P.choiceAt = null;
+    P.steps = pathSteps();
     P.starts = []; P.gate = null; P.end = null; P.focus = -1; P.touched = 0; P.forced.clear();
     renderChapters();
     renderCascade();
@@ -56,6 +74,8 @@
     // Decode the sounds of this chapter (and the soundbox) before the first tap.
     const want = new Set();
     P.steps.forEach((s) => s.cards.forEach((c) => want.add(c.file)));
+    // Every way of the choice is ready before it is picked.
+    if (choiceOf()) choiceOf().answers.forEach((a) => (a.steps || []).forEach((s) => s.cards.forEach((c) => want.add(c.file))));
     (P.rec.story.soundbox || []).forEach((s) => want.add(s.file));
     const missing = [...want].filter((f) => !P.buffers.has(f));
     P.loading = missing.length;
@@ -117,9 +137,29 @@
     if (i + 1 < P.steps.length) {
       if (P.steps[i + 1].gate) P.gate = { i: i + 1, t: endT };
       else schedule(i + 1, endT);
+    } else if (choiceOf() && P.answer == null && i === P.trunk.length - 1) {
+      P.choiceAt = endT; // the wire stops at the silver gate: the bard picks the way
     } else {
       P.end = P.voices.reduce((a, v) => Math.max(a, v.cut ?? v.end), endT);
     }
+  }
+
+  /** The bard picks a way. Picked when the wire waits at the choice, it starts at once;
+   *  picked ahead of time, its first gate waits like any other. A way already playing is kept. */
+  function choose(a) {
+    const ch = choiceOf();
+    if (!ch || !ch.answers[a]) return;
+    const b = P.trunk.length;
+    if (P.answer != null && P.starts[b] != null) { if (a !== P.answer) toast('This way is already playing. Stop the chapter to choose again.'); return; }
+    if (P.loading) { toast('The sounds of this chapter are still loading.'); return; }
+    const waiting = state().mode === 'choice';
+    P.answer = a;
+    P.steps = pathSteps();
+    renderCascade();
+    if (!P.steps[b]) { P.end = P.choiceAt ?? now(); P.choiceAt = null; paintDock(); return; }
+    if (waiting) go(b);
+    else if (P.choiceAt != null) { P.gate = { i: b, t: P.choiceAt }; P.choiceAt = null; }
+    paintDock();
   }
 
   /** Moves the wire to step i now: whatever was waiting after the current moment is called off. */
@@ -139,7 +179,7 @@
       return true;
     });
     for (let j = 0; j < P.starts.length; j++) if (j >= i || P.starts[j] > t) P.starts[j] = undefined;
-    P.gate = null; P.end = null;
+    P.gate = null; P.end = null; P.choiceAt = null;
     // Opening a gate: the gold first runs down from the gate to the sounds, then they start.
     schedule(i, t + (P.steps[i].gate || i === 0 ? POUR : LEAD));
     P.focus = -1;
@@ -207,7 +247,9 @@
     if (P.paused) { audio().ctx.resume().catch(() => {}); P.paused = false; }
     P.voices.forEach((v) => { if (!v.done && v.cut == null) fadeVoice(v, ms); });
     P.voices = [];
-    P.starts = []; P.gate = null; P.end = null; P.focus = -1; P.forced.clear();
+    P.starts = []; P.gate = null; P.end = null; P.focus = -1; P.forced.clear(); P.choiceAt = null;
+    // Back to the start: the choice is open again.
+    if (P.answer != null) { P.answer = null; P.steps = pathSteps(); if (P.rec && P.dom) renderCascade(); }
     paintDock();
   }
 
@@ -225,7 +267,8 @@
     let cur = -1;
     P.starts.forEach((s, i) => { if (s != null && s <= t) cur = i; });
     const started = P.starts.some((s) => s != null);
-    if (!started) return { mode: 'idle', cur: -1, t };
+    if (!started) return !P.trunk.length && choiceOf() && P.answer == null ? { mode: 'choice', cur: -1, t } : { mode: 'idle', cur: -1, t };
+    if (P.choiceAt != null && t >= P.choiceAt) return { mode: 'choice', cur, t };
     if (P.gate && t >= P.gate.t) return { mode: 'wait', cur, gate: P.gate.i, t };
     if (P.end != null && t >= P.end) return { mode: 'done', cur, t };
     return { mode: 'run', cur, t };
@@ -235,7 +278,7 @@
   function nextTarget(s) {
     if (s.mode === 'idle') return 0;
     if (s.mode === 'wait') return s.gate;
-    if (s.mode === 'done') return -1;
+    if (s.mode === 'done' || s.mode === 'choice') return -1;
     if (P.gate) return P.gate.i;
     const pending = P.starts.findIndex((x, i) => i > s.cur && x != null);
     return pending > 0 ? pending : (s.cur + 1 < P.steps.length ? s.cur + 1 : -1);
@@ -388,8 +431,10 @@
   function renderCascade() {
     const box = $('#fl-cascade');
     box.textContent = '';
-    P.dom = { runs: [], end: null, cards: new Map(), dots: [], shown: 0, last: 0 };
-    if (!P.steps.length) box.append(el('p', 'fl-empty', 'This chapter has no steps yet. Shape it in the Flow editor, on a computer.'));
+    P.dom = { runs: [], end: null, cards: new Map(), dots: [], shown: 0, last: 0, choice: null };
+    const choice = choiceOf();
+    const choiceSec = choice ? renderChoice(choice) : null;
+    if (!P.steps.length && !choice) box.append(el('p', 'fl-empty', 'This chapter has no steps yet. Shape it in the Flow editor, on a computer.'));
     P.offsets = F.runOffsets(P.steps);
     const runs = runsOf(P.steps);
     const cs = getComputedStyle(box);
@@ -400,11 +445,12 @@
     svg.setAttribute('aria-hidden', 'true');
     box.append(svg);
     runs.forEach((run, r) => {
+      if (choiceSec && run.gate === P.trunk.length) box.append(choiceSec);
       // A run of single sounds one after the other sits on the spine; it gets a little more room per sound.
       let L = layoutRun(run, P.offsets, r === runs.length - 1);
       if (L.lanes === 1) { const L1 = layoutRun(run, P.offsets, r === runs.length - 1, 62); if (L1.lanes === 1) L = L1; }
       const straddle = L.lanes === 1;
-      const sec = el('section', 'fl-run');
+      const sec = el('section', `fl-run${choice && run.gate >= P.trunk.length ? ' way' : ''}`);
       const g = P.steps[run.gate];
       const row = el('div', 'fl-node-row');
       const node = el('button', 'fl-node gate');
@@ -512,6 +558,7 @@
       box.append(sec);
       P.dom.runs.push({ run, L, sec, node, sub, area, head, total: H, cards, X, top: 0, cy: 0 });
     });
+    if (choiceSec && !choiceSec.parentNode) box.append(choiceSec);
     const end = el('div', 'fl-end');
     const btn = el('button', 'fl-nextch');
     btn.type = 'button';
@@ -533,10 +580,38 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => measure());
   }
 
+  /** The silver gate of a choice: its question, and one button per way. */
+  function renderChoice(choice) {
+    const sec = el('section', 'fl-choice');
+    const row = el('div', 'fl-node-row');
+    const node = el('span', 'fl-node gate silver');
+    node.innerHTML = ICON.fork;
+    const meta = el('div', 'fl-meta');
+    meta.append(el('span', 'k', 'Choice'), el('b', '', choice.question || 'Which way?'));
+    row.append(node, meta);
+    const answers = el('div', 'fl-answers');
+    const b = P.trunk.length;
+    const locked = P.answer != null && P.starts[b] != null;
+    const btns = choice.answers.map((a, k) => {
+      const btn = el('button', `fl-answer${P.answer === k ? ' chosen' : P.answer != null ? ' other' : ''}`);
+      btn.type = 'button';
+      btn.disabled = locked && P.answer !== k;
+      const first = (a.steps || [])[0];
+      btn.append(el('b', '', a.label || `Way ${k + 1}`));
+      if (first) btn.append(el('small', '', stepLabel(first, b)));
+      btn.addEventListener('click', () => choose(k));
+      answers.append(btn);
+      return btn;
+    });
+    sec.append(row, answers);
+    P.dom.choice = { sec, node, btns, cy: 0 };
+    return sec;
+  }
+
   /** Draws the wire from where things actually sit on the page (text may wrap, fonts may load late). */
   function measure() {
     const D = P.dom;
-    if (!D || !D.svg || !D.runs.length) { if (D && D.svg) D.svg.innerHTML = ''; return; }
+    if (!D || !D.svg || (!D.runs.length && !D.choice)) { if (D && D.svg) D.svg.innerHTML = ''; return; }
     const box = $('#fl-cascade');
     const b = box.getBoundingClientRect();
     const rel = (e) => { const r = e.getBoundingClientRect(); return { x: r.left - b.left, y: r.top - b.top, w: r.width, h: r.height }; };
@@ -580,8 +655,9 @@
     });
     const en = rel(D.end.node);
     D.end.cy = en.y + en.h / 2;
+    if (D.choice) { const cn = rel(D.choice.node); D.choice.cy = cn.y + cn.h / 2; if (!D.runs.length) X = cn.x + cn.w / 2; }
     // The spine: straight down the middle from the first gate to Next chapter, through every gate.
-    let y0 = D.runs[0].cy;
+    let y0 = D.runs.length ? D.runs[0].cy : D.choice.cy;
     const spine = [];
     holes.sort((p, q) => p[0] - q[0]).forEach(([t, bt]) => { if (t > y0) spine.push(`M${f(X)} ${f(y0)}V${f(t)}`); y0 = Math.max(y0, bt); });
     if (D.end.cy > y0) spine.push(`M${f(X)} ${f(y0)}V${f(D.end.cy)}`);
@@ -652,6 +728,7 @@
       }
     });
     if (s.mode === 'idle') target = 0;
+    if (s.mode === 'choice' && D.choice) target = Math.max(target, D.choice.cy);
     if (s.mode === 'done') target = D.end.cy;
     // The gold flows: it follows the playhead exactly; along bare wire (a run's end down to the next gate,
     // a jump ahead) it runs at an easy pace the eye can follow, slowing as it arrives.
@@ -719,6 +796,12 @@
       if (x.time.textContent !== txt) x.time.textContent = txt;
     });
     D.dots.forEach(({ d, i, gy }) => setCls(d, 'lit', P.starts[i] != null && P.starts[i] <= t && Y >= (gy || 0) - 1));
+    if (D.choice) {
+      const at = s.mode === 'choice';
+      setCls(D.choice.sec, 'waiting', at);
+      setCls(D.choice.sec, 'lit', Y >= D.choice.cy - 2 || P.answer != null && P.starts[P.trunk.length] != null);
+      if (at) focusY = D.choice.cy - 30;
+    }
     const arrived = s.mode === 'done' && Y >= D.end.cy - 2;
     setCls(D.end.end, 'lit', arrived);
     setCls(D.end.btn, 'ready', arrived || (s.mode === 'run' && P.end != null && P.end - t < 5));
@@ -766,6 +849,7 @@
     if (P.loading) { label = 'Loading sounds'; sub = `${P.loading} left`; cls = 'loading'; }
     else if (s.mode === 'idle') { label = 'Begin'; sub = P.steps[0] ? stepLabel(P.steps[0], 0) : 'Nothing to play'; cls = 'ready'; }
     else if (s.mode === 'wait') { label = 'Go'; sub = stepLabel(P.steps[s.gate], s.gate); cls = 'ready'; }
+    else if (s.mode === 'choice') { label = 'Choose'; sub = (choiceOf() && choiceOf().question) || 'Pick the way'; cls = 'ready silver'; }
     else if (s.mode === 'done') {
       const last = P.ch + 1 >= P.rec.story.chapters.length;
       label = last ? 'The end' : 'Next chapter'; sub = last ? 'Every chapter is played' : (P.rec.story.chapters[P.ch + 1].title || `Chapter ${P.ch + 2}`); cls = last ? 'off' : 'ready';
@@ -798,6 +882,11 @@
 
   function onGo() {
     const s = state();
+    if (s.mode === 'choice') {
+      // The answers are on the wire: bring them into view.
+      if (P.dom && P.dom.choice) { P.touched = 0; P.scrolling = 0; follow(P.dom.choice.cy - 30); P.dom.choice.sec.classList.remove('nudge'); void P.dom.choice.sec.offsetWidth; P.dom.choice.sec.classList.add('nudge'); }
+      return;
+    }
     if (s.mode === 'done') { if (P.ch + 1 < P.rec.story.chapters.length) openChapter(P.ch + 1, !!settings.autoNext); return; }
     const t = nextTarget(s);
     if (t >= 0) go(t);

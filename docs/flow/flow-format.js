@@ -54,6 +54,22 @@
     return out;
   }
 
+  /** A choice at the end of a chapter: a question and 2 to 3 ways, each with its own steps. */
+  const MAX_ANSWERS = 3;
+  function cleanChoice(c) {
+    if (!c || !Array.isArray(c.answers)) return null;
+    const out = Object.assign({}, c);
+    out.question = String(c.question || '').slice(0, 140);
+    out.answers = c.answers.slice(0, MAX_ANSWERS).map((a, k) => Object.assign({}, a, { label: String((a && a.label) || `Way ${k + 1}`).slice(0, 40), steps: (a && a.steps) || [] }));
+    return out.answers.length >= 2 ? out : null;
+  }
+  /** Every step of a chapter: its trunk, then every way of its choice. */
+  function allSteps(ch) {
+    const out = (ch.steps || []).slice();
+    if (ch.choice && Array.isArray(ch.choice.answers)) ch.choice.answers.forEach((a) => (a.steps || []).forEach((s) => out.push(s)));
+    return out;
+  }
+
   /** The step's own length: until `next` if set, else until its last card ends. */
   function stepLength(step) {
     if (step.next != null) return step.next;
@@ -127,9 +143,12 @@
     out.chapters = chapters.map((c, i) => {
       const fc = (flow.chapters || [])[i] || { steps: [] };
       const ch = Object.assign({}, fc);
-      ch.steps = (fc.steps || []).map((s) => cleanStep(s, lengths))
+      const clean = (list) => (list || []).map((s) => cleanStep(s, lengths))
         .map((s) => Object.assign(s, { cards: s.cards.filter((k) => !files || files.has(k.file)) }));
+      ch.steps = clean(fc.steps);
       if (ch.steps[0]) ch.steps[0].gate = true;
+      const choice = cleanChoice(fc.choice);
+      if (choice) { choice.answers.forEach((a) => { a.steps = clean(a.steps); if (a.steps[0]) a.steps[0].gate = true; }); ch.choice = choice; } else delete ch.choice;
       return ch;
     });
     return out;
@@ -152,7 +171,7 @@
       if (flow.format !== 'bardic-flow') throw new Error('flow.json is not a Bardic Flow.');
       if (flow.version !== FLOW_VERSION) throw new Error(`This Flow uses version ${flow.version}, which this Bardic Flow does not know yet. Update the app.`);
     }
-    const paths = [...new Set(soundsOf(story).map((s) => s.file).concat(flow ? flow.chapters.flatMap((c) => (c.steps || []).flatMap((s) => (s.cards || []).map((k) => k.file))) : []))]
+    const paths = [...new Set(soundsOf(story).map((s) => s.file).concat(flow ? flow.chapters.flatMap((c) => allSteps(c).flatMap((s) => (s.cards || []).map((k) => k.file))) : []))]
       .filter((p) => p && zip.has(p));
     const files = new Map();
     let n = 0;
@@ -211,6 +230,7 @@
   }
 
   global.BardicFlow = {
+    MAX_ANSWERS, cleanChoice, allSteps,
     FLOW_VERSION, LANES, ZONES, soundsOf, cleanCard, cleanStep, stepLength, runOffsets,
     defaultFlow, defaultChapter, normalize, read, pack, packBardic, yymmdd, clock,
   };

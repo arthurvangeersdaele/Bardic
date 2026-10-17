@@ -20,6 +20,7 @@
     // A play glyph centred by eye in its circle (a triangle centred by its box looks pushed to the right).
     go: svg('<path d="M7.2 5.3v13.4a1 1 0 0 0 1.5.86l10.7-6.7a1 1 0 0 0 0-1.72L8.7 4.44a1 1 0 0 0-1.5.86z"/>', 16, true),
     // A gate on the wire: an arch with two closed doors.
+    fork: svg('<circle cx="12" cy="3.6" r="1.4" fill="currentColor"/><path d="M12 4.6v5.4"/><path d="M12 10c0 3.6-5.5 4.2-5.5 8.4"/><path d="M12 10c0 3.6 5.5 4.2 5.5 8.4"/><circle cx="6.5" cy="19.4" r="1.6" fill="currentColor"/><circle cx="17.5" cy="19.4" r="1.6" fill="currentColor"/>', 20),
     gate: svg('<path d="M5 20.5V10a7 7 0 0 1 14 0v10.5"/><path d="M12 3.6v16.9"/><path d="M3.5 20.5h17"/><path d="M9.6 12.6v1.6M14.4 12.6v1.6"/>', 20),
     next: svg('<path d="M5.5 5.6v12.8a1 1 0 0 0 1.55.83l9.2-6.4a1 1 0 0 0 0-1.66l-9.2-6.4a1 1 0 0 0-1.55.83z"/><rect x="17.2" y="5" width="2.6" height="14" rx="1.1"/>', 16, true),
     pause: svg('<rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/>', 16, true),

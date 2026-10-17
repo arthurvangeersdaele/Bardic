@@ -92,6 +92,13 @@ A **card**:
 | `fadeIn`, `fadeOut` | number | Seconds, 0 for none. |
 | `volume` | number | 0 to 1. |
 
+A chapter may end on a **choice** (drawn in silver): `chapters[].choice` holds a `question` and 2 to 3 `answers`, each `{ "label", "steps" }`. The chapter's own `steps` play first; when they end, the wire stops at the silver gate and asks the question. Picking an answer plays that answer's `steps` (the first one is always a gate), which end the chapter. Ways do not join again.
+
+```json
+"choice": { "question": "Did the boy survive?",
+  "answers": [ { "label": "Yes", "steps": [ ... ] }, { "label": "No", "steps": [ ... ] } ] }
+```
+
 Unknown fields must be kept when a tool re-saves a file.
 
 ## Playing
