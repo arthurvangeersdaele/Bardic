@@ -96,8 +96,10 @@ Unknown fields must be kept when a tool re-saves a file.
 
 ## Playing
 
+In the player, time flows down: inside a run (a gate and the steps that follow it on their own) each card sits at the height where it starts and is as tall as it lasts (long sounds squeezed, short ones stretched to stay readable), so sounds that overlap stand side by side. A thread joins each card to the wire, and the golden wire runs round the card's edge as the sound plays.
+
 A chapter opens on its first gate. Starting a step starts each of its cards after its `offset`; when the step ends (`next`, or its last card), the following step starts on its own, unless it is a gate, where the wire waits. After the last step, the wire waits for **Next chapter**. Tapping a step's node jumps the wire there; tapping a playing card fades it out.
 
 ## A first Flow from a `.bardic`
 
-Importing a plain `.bardic` builds a first Flow for each chapter: the first music and up to two ambiances open the chapter together, then every other music, the other ambiances (three at a time) and each event get a gate of their own. Endless sounds repeat for 3 minutes (music) or 5 minutes (ambiances), sounds played twice last twice their length.
+Importing a plain `.bardic` builds a first Flow for each chapter: the first music and up to two ambiances open the chapter together, then every other music, the other ambiances (three at a time) and each event get a gate of their own. Endless sounds repeat for 3 minutes (music) or 5 minutes (ambiances), sounds played twice last twice their length. When the opening holds sounds that repeat, its `next` is 30 s, so the following gate is ready without waiting for them.

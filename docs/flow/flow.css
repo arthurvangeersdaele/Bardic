@@ -269,3 +269,39 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fe-snd .add:hover, .fe-snd .pv:hover { border-color: var(--muted); }
 @media (max-width: 1200px) { .fe-body { grid-template-columns: 190px minmax(0, 1fr) 330px; } .fe-saved { display: none; } }
 @media (prefers-reduced-motion: reduce) { .fl-step.waiting .fl-node, .fl-go.ready, .fl-nextch.ready { animation: none !important; } }
+
+/* ---------- Time flows down (player) ---------- */
+.fl-cascade { position: relative; }
+.fl-run { position: relative; }
+.fl-run > .fl-link, .fl-end > .fl-link { margin: 0 auto 0 13.5px; }
+.fl-run .fl-node-row, .fl-end { align-items: flex-start; text-align: left; }
+.fl-run .fl-node-row { flex-direction: row; align-items: center; gap: 12px; margin-left: -8px; }
+.fl-run .fl-node.gate { flex: none; }
+.fl-end { align-items: flex-start; }
+.fl-end .fl-nextch { margin-left: 0; }
+.fl-area { position: relative; margin-top: 2px; }
+.fl-threads { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.fl-threads .w { fill: none; stroke: var(--wire); stroke-width: 3; stroke-linecap: round; transition: stroke .3s; }
+.fl-threads .w.lit { stroke: var(--gold); filter: drop-shadow(0 0 4px var(--gold-glow)); transition: stroke-dashoffset .12s linear; }
+.fl-threads .w.br { stroke-width: 2.5; }
+.fl-threads .w.br.lit { stroke: var(--gold); filter: drop-shadow(0 0 3px var(--gold-glow)); }
+.fl-area .fl-card { position: absolute; margin: 0; opacity: .8; }
+.fl-area .fl-card.on { border-color: var(--line); box-shadow: 0 0 20px color-mix(in srgb, var(--gold) 28%, transparent); opacity: 1; }
+.fl-ring { position: absolute; left: -1px; top: -1px; pointer-events: none; overflow: visible; }
+.fl-ring path { fill: none; stroke: var(--gold); stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--gold-glow)); }
+.fl-area .fl-stub { display: none; }
+.fl-cont { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 8px 4px; font-size: 11px; color: var(--muted); text-align: center; background: linear-gradient(transparent, var(--card) 70%); }
+.fl-card.cont { border-bottom-style: dashed; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; }
+.fl-area.narrow .fl-zone { display: none; }
+.fl-area.narrow .fl-ch b { font-size: 14px; }
+.fl-area.narrow .fl-card { padding: 8px 7px 7px 9px; }
+.fl-dot { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; border: 3px solid var(--wire); background: var(--bg); padding: 0; z-index: 1; }
+.fl-dot.lit { border-color: var(--gold); background: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
+.fl-playhead { position: absolute; left: 6px; right: 0; top: 0; height: 2px; margin-top: -1px; pointer-events: none; z-index: 2;
+  background: linear-gradient(90deg, var(--gold), color-mix(in srgb, var(--gold) 0%, transparent)); box-shadow: 0 0 8px var(--gold-glow); }
+.fl-playhead::before { content: ""; position: absolute; left: 3px; top: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--gold-hot); box-shadow: 0 0 12px var(--gold); }
+.fl-run.waiting .fl-node { animation: gate 1.4s ease-in-out infinite; }
+.fl-run.lit .fl-node, .fl-run.waiting .fl-node { border-color: var(--gold); background: var(--gold); color: #1A1206; box-shadow: 0 0 14px var(--gold-glow); }
+.fl-run.waiting .fl-sub { color: var(--gold); font-weight: 600; }
+.fl-run.lit > .fl-link { box-shadow: 0 0 8px var(--gold-glow); }
+.fl-area .fl-ch b { overflow-wrap: anywhere; hyphens: auto; }

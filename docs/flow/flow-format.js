@@ -97,7 +97,8 @@
     if (music[0]) first.push(card(music[0], lengths[music[0].file]));
     amb.slice(0, LANES - first.length).forEach((a) => first.push(card(a, lengths[a.file])));
     const usedAmb = first.length - (music[0] ? 1 : 0);
-    if (first.length) steps.push({ title: 'Opening', gate: true, next: null, cards: first });
+    // The opening sets the scene; the next cue is ready after 30 s even if its sounds go on much longer.
+    if (first.length) steps.push({ title: 'Opening', gate: true, next: first.some((c) => c.repeat) ? 30 : null, cards: first });
     music.slice(1).forEach((m) => steps.push({ title: '', gate: true, next: null, cards: [card(m, lengths[m.file])] }));
     const rest = amb.slice(usedAmb);
     for (let i = 0; i < rest.length; i += LANES) steps.push({ title: '', gate: true, next: null, cards: rest.slice(i, i + LANES).map((a) => card(a, lengths[a.file])) });

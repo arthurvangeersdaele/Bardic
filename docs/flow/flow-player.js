@@ -124,8 +124,9 @@
     const { ctx } = audio(true);
     if (P.paused) { ctx.resume().catch(() => {}); P.paused = false; }
     const t = now();
+    // Steps not started yet are called off; the late sounds of a step already playing still come in.
     P.voices = P.voices.filter((v) => {
-      if (v.t0 > t) { try { v.src.onended = null; v.src.stop(); v.g.disconnect(); } catch (e) { /* not started */ } return false; }
+      if (v.t0 > t && !(P.starts[v.step] <= t && v.step < i)) { try { v.src.onended = null; v.src.stop(); v.g.disconnect(); } catch (e) { /* not started */ } return false; }
       return true;
     });
     for (let j = 0; j < P.starts.length; j++) if (j >= i || P.starts[j] > t) P.starts[j] = undefined;
@@ -256,87 +257,174 @@
     return s.cards.map((c) => c.name).join(' + ') || `Step ${i + 1}`;
   }
 
-  /** Split or join of the wire between the centre and N lanes, in a 100 × 40 box stretched to the width. */
-  function wireSvg(n, join) {
-    const paths = [];
-    for (let k = 0; k < n; k++) {
-      const x = ((k + 0.5) / n) * 100;
-      // The same bend as the wire of the app icon.
-      paths.push(join ? `M${x} 0 C${x} 22.1 50 23.3 50 40` : `M50 0 C50 16.7 ${x} 17.9 ${x} 40`);
-    }
-    return `<svg class="fl-wsvg" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">${paths.map((d, k) => `<path class="w" data-k="${k}" d="${d}"/>`).join('')}</svg>`;
+  /* A chapter is drawn as runs: a run opens on a gate and holds the steps that follow on their own.
+   * Inside a run, time flows down: every card starts at the height of its start and is as tall as it lasts
+   * (long sounds squeezed, short ones stretched to stay readable), so sounds that overlap sit side by side.
+   * The golden wire runs down the left, a thread branches to each card, and a playhead sweeps down with time. */
+  const GUTTER = 34;   // the wire's column
+  const WIRE_X = 15;
+  const MIN_CARD = 70; // px: a card always fits its name and its countdown
+  const gap = (dt) => 8 + 9 * Math.sqrt(Math.max(0, dt)); // px for dt seconds: longer is taller, but not linearly
+
+  /** A rounded rectangle, inset for a 3 px stroke, starting on the left edge at y0 and going clockwise. */
+  function ringPath(w, h, r, y0) {
+    const i = 1.5, R = Math.max(0, Math.min(r - i, (w - 2 * i) / 2, (h - 2 * i) / 2));
+    const L = i, T = i, Rt = w - i, B = h - i;
+    const y = Math.min(Math.max(y0, T + R), B - R);
+    return `M${L} ${y}V${T + R}A${R} ${R} 0 0 1 ${L + R} ${T}H${Rt - R}A${R} ${R} 0 0 1 ${Rt} ${T + R}V${B - R}A${R} ${R} 0 0 1 ${Rt - R} ${B}H${L + R}A${R} ${R} 0 0 1 ${L} ${B - R}V${y}`;
+  }
+
+  function runsOf(steps) {
+    const runs = [];
+    steps.forEach((s, i) => { if (i === 0 || s.gate) runs.push({ gate: i, steps: [] }); runs[runs.length - 1].steps.push(i); });
+    return runs;
+  }
+
+  /** Lays out one run: card positions (seconds), lanes, and the time-to-pixel map. */
+  function layoutRun(run, offsets, last) {
+    const items = [];
+    let stepsEnd = 0;
+    run.steps.forEach((i) => {
+      const s = P.steps[i];
+      stepsEnd = Math.max(stepsEnd, offsets[i] + F.stepLength(s));
+      s.cards.forEach((c, k) => items.push({ i, k, c, s0: offsets[i] + c.offset, s1: offsets[i] + c.offset + c.duration }));
+    });
+    // A run that a gate follows ends with its steps: sounds still playing carry on under the next gate.
+    const end = last ? Math.max(stepsEnd, ...items.map((x) => x.s1), 0) : stepsEnd;
+    items.forEach((x) => { x.e = Math.min(x.s1, Math.max(end, x.s0 + 0.1)); x.cont = x.s1 > x.e + 0.05; });
+    // Lanes: each card takes the first lane free at its start.
+    const lanes = [];
+    items.sort((a, b) => a.s0 - b.s0 || a.i - b.i || a.k - b.k).forEach((x) => {
+      let l = lanes.findIndex((free) => free <= x.s0 + 0.01);
+      if (l < 0) { l = lanes.length; lanes.push(0); }
+      lanes[l] = x.e;
+      x.lane = l;
+    });
+    // Time to pixels: a breakpoint at every start and end, a height for every gap between them.
+    const ts = [...new Set([0, end, ...items.flatMap((x) => [x.s0, x.e]), ...run.steps.map((i) => offsets[i])])].sort((a, b) => a - b);
+    const hs = ts.slice(1).map((t, n) => gap(t - ts[n]));
+    const ys = () => { const out = [0]; hs.forEach((h) => out.push(out[out.length - 1] + h)); return out; };
+    let y = ys();
+    const at = (t) => ts.indexOf(t);
+    // Stretch the last stretch of a card too short to read.
+    items.slice().sort((a, b) => a.e - b.e).forEach((x) => {
+      const a = at(x.s0), b = at(x.e);
+      const short = MIN_CARD - (y[b] - y[a]);
+      if (short > 0 && b > a) { hs[b - 1] += short; y = ys(); }
+    });
+    const map = (t) => {
+      if (t <= 0) return 0;
+      if (t >= ts[ts.length - 1]) return y[y.length - 1];
+      let n = 1;
+      while (ts[n] < t) n += 1;
+      return y[n - 1] + (y[n] - y[n - 1]) * ((t - ts[n - 1]) / Math.max(1e-6, ts[n] - ts[n - 1]));
+    };
+    return { items, lanes: Math.max(1, lanes.length), end, height: Math.max(y[y.length - 1], 24), map, y: (t) => y[at(t)] };
   }
 
   function renderCascade() {
     const box = $('#fl-cascade');
     box.textContent = '';
-    P.dom = { steps: [], end: null };
-    if (!P.steps.length) {
-      box.append(el('p', 'fl-empty', 'This chapter has no steps yet. Shape it in the Flow editor, on a computer.'));
-    }
-    const offsets = F.runOffsets(P.steps);
-    P.steps.forEach((s, i) => {
-      const sec = el('section', 'fl-step');
-      sec.dataset.i = i;
-      if (s.gate) sec.classList.add('gate');
-      const n = Math.max(1, s.cards.length);
-      sec.style.setProperty('--n', n);
-
-      if (i > 0) sec.append(el('div', 'fl-link'));
+    P.dom = { runs: [], end: null, cards: new Map(), dots: [] };
+    if (!P.steps.length) box.append(el('p', 'fl-empty', 'This chapter has no steps yet. Shape it in the Flow editor, on a computer.'));
+    P.offsets = F.runOffsets(P.steps);
+    const runs = runsOf(P.steps);
+    const cs = getComputedStyle(box);
+    const width = Math.max(240, (box.clientWidth || 360) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight));
+    runs.forEach((run, r) => {
+      const L = layoutRun(run, P.offsets, r === runs.length - 1);
+      const sec = el('section', 'fl-run');
+      if (r > 0) sec.append(el('div', 'fl-link'));
+      const g = P.steps[run.gate];
       const row = el('div', 'fl-node-row');
-      const node = el('button', `fl-node${s.gate ? ' gate' : ''}`);
+      const node = el('button', 'fl-node gate');
       node.type = 'button';
-      node.innerHTML = s.gate ? ICON.play : '';
-      node.setAttribute('aria-label', `${s.gate ? 'Go' : 'Jump'}: ${stepLabel(s, i)}`);
-      node.addEventListener('click', () => go(i));
+      node.innerHTML = ICON.play;
+      node.setAttribute('aria-label', `Go: ${stepLabel(g, run.gate)}`);
+      node.addEventListener('click', () => go(run.gate));
       const meta = el('div', 'fl-meta');
-      const len = F.stepLength(s);
-      meta.append(el('b', '', stepLabel(s, i)));
-      const sub = el('span', 'fl-sub');
-      sub.textContent = `${s.gate ? (i === 0 ? 'Starts on your tap' : 'Waits for your tap') : `Follows on its own, +${F.clock(offsets[i])}`}, ${F.clock(len)}`;
+      meta.append(el('b', '', stepLabel(g, run.gate)));
+      const sub = el('span', 'fl-sub', `${run.gate === 0 ? 'Starts on your tap' : 'Waits for your tap'}, ${F.clock(L.end)}`);
       meta.append(sub);
       row.append(node, meta);
       sec.append(row);
 
-      const split = el('div', 'fl-split');
-      split.innerHTML = wireSvg(n, false);
-      sec.append(split);
-
-      const lanes = el('div', 'fl-lanes');
-      const cards = [];
-      s.cards.forEach((c, k) => {
-        const card = el('button', 'fl-card');
+      const area = el('div', 'fl-area');
+      area.style.height = `${L.height + 18}px`;
+      const laneW = (width - GUTTER) / L.lanes;
+      if (laneW < 118) area.classList.add('narrow');
+      const NS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('class', 'fl-threads');
+      svg.setAttribute('width', width); svg.setAttribute('height', L.height + 18);
+      const base = document.createElementNS(NS, 'path');
+      base.setAttribute('class', 'w'); base.setAttribute('d', `M${WIRE_X} 0V${L.height + 18}`);
+      const lit = document.createElementNS(NS, 'path');
+      lit.setAttribute('class', 'w lit'); lit.setAttribute('d', `M${WIRE_X} 0V${L.height + 18}`);
+      lit.style.strokeDasharray = `${L.height + 18}`; lit.style.strokeDashoffset = `${L.height + 18}`;
+      svg.append(base, lit);
+      area.append(svg);
+      L.items.forEach((x) => {
+        const top = L.y(x.s0) + 9;
+        const h = L.y(x.e) - L.y(x.s0);
+        const left = GUTTER + x.lane * laneW;
+        // The thread: from the wire, the same bend as the icon, into the card's side.
+        const ty = top + 16;
+        const thread = document.createElementNS(NS, 'path');
+        thread.setAttribute('class', 'w br');
+        thread.setAttribute('d', `M${WIRE_X} ${top - 6} C${WIRE_X} ${ty}, ${left - 14} ${ty}, ${left + 3} ${ty}`);
+        svg.append(thread);
+        const c = x.c;
+        const card = el('button', `fl-card${x.cont ? ' cont' : ''}`);
         card.type = 'button';
+        card.style.cssText = `top:${top}px;left:${left + 3}px;width:${laneW - 6}px;height:${Math.max(24, h - 4)}px`;
         card.style.setProperty('--z', ZCOL[c.zone] || 'var(--accent)');
         const stub = el('i', 'fl-stub');
         const head = el('div', 'fl-ch');
         head.append(el('b', '', c.name));
         const tags = el('div', 'fl-tags');
         tags.append(el('span', 'fl-zone', ZNAME[c.zone] || ''));
-        if (c.offset) tags.append(el('span', 'fl-off', `+${F.clock(c.offset)}`));
-        if (c.repeat) { const r = el('span', 'fl-rep'); r.innerHTML = ICON.repeat; tags.append(r); }
+        if (c.repeat) { const rp = el('span', 'fl-rep'); rp.innerHTML = ICON.repeat; tags.append(rp); }
         const time = el('span', 'fl-time', F.clock(c.duration));
         tags.append(time);
         const track = el('div', 'fl-track');
         const fill = el('i');
         track.append(fill);
-        card.append(stub, head, tags, track);
+        // The wire, once it touches the card, runs round its edge as the sound plays.
+        const cw = laneW - 6, ch = Math.max(24, h - 4);
+        const ring = document.createElementNS(NS, 'svg');
+        ring.setAttribute('class', 'fl-ring');
+        ring.setAttribute('width', cw); ring.setAttribute('height', ch);
+        const rp = document.createElementNS(NS, 'path');
+        rp.setAttribute('d', ringPath(cw, ch, 12, 16));
+        ring.append(rp);
+        card.append(ring, stub, head, tags, track);
+        if (x.cont) card.append(el('span', 'fl-cont', 'carries on'));
         card.addEventListener('click', () => {
-          const v = voiceOf(i, k);
+          const v = voiceOf(x.i, x.k);
           if (v && !v.done && v.cut == null && v.t0 <= now()) { fadeVoice(v, settings.fade); toast(`Fading out ${c.name}.`, 1600); }
         });
-        lanes.append(card);
-        cards.push({ card, fill, time, stub, c });
+        area.append(card);
+        P.dom.cards.set(`${x.i}:${x.k}`, { card, fill, time, thread, c, rp, len: 0 });
       });
-      if (!s.cards.length) lanes.append(el('div', 'fl-card ghost', 'Silence'));
-      sec.append(lanes);
-
-      const join = el('div', 'fl-join');
-      join.innerHTML = wireSvg(n, true);
-      sec.append(join);
-
+      // The steps that follow on their own: a dot on the wire, tap to jump there.
+      run.steps.slice(1).forEach((i) => {
+        const d = el('button', 'fl-dot');
+        d.type = 'button';
+        d.style.top = `${L.y(P.offsets[i]) + 9}px`;
+        d.style.left = `${WIRE_X}px`;
+        d.title = stepLabel(P.steps[i], i);
+        d.setAttribute('aria-label', `Jump to ${stepLabel(P.steps[i], i)}`);
+        d.addEventListener('click', () => go(i));
+        area.append(d);
+        P.dom.dots.push({ d, i });
+      });
+      const head = el('div', 'fl-playhead');
+      head.hidden = true;
+      area.append(head);
+      sec.append(area);
       box.append(sec);
-      P.dom.steps.push({ sec, node, sub, split, join, cards, cls: '' });
+      P.dom.runs.push({ run, L, sec, node, sub, area, lit, head, total: L.height + 18 });
     });
     const end = el('div', 'fl-end');
     end.append(el('div', 'fl-link'));
@@ -349,6 +437,7 @@
     end.append(btn);
     box.append(end);
     P.dom.end = { end, btn };
+    P.dom.width = width;
   }
 
   function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -360,74 +449,92 @@
 
   function setCls(node, name, on) { if (node.classList.contains(name) !== on) node.classList.toggle(name, on); }
 
-  /** One frame: lights the wire and the cards, moves the countdowns. */
+  /** Where the wire is inside run r, in seconds of its plan (follows jumps), or null before it starts. */
+  function runTime(R, t) {
+    let cur = -1;
+    R.run.steps.forEach((i) => { const s = P.starts[i]; if (s != null && s <= t && (cur < 0 || s >= P.starts[cur])) cur = i; });
+    if (cur < 0) return null;
+    return P.offsets[cur] + (t - P.starts[cur]);
+  }
+
+  /** One frame: lights the wire, the threads and the cards, moves the playhead and the countdowns. */
   function frame() {
     if (!P.rec || !P.dom) return;
     const s = state();
     const t = s.t;
     P.voices = P.voices.filter((v) => !(v.done && (v.cut ?? v.end) < t - 2));
-    let focus = s.mode === 'wait' ? s.gate : s.mode === 'idle' ? 0 : s.mode === 'done' ? P.steps.length : s.cur;
-    P.dom.steps.forEach((d, i) => {
-      const st = P.starts[i];
-      const lit = st != null && st <= t;
-      const len = F.stepLength(P.steps[i]);
-      const past = lit && t >= st + len && d.cards.every((x, k) => { const v = voiceOf(i, k); return !v || t >= (v.cut ?? v.end); });
-      const waiting = s.mode === 'wait' && s.gate === i;
-      const ready = s.mode === 'idle' && i === 0;
-      setCls(d.sec, 'lit', lit);
-      setCls(d.sec, 'past', past);
-      setCls(d.sec, 'waiting', waiting || ready);
-      setCls(d.sec, 'current', i === s.cur && !past);
-      // The link above a step charges while the wire runs towards it.
-      if (i > 0) {
-        const prev = P.starts[i - 1];
-        let p = 0;
-        if (lit || waiting) p = 1;
-        else if (prev != null && prev <= t) { const pl = F.stepLength(P.steps[i - 1]); p = pl > 0 ? Math.min(1, (t - prev) / pl) : 1; }
-        d.sec.style.setProperty('--link', p.toFixed(3));
+    let focusY = null;
+    const curRun = P.dom.runs.findIndex((R) => R.run.steps.includes(s.cur));
+    P.dom.runs.forEach((R, r) => {
+      // A run left behind by a later gate counts as played to its end.
+      const rt = curRun > r && runTime(R, t) != null ? Math.max(runTime(R, t), R.L.end + 1) : runTime(R, t);
+      const started = rt != null;
+      const waiting = (s.mode === 'wait' && s.gate === R.run.gate) || (s.mode === 'idle' && r === 0);
+      setCls(R.sec, 'lit', started);
+      setCls(R.sec, 'waiting', waiting);
+      setCls(R.sec, 'past', started && rt >= R.L.end);
+      // The link above a gate charges while the run before it ends.
+      if (r > 0) {
+        const P0 = P.dom.runs[r - 1];
+        const prt = runTime(P0, t);
+        const p = started || waiting ? 1 : prt == null ? 0 : Math.min(1, prt / Math.max(0.01, P0.L.end));
+        R.sec.style.setProperty('--link', p.toFixed(3));
       }
-      d.cards.forEach((x, k) => {
-        const v = lit || (st != null) ? voiceOf(i, k) : null;
-        const c = x.c;
-        let on = false, done = false, frac = 0, left = c.duration, stub = 0;
-        if (v) {
-          const end = v.cut ?? v.end;
-          on = t >= v.t0 && t < end;
-          done = t >= end;
-          frac = Math.min(1, Math.max(0, (t - v.t0) / Math.max(0.01, v.end - v.t0)));
-          left = Math.max(0, v.end - Math.max(t, v.t0));
-          stub = st != null && c.offset > 0 ? Math.min(1, Math.max(0, (t - st) / c.offset)) : (t >= v.t0 ? 1 : 0);
-        } else if (st != null && st <= t) { done = true; stub = 1; }
-        setCls(x.card, 'on', on);
-        setCls(x.card, 'done', done && !on);
-        setCls(x.card, 'warn', on && left <= 10);
-        x.card.style.setProperty('--stub', stub.toFixed(3));
-        x.fill.style.width = `${(done ? 1 : frac) * 100}%`;
-        const txt = on ? F.clock(left) : F.clock(c.duration);
-        if (x.time.textContent !== txt) x.time.textContent = txt;
-      });
+      const y = started ? Math.min(R.L.map(rt) + 9, R.total) : 0;
+      R.lit.style.strokeDashoffset = `${R.total - y}`;
+      const show = started && r === curRun && rt < R.L.end + 0.5 && s.mode !== 'idle';
+      R.head.hidden = !show;
+      if (show) { R.head.style.transform = `translateY(${y}px)`; focusY = R.sec.offsetTop + R.area.offsetTop + y; }
+      if (waiting) focusY = R.sec.offsetTop + 10;
     });
+    P.dom.cards.forEach((x, key) => {
+      const [i, k] = key.split(':').map(Number);
+      const st = P.starts[i];
+      const v = st != null ? voiceOf(i, k) : null;
+      const c = x.c;
+      let on = false, done = false, frac = 0, left = c.duration, stub = 0;
+      if (v) {
+        const end = v.cut ?? v.end;
+        on = t >= v.t0 && t < end;
+        done = t >= end;
+        frac = Math.min(1, Math.max(0, (t - v.t0) / Math.max(0.01, v.end - v.t0)));
+        left = Math.max(0, v.end - Math.max(t, v.t0));
+        stub = t >= v.t0 ? 1 : 0;
+      } else if (st != null && st <= t) { done = true; stub = 1; }
+      setCls(x.card, 'on', on);
+      setCls(x.card, 'done', done && !on);
+      setCls(x.card, 'warn', on && left <= 10);
+      setCls(x.thread, 'lit', stub > 0);
+      x.fill.style.width = `${(done ? 1 : frac) * 100}%`;
+      if (!x.len) { try { x.len = x.rp.getTotalLength(); x.rp.style.strokeDasharray = `${x.len} ${x.len}`; } catch (e) { x.len = 1; } }
+      const ringP = stub > 0 ? (done ? 1 : frac) : 0;
+      x.rp.style.strokeDashoffset = `${x.len * (1 - ringP)}`;
+      const txt = on ? F.clock(left) : F.clock(c.duration);
+      if (x.time.textContent !== txt) x.time.textContent = txt;
+    });
+    P.dom.dots.forEach(({ d, i }) => setCls(d, 'lit', P.starts[i] != null && P.starts[i] <= t));
     setCls(P.dom.end.end, 'lit', s.mode === 'done');
     setCls(P.dom.end.btn, 'ready', s.mode === 'done' || (s.mode === 'run' && P.end != null && P.end - t < 5));
-    if (P.steps.length) {
-      const lastStart = P.starts[P.steps.length - 1];
-      const ll = F.stepLength(P.steps[P.steps.length - 1]);
-      const p = s.mode === 'done' ? 1 : lastStart != null && lastStart <= t ? Math.min(1, (t - lastStart) / Math.max(0.01, (P.end ?? lastStart + ll) - lastStart)) : 0;
-      P.dom.end.end.style.setProperty('--link', p.toFixed(3));
+    const lastR = P.dom.runs[P.dom.runs.length - 1];
+    if (lastR) {
+      const rt = runTime(lastR, t);
+      P.dom.end.end.style.setProperty('--link', (s.mode === 'done' ? 1 : rt == null ? 0 : Math.min(1, rt / Math.max(0.01, lastR.L.end))).toFixed(3));
     }
-    if (focus !== P.focus) { P.focus = focus; follow(focus); }
+    if (s.mode === 'done') focusY = P.dom.end.end.offsetTop;
+    follow(focusY);
     paintDock(s);
   }
 
-  /** Keeps the step in play near the top of the screen, with the coming steps below it. */
-  function follow(i) {
-    if (Date.now() - P.touched < 5000) return;
+  /** Keeps the playhead (or the gate that waits) near the top of the screen, the coming sounds below it. */
+  function follow(y) {
+    if (y == null || Date.now() - P.touched < 5000) return;
     const sc = $('#fl-scroll');
-    const target = i >= P.dom.steps.length ? P.dom.end.end : P.dom.steps[i] && P.dom.steps[i].sec;
-    if (!target) return;
-    const top = target.offsetTop - sc.clientHeight * 0.16;
+    const want = Math.max(0, y - sc.clientHeight * 0.22);
+    if (Math.abs(sc.scrollTop - want) < 48) return;
+    if (P.scrolling && Date.now() - P.scrolling < 700) return;
+    P.scrolling = Date.now();
     const quiet = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    sc.scrollTo({ top: Math.max(0, top), behavior: quiet ? 'auto' : 'smooth' });
+    sc.scrollTo({ top: want, behavior: quiet ? 'auto' : 'smooth' });
   }
 
   let lastDock = '';
@@ -509,6 +616,11 @@
       paintRange(e.target);
       if (P.sbBus) P.sbBus.gain.value = settings.sbVolume;
       saveSettings();
+    });
+    let resizeT = 0;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeT);
+      resizeT = setTimeout(() => { if (P.rec && P.dom && P.dom.width !== null) renderCascade(); }, 150);
     });
     const sc = $('#fl-scroll');
     ['touchstart', 'wheel', 'mousedown'].forEach((ev) => sc.addEventListener(ev, () => { P.touched = Date.now(); }, { passive: true }));

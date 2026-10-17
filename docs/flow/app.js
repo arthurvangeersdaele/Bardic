@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '261017.3';
+  const VERSION = '261017.4';
   const { $, el, ICON, settings, saveSettings, applyTheme, toast, busy, idle, ask, deliver, audio, decode, applyAudioSession } = window.FlowUI;
   const F = window.BardicFlow;
   const DB = window.FlowDB;
@@ -68,11 +68,12 @@
       card.append(main, acts);
       list.append(card);
     });
-    if (!recs.some((r) => r.flow.id === DISCOVERY.id)) list.append(discoveryCard());
+    // Offered until this revision of it is on the device (a newer one replaces the old).
+    if (!recs.some((r) => r.flow.id === DISCOVERY.id && (r.flow.revision || 0) >= DISCOVERY.revision)) list.append(discoveryCard());
   }
 
   /* ================= Discovery tale ================= */
-  const DISCOVERY = { id: '3c9a6e2f-81d4-4b7a-a5e2-6f0b9d4c2a17', file: 'discovery/261017_underwater-adventure.bardic-flow', title: 'Underwater Adventure' };
+  const DISCOVERY = { id: '3c9a6e2f-81d4-4b7a-a5e2-6f0b9d4c2a17', revision: 2, file: 'discovery/261017_underwater-adventure.bardic-flow', title: 'Underwater Adventure' };
   function discoveryCard() {
     const b = el('button', 'fl-discovery');
     b.type = 'button';

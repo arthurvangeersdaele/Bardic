@@ -108,7 +108,7 @@ flow_chapters = [
             card(1, 'The giant wave', volume=0.9),
             card(1, 'Panic scream', offset=2, volume=0.6),
             card(1, 'Raging sea', offset=3, duration=AMB, repeat=True, fade_in=4, fade_out=6, volume=0.65),
-        ]),
+        ], next_=12),
         step('Swept away', [card(1, 'Point of no return', fade_in=2, fade_out=8, volume=0.7)]),
     ]},
     {'steps': [  # 3. Discovering the underwater world
@@ -130,7 +130,7 @@ flow_chapters = [
             card(3, 'Creaking ship', duration=AMB, repeat=True, fade_in=3, fade_out=6, volume=0.6),
             card(3, 'Three sheets', offset=1, fade_in=4, fade_out=8, volume=0.55),
             card(3, 'Harbor', offset=4, duration=AMB, repeat=True, fade_in=5, fade_out=6, volume=0.3),
-        ]),
+        ], next_=20),
         step('The treasure', [
             card(3, 'Treasure chest', volume=0.8),
             card('sb', 'Gold coins', offset=0.4, volume=0.7),
@@ -152,7 +152,7 @@ flow_chapters = [
             card(4, 'Storm at sea', duration=AMB, repeat=True, fade_in=3, fade_out=6, volume=0.55),
             card(4, 'Weight of revenge', offset=2, fade_in=5, fade_out=8, volume=0.6),
             card(4, 'Hull under strain', offset=5, duration=AMB, repeat=True, fade_in=5, fade_out=6, volume=0.4),
-        ]),
+        ], next_=15),
         step('The Kraken rises', [
             card(4, 'Kraken roar', volume=0.95),
             card(4, 'Tentacle slam', offset=3, volume=0.8),
@@ -173,7 +173,7 @@ flow_chapters = [
 
 flow = {
     'format': 'bardic-flow', 'version': 1, 'id': '3c9a6e2f-81d4-4b7a-a5e2-6f0b9d4c2a17', 'story': story['id'],
-    'revision': 1, 'bard': 'Bardic', 'created': STAMP, 'forged': STAMP, 'generator': 'Bardic Flow discovery script',
+    'revision': 2, 'bard': 'Bardic', 'created': STAMP, 'forged': STAMP, 'generator': 'Bardic Flow discovery script',
     'chapters': flow_chapters,
 }
 
