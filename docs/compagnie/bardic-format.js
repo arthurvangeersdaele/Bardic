@@ -283,5 +283,5 @@
     return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`;
   }
 
-  global.Bardic = { ZONES, LOOPS, SHARE_LIMIT, FORMAT_VERSION, pack, unpack, validate, isAudio, formatSize, slug, bardName, FORGOTTEN };
+  global.Bardic = { ZONES, LOOPS, SHARE_LIMIT, FORMAT_VERSION, pack, unpack, validate, isAudio, formatSize, slug, bardName, FORGOTTEN, writeZip, readZip, uuid };
 })(window);

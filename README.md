@@ -93,11 +93,25 @@ Builder and playing your own files are for computers (the app does both on a pho
 
 The `.bardic` format (a ZIP with `story.json` and the audio files, signed with a bard name and versioned by a hidden revision counter) is specified in [BARDIC_FORMAT.md](BARDIC_FORMAT.md). The bard name is set in Settings: the web player's (shared with the Story builder) and the Android app's. In the app, `app/src/main/java/com/bardic/app/bardic/` reads and writes the format and `settings/BardSettings.kt` keeps the bard name; the engine test screen can already open a `.bardic` and export it as its next revision.
 
+## Bardic Flow
+
+`docs/flow/` is a second app in the repo, not shown on the Bardic page yet: https://arthurvangeersdaele.github.io/Bardic/flow/
+
+Bardic Flow is for bards who prepare the exact timing of their sounds before the session, then follow it at the table. It plays vertically, on a phone held upright:
+
+- **Library**: the stories kept on the device (IndexedDB, `flow-db.js`), Import, Settings. No Recueil, no Discovery.
+- **Player**: the story title on top, the chapters in a row that scrolls sideways, then the chapter as a cascade of steps from top to bottom. A step holds up to three sounds side by side; a golden wire runs down the screen, splits to the cards of a step and joins again below, and lights each card as its moment comes, so the coming sounds are always in sight. Steps follow on their own when the one above ends; gates wait for a tap on **Go**. At the end of a chapter, the wire waits on a golden **Next chapter** button. Pause (the whole timeline stops with the audio clock), fade out everything, master volume, the story's soundbox in a drawer, tap a playing card to fade it out, tap any step to jump there.
+- **Editor** (computer only for now): steps, gates, when the next step starts, and for each card its offset, length, trim, repeat, fades and volume; sounds dragged from the chapter, another chapter or the soundbox. Importing a `.bardic` builds a first Flow to start from. **Forge .bardic-flow** writes the file for the phone, **Export .bardic** gives the story back without its Flow.
+- Same themes and bard name as Bardic. Home Screen web app on iPhone (`sw.js` keeps it offline; bump `VERSION` there and in `app.js` when shipping a change). The Android build comes next.
+
+The `.bardic-flow` format (a `.bardic` plus `flow.json`) is specified in [BARDIC_FLOW_FORMAT.md](BARDIC_FLOW_FORMAT.md).
+
 ## Icons
 
 - `branding/`: the Bardic icon and its pumpkin version, each with rounded corners (web, social) and as a full square (stores; Android and iOS cut their own shape). 1024 × 1024 SVG.
 - Android: adaptive icon in `app/src/main/res/` (`mipmap-anydpi-v26/ic_launcher.xml`, with a monochrome layer for themed icons). The pumpkin version is ready as `@mipmap/ic_launcher_pumpkin`: point `android:icon` and `android:roundIcon` in the manifest to it to switch.
 - Web: `docs/icons/` (favicon and Apple touch icon).
+- Bardic Flow: `branding/261017_bardic_flow_icon.svg` (and `_square`), the Bardic icon darkened with a golden wire splitting in two; PNGs in `docs/flow/icons/`.
 
 ## Build locally
 

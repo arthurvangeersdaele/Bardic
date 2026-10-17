@@ -1,0 +1,18 @@
+{
+  "name": "Bardic Flow",
+  "short_name": "Flow",
+  "description": "Prepare the exact timing of your story's sounds, then follow the golden wire at the table.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A0A0D",
+  "theme_color": "#15151B",
+  "icons": [
+    { "src": "icons/261017_bardic_flow_180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icons/261017_bardic_flow_192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/261017_bardic_flow_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/261017_bardic_flow_icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
