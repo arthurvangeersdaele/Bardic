@@ -391,3 +391,5 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-area.narrow .fl-card.r:not(.short) { padding-left: 8px; padding-right: 5px; }
 .fl-area.narrow .fl-card.l:not(.short) { padding-left: 5px; padding-right: 8px; }
 .fl-area .fl-stick { top: 15px; }
+.fl-node.gate svg[fill="none"] { width: 22px; height: 22px; }
+.fl-area .fl-card.mid .fl-ch b { -webkit-line-clamp: 1; }

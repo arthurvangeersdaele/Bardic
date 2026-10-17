@@ -315,6 +315,7 @@
   const RUN_PX = 420;   // a run is drawn about this tall...
   const MIN_PPS = 2;    // ...at no less than 2 px per second
   const MAX_PPS = 36;   // and no more than 36
+  const SILENT_PX = 26; // a silence is drawn no longer than this
   const MIN_PX = 30;    // a sound shorter than that still shows its name
 
   function runsOf(steps) {
@@ -337,9 +338,26 @@
     items.forEach((x) => { x.e = Math.min(x.s1, Math.max(end, x.s0 + 0.1)); x.cont = x.s1 > x.e + 0.05; });
     // One speed for the whole run: so many pixels per second, the same for every card and for the time line.
     // A card is as tall as it lasts; sounds side by side are sized by the same rule.
-    const pps = Math.min(MAX_PPS, Math.max(MIN_PPS, RUN_PX / Math.max(end, 0.1)));
-    const map = (t) => Math.max(0, Math.min(t, end)) * pps;
-    items.forEach((x) => { x.y0 = x.s0 * pps; x.y1 = Math.max(x.e * pps, x.y0 + minPx); });
+    // Silence is not drawn to scale: where no sound plays the wire stays short (the gold still takes the time
+    // it lasts, but never travels a long empty stretch). Only stretches with sounds are drawn at the run's speed.
+    const busy = [];
+    items.map((x) => [x.s0, x.e]).sort((a, b) => a[0] - b[0]).forEach(([a, b]) => {
+      const lastB = busy[busy.length - 1];
+      if (lastB && a <= lastB[1] + 0.05) lastB[1] = Math.max(lastB[1], b); else busy.push([a, b]);
+    });
+    const busyT = busy.reduce((n, [a, b]) => n + (Math.min(b, end) - Math.max(0, a)), 0);
+    const pps = Math.min(MAX_PPS, Math.max(MIN_PPS, RUN_PX / Math.max(busyT, 0.1)));
+    const segs = [];
+    let tc = 0, yc = 0;
+    const push = (t1, dense) => { if (t1 <= tc) return; const full = (t1 - tc) * pps; const len = dense ? full : Math.min(full, SILENT_PX); segs.push({ t0: tc, t1, y0: yc, len }); yc += len; tc = t1; };
+    busy.forEach(([a, b]) => { push(Math.min(a, end), false); push(Math.min(b, end), true); });
+    push(end, false);
+    const map = (t) => {
+      t = Math.max(0, Math.min(t, end));
+      for (const g of segs) if (t <= g.t1) return g.y0 + (g.t1 > g.t0 ? (t - g.t0) / (g.t1 - g.t0) : 0) * g.len;
+      return yc;
+    };
+    items.forEach((x) => { x.y0 = map(x.s0); x.y1 = Math.max(map(x.e), x.y0 + minPx); });
     // Lanes: each card takes the first lane free at its top (a very short card keeps a readable height).
     const lanes = [];
     items.sort((a, b) => a.s0 - b.s0 || a.i - b.i || a.k - b.k).forEach((x) => {
@@ -348,8 +366,8 @@
       lanes[l] = x.y1 + 4;
       x.lane = l;
     });
-    const height = Math.max(end * pps, ...items.map((x) => x.y1), 24);
-    return { items, lanes: Math.max(1, lanes.length), end, pps, height, map, y: (t) => t * pps };
+    const height = Math.max(map(end), ...items.map((x) => x.y1), 24);
+    return { items, lanes: Math.max(1, lanes.length), end, pps, height, map, y: map };
   }
 
   /* The whole chapter shares one golden wire, drawn as a single SVG over the cascade: the spine runs
@@ -391,7 +409,8 @@
       const row = el('div', 'fl-node-row');
       const node = el('button', 'fl-node gate');
       node.type = 'button';
-      node.innerHTML = ICON.go;
+      // The first gate starts the chapter (play); the ones after it are gates the wire waits at.
+      node.innerHTML = run.gate === 0 ? ICON.go : ICON.gate;
       node.setAttribute('aria-label', `Go: ${stepLabel(g, run.gate)}`);
       node.addEventListener('click', () => go(run.gate));
       const meta = el('div', 'fl-meta');
@@ -428,7 +447,9 @@
         const rad = Math.min(CARD_RX, ch / 2);
         const rady = Math.min(CARD_RY, ch / 2);
         const c = x.c;
-        const card = el('button', `fl-card ${pl.side}${x.cont ? ' cont' : ''}${ch < 58 ? ' short' : ''}`);
+        // Room decides the card's face: one line (short), a one-line name (mid), or the full card.
+        const short = ch < 76;
+        const card = el('button', `fl-card ${pl.side}${x.cont ? ' cont' : ''}${short ? ' short' : ch < 100 ? ' mid' : ''}`);
         card.type = 'button';
         card.style.cssText = `top:${top}px;left:${left}px;width:${cardW}px;height:${ch}px;border-radius:${rad}px / ${rady}px`;
         card.style.setProperty('--z', ZCOL[c.zone] || 'var(--accent)');
@@ -454,10 +475,10 @@
         // Start now: a bead on the wire, where the gold flows into the card (its top corner, or the top of a card on the spine).
         // A short sound: on its wire, half-way down. Otherwise on its top edge, just past the corner the gold comes round
         // (two sounds hanging either side of the spine never share a bead's place).
-        const size = ch < 58 ? 22 : 24;
+        const size = short ? 22 : 24;
         const dir = pl.side === 'l' ? -1 : 1;
-        const bx = pl.side === 'c' ? pl.rail : ch < 58 ? pl.rail : pl.rail + dir * (rad + size / 2 + 3);
-        const cy = pl.side === 'c' || ch >= 58 ? top : top + ch / 2;
+        const bx = pl.side === 'c' ? pl.rail : short ? pl.rail : pl.rail + dir * (rad + size / 2 + 3);
+        const cy = pl.side === 'c' || !short ? top : top + ch / 2;
         const pb = el('button', 'fl-force');
         pb.type = 'button';
         pb.style.cssText = `left:${bx - size / 2}px;top:${cy - size / 2}px;width:${size}px;height:${size}px`;
