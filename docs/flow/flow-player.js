@@ -564,13 +564,9 @@
       setCls(x.card, 'spent', P.forced.has(key) && done);
       setCls(x.card, 'reached', !!(on || done || P.forced.has(key) || (st != null && st + c.offset <= t) || (s.cur >= 0 && runIndex(i) < runIndex(s.cur))));
       x.fill.style.width = `${(done ? 1 : frac) * 100}%`;
-      // Gold height: down to the time line (a card started by hand follows its own sound).
+      // The gold on a card is the time of that sound: it comes down its sides exactly as its progress bar fills.
       let g = 0;
-      if (stub > 0) {
-        if (done) g = x.ch;
-        else if (P.forced.has(key)) g = frac * x.ch;
-        else g = Math.min(x.ch, Math.max(3, P.dom.runs[x.run].y - x.top));
-      }
+      if (stub > 0) g = done ? x.ch : Math.max(3, frac * x.ch);
       g = Math.round(g);
       if (g !== x.g) { x.g = g; x.gold.style.setProperty('--g', `${g}px`); setCls(x.gold, 'on', g > 0); }
       const txt = on ? F.clock(left) : F.clock(c.duration);
