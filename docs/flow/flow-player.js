@@ -312,13 +312,6 @@
   const MIN_CARD = 70; // px: a card always fits its name and its countdown
   const gap = (dt) => 8 + 9 * Math.sqrt(Math.max(0, dt)); // px for dt seconds: longer is taller, but not linearly
 
-  /** A rounded rectangle, inset for a 3 px stroke, from the top-left corner (where the thread arrives), clockwise. */
-  function ringPath(w, h, r) {
-    const i = 1.5, R = Math.max(0, Math.min(r - i, (w - 2 * i) / 2, (h - 2 * i) / 2));
-    const L = i, T = i, Rt = w - i, B = h - i;
-    return `M${L} ${T + R}A${R} ${R} 0 0 1 ${L + R} ${T}H${Rt - R}A${R} ${R} 0 0 1 ${Rt} ${T + R}V${B - R}A${R} ${R} 0 0 1 ${Rt - R} ${B}H${L + R}A${R} ${R} 0 0 1 ${L} ${B - R}Z`;
-  }
-
   function runsOf(steps) {
     const runs = [];
     steps.forEach((s, i) => { if (i === 0 || s.gate) runs.push({ gate: i, steps: [] }); runs[runs.length - 1].steps.push(i); });
@@ -440,22 +433,17 @@
         const track = el('div', 'fl-track');
         const fill = el('i');
         track.append(fill);
-        // The wire, once it touches the card, runs round its edge as the sound plays.
-        const cw = laneW - 6, ch = Math.max(24, h - 4);
-        const ring = document.createElementNS(NS, 'svg');
-        ring.setAttribute('class', 'fl-ring');
-        ring.setAttribute('width', cw); ring.setAttribute('height', ch);
-        const rp = document.createElementNS(NS, 'path');
-        rp.setAttribute('d', ringPath(cw, ch, 12));
-        ring.append(rp);
-        card.append(ring, stub, head, tags, track);
+        // The wire, once it touches the card's top, comes down both its sides with the time line.
+        const ch = Math.max(24, h - 4);
+        const gold = el('i', 'fl-gold');
+        card.append(gold, stub, head, tags, track);
         if (x.cont) card.append(el('span', 'fl-cont', 'until the next Go'));
         card.addEventListener('click', () => {
           const v = voiceOf(x.i, x.k);
           if (v && !v.done && v.cut == null && v.t0 <= now()) { fadeVoice(v, settings.fade); toast(`Fading out ${c.name}.`, 1600); }
         });
         area.append(card);
-        P.dom.cards.set(`${x.i}:${x.k}`, { card, fill, time, thread, c, rp, pb, len: 0 });
+        P.dom.cards.set(`${x.i}:${x.k}`, { card, fill, time, thread, c, gold, pb, top, ch, run: r, g: -1 });
       });
       // The steps that follow on their own: a dot on the wire, tap to jump there.
       run.steps.slice(1).forEach((i) => {
@@ -531,6 +519,7 @@
         R.sec.style.setProperty('--link', p.toFixed(3));
       }
       const y = started ? Math.min(R.L.map(rt) + 9, R.total) : 0;
+      R.y = y;
       R.lit.style.strokeDashoffset = `${R.total - y}`;
       const show = started && r === curRun && rt < R.L.end + 0.5 && s.mode !== 'idle';
       R.head.hidden = !show;
@@ -557,9 +546,15 @@
       setCls(x.thread, 'lit', stub > 0);
       setCls(x.card, 'reached', !!(on || done || P.forced.has(key) || (st != null && st + c.offset <= t) || (s.cur >= 0 && runIndex(i) < runIndex(s.cur))));
       x.fill.style.width = `${(done ? 1 : frac) * 100}%`;
-      if (!x.len) { try { x.len = x.rp.getTotalLength(); x.rp.style.strokeDasharray = `${x.len} ${x.len}`; } catch (e) { x.len = 1; } }
-      const ringP = stub > 0 ? (done ? 1 : frac) : 0;
-      x.rp.style.strokeDashoffset = `${x.len * (1 - ringP)}`;
+      // Gold height: down to the time line (a card started by hand follows its own sound).
+      let g = 0;
+      if (stub > 0) {
+        if (done) g = x.ch;
+        else if (P.forced.has(key)) g = frac * x.ch;
+        else g = Math.min(x.ch, Math.max(3, P.dom.runs[x.run].y - x.top));
+      }
+      g = Math.round(g);
+      if (g !== x.g) { x.g = g; x.gold.style.setProperty('--g', `${g}px`); setCls(x.gold, 'on', g > 0); }
       const txt = on ? F.clock(left) : F.clock(c.duration);
       if (x.time.textContent !== txt) x.time.textContent = txt;
     });

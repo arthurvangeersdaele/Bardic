@@ -315,3 +315,8 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-area.narrow .fl-tags { flex-wrap: wrap; row-gap: 6px; }
 .fl-area.narrow .fl-force { margin-left: auto; }
 .fl-force { position: relative; z-index: 2; }
+/* The gold frame: top edge when the wire touches the card, then both sides down to the time line, the bottom when it ends. */
+.fl-gold { position: absolute; inset: -1px; border: 3px solid var(--gold); border-radius: 12px; pointer-events: none; opacity: 0; z-index: 1;
+  clip-path: inset(0 0 calc(100% - var(--g, 0px)) 0); filter: drop-shadow(0 0 4px var(--gold-glow)); }
+.fl-gold.on { opacity: 1; }
+.fl-ring { display: none; }
