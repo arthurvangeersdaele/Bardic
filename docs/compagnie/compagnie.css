@@ -308,6 +308,7 @@ html:not(.pc) .tale .dl { background: var(--accent); border-color: var(--accent)
 html.pc .discord-bar { width: min(100%, 906px); }
 .discord-bar:hover { border-color: var(--accent); transform: translateY(-2px); }
 .discord-bar .tile { flex: none; width: 46px; height: 46px; border-radius: 12px; background: #15151B; border: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: center; gap: 4px; padding-top: 10px; box-sizing: border-box; }
+.discord-bar .tile.dc { background: #5865F2; border-color: #5865F2; align-items: center; padding-top: 0; }
 .discord-bar .tile i { display: block; width: 6px; border-radius: 3px; }
 .discord-bar .tile i:nth-child(1) { height: 15px; margin-top: 7.5px; background: var(--music); }
 .discord-bar .tile i:nth-child(2) { height: 24px; background: var(--amb); }
