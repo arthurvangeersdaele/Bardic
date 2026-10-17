@@ -305,3 +305,13 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-run.waiting .fl-sub { color: var(--gold); font-weight: 600; }
 .fl-run.lit > .fl-link { box-shadow: 0 0 8px var(--gold-glow); }
 .fl-area .fl-ch b { overflow-wrap: anywhere; hyphens: auto; }
+.fl-area .fl-ch { display: flex; align-items: flex-start; gap: 6px; }
+.fl-area .fl-ch b { flex: 1; min-width: 0; }
+.fl-force { flex: none; width: 28px; height: 28px; margin: -4px -3px -4px 2px; border-radius: 50%; display: grid; place-items: center; color: var(--gold); border: 1.5px solid color-mix(in srgb, var(--gold) 60%, var(--line)); background: var(--bg); cursor: pointer; }
+.fl-force svg { width: 12px; height: 12px; margin-left: 2px; }
+.fl-force:active { transform: scale(.92); }
+.fl-card.reached .fl-force { display: none; }
+.fl-area .fl-tags { flex-wrap: nowrap; }
+.fl-area.narrow .fl-tags { flex-wrap: wrap; row-gap: 6px; }
+.fl-area.narrow .fl-force { margin-left: auto; }
+.fl-force { position: relative; z-index: 2; }

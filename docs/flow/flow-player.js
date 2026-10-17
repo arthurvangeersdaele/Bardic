@@ -13,7 +13,7 @@
 
   const P = {
     rec: null, ch: 0, steps: [], buffers: new Map(), blobs: null, loading: 0,
-    voices: [], starts: [], gate: null, end: null, paused: false, bus: null, sbBus: null,
+    voices: [], starts: [], gate: null, end: null, forced: new Set(), paused: false, bus: null, sbBus: null,
     dom: null, raf: 0, focus: -1, touched: 0, onLeave: null, chapterToken: 0,
   };
 
@@ -48,7 +48,7 @@
     if (P.voices.length || P.starts.length) stopAll();
     P.ch = i;
     P.steps = (P.rec.flow.chapters[i] || { steps: [] }).steps;
-    P.starts = []; P.gate = null; P.end = null; P.focus = -1; P.touched = 0;
+    P.starts = []; P.gate = null; P.end = null; P.focus = -1; P.touched = 0; P.forced.clear();
     renderChapters();
     renderCascade();
     $('#fl-scroll').scrollTop = 0;
@@ -107,7 +107,11 @@
   function schedule(i, t0) {
     const step = P.steps[i];
     P.starts[i] = t0;
-    step.cards.forEach((c, k) => { const v = makeVoice(i, k, c, t0 + c.offset); if (v) P.voices.push(v); });
+    step.cards.forEach((c, k) => {
+      if (P.forced.has(`${i}:${k}`)) return; // already started by hand
+      const v = makeVoice(i, k, c, t0 + c.offset);
+      if (v) P.voices.push(v);
+    });
     const endT = t0 + F.stepLength(step);
     if (i + 1 < P.steps.length) {
       if (P.steps[i + 1].gate) P.gate = { i: i + 1, t: endT };
@@ -124,9 +128,13 @@
     const { ctx } = audio(true);
     if (P.paused) { ctx.resume().catch(() => {}); P.paused = false; }
     const t = now();
-    // Steps not started yet are called off; the late sounds of a step already playing still come in.
+    const run = runIndex(i);
+    // Steps not started yet are called off. Inside the same run, the late sounds of a step already playing still come in;
+    // a gate closes the run before it: its sounds fade out as the new one begins.
     P.voices = P.voices.filter((v) => {
-      if (v.t0 > t && !(P.starts[v.step] <= t && v.step < i)) { try { v.src.onended = null; v.src.stop(); v.g.disconnect(); } catch (e) { /* not started */ } return false; }
+      const same = runIndex(v.step) === run;
+      if (v.t0 > t && !(same && P.starts[v.step] <= t && v.step < i)) { try { v.src.onended = null; v.src.stop(); v.g.disconnect(); } catch (e) { /* not started */ } return false; }
+      if (!same && P.steps[i].gate && !v.done && v.cut == null) fadeVoice(v, settings.fade);
       return true;
     });
     for (let j = 0; j < P.starts.length; j++) if (j >= i || P.starts[j] > t) P.starts[j] = undefined;
@@ -136,6 +144,44 @@
     P.touched = 0;
     global.FlowApp && global.FlowApp.wake();
     paintDock();
+  }
+
+  /** The gate a step hangs from: steps share a run until the next gate. */
+  function runIndex(i) {
+    let g = 0;
+    for (let j = 0; j <= i && j < P.steps.length; j++) if (j === 0 || P.steps[j].gate) g = j;
+    return g;
+  }
+
+  /** Starts one card now, by hand, ahead of the wire. Not once the wire has reached it. */
+  function force(i, k) {
+    const key = `${i}:${k}`;
+    const c = P.steps[i] && P.steps[i].cards[k];
+    if (!c || P.loading || cardReached(i, k)) return;
+    audio(true);
+    if (P.paused) { audio().ctx.resume().catch(() => {}); P.paused = false; }
+    const t = now();
+    const pending = voiceOf(i, k);
+    if (pending && pending.t0 > t) { try { pending.src.onended = null; pending.src.stop(); pending.g.disconnect(); } catch (e) { /* not started */ } P.voices = P.voices.filter((v) => v !== pending); }
+    const v = makeVoice(i, k, c, t + LEAD);
+    if (!v) return;
+    P.voices.push(v);
+    P.forced.add(key);
+    if (P.end != null) P.end = Math.max(P.end, v.end);
+    global.FlowApp && global.FlowApp.wake();
+    paintDock();
+  }
+  /** True once the card has started, or the wire went past its start. */
+  function cardReached(i, k) {
+    const t = now();
+    const v = voiceOf(i, k);
+    if (v && v.t0 <= t) return true;
+    if (P.forced.has(`${i}:${k}`)) return true;
+    const st = P.starts[i];
+    if (st != null && st + P.steps[i].cards[k].offset <= t) return true;
+    // A run the wire has left behind (a later gate was opened) stays behind.
+    const cur = state().cur;
+    return cur >= 0 && runIndex(i) < runIndex(cur);
   }
 
   function fadeVoice(v, ms) {
@@ -159,7 +205,7 @@
     if (P.paused) { audio().ctx.resume().catch(() => {}); P.paused = false; }
     P.voices.forEach((v) => { if (!v.done && v.cut == null) fadeVoice(v, ms); });
     P.voices = [];
-    P.starts = []; P.gate = null; P.end = null; P.focus = -1;
+    P.starts = []; P.gate = null; P.end = null; P.focus = -1; P.forced.clear();
     paintDock();
   }
 
@@ -266,12 +312,11 @@
   const MIN_CARD = 70; // px: a card always fits its name and its countdown
   const gap = (dt) => 8 + 9 * Math.sqrt(Math.max(0, dt)); // px for dt seconds: longer is taller, but not linearly
 
-  /** A rounded rectangle, inset for a 3 px stroke, starting on the left edge at y0 and going clockwise. */
-  function ringPath(w, h, r, y0) {
+  /** A rounded rectangle, inset for a 3 px stroke, from the top-left corner (where the thread arrives), clockwise. */
+  function ringPath(w, h, r) {
     const i = 1.5, R = Math.max(0, Math.min(r - i, (w - 2 * i) / 2, (h - 2 * i) / 2));
     const L = i, T = i, Rt = w - i, B = h - i;
-    const y = Math.min(Math.max(y0, T + R), B - R);
-    return `M${L} ${y}V${T + R}A${R} ${R} 0 0 1 ${L + R} ${T}H${Rt - R}A${R} ${R} 0 0 1 ${Rt} ${T + R}V${B - R}A${R} ${R} 0 0 1 ${Rt - R} ${B}H${L + R}A${R} ${R} 0 0 1 ${L} ${B - R}V${y}`;
+    return `M${L} ${T + R}A${R} ${R} 0 0 1 ${L + R} ${T}H${Rt - R}A${R} ${R} 0 0 1 ${Rt} ${T + R}V${B - R}A${R} ${R} 0 0 1 ${Rt - R} ${B}H${L + R}A${R} ${R} 0 0 1 ${L} ${B - R}Z`;
   }
 
   function runsOf(steps) {
@@ -369,10 +414,10 @@
         const h = L.y(x.e) - L.y(x.s0);
         const left = GUTTER + x.lane * laneW;
         // The thread: from the wire, the same bend as the icon, into the card's side.
-        const ty = top + 16;
+        // The thread leaves the wire at the card's start, straight across: everything at one height starts together.
         const thread = document.createElementNS(NS, 'path');
         thread.setAttribute('class', 'w br');
-        thread.setAttribute('d', `M${WIRE_X} ${top - 6} C${WIRE_X} ${ty}, ${left - 14} ${ty}, ${left + 3} ${ty}`);
+        thread.setAttribute('d', `M${WIRE_X} ${top}H${left + 6}`);
         svg.append(thread);
         const c = x.c;
         const card = el('button', `fl-card${x.cont ? ' cont' : ''}`);
@@ -385,8 +430,13 @@
         const tags = el('div', 'fl-tags');
         tags.append(el('span', 'fl-zone', ZNAME[c.zone] || ''));
         if (c.repeat) { const rp = el('span', 'fl-rep'); rp.innerHTML = ICON.repeat; tags.append(rp); }
+        const pb = el('span', 'fl-force');
+        pb.setAttribute('role', 'button');
+        pb.setAttribute('aria-label', `Start ${c.name} now`);
+        pb.innerHTML = ICON.play;
+        pb.addEventListener('click', (e) => { e.stopPropagation(); force(x.i, x.k); });
         const time = el('span', 'fl-time', F.clock(c.duration));
-        tags.append(time);
+        tags.append(time, pb);
         const track = el('div', 'fl-track');
         const fill = el('i');
         track.append(fill);
@@ -396,16 +446,16 @@
         ring.setAttribute('class', 'fl-ring');
         ring.setAttribute('width', cw); ring.setAttribute('height', ch);
         const rp = document.createElementNS(NS, 'path');
-        rp.setAttribute('d', ringPath(cw, ch, 12, 16));
+        rp.setAttribute('d', ringPath(cw, ch, 12));
         ring.append(rp);
         card.append(ring, stub, head, tags, track);
-        if (x.cont) card.append(el('span', 'fl-cont', 'carries on'));
+        if (x.cont) card.append(el('span', 'fl-cont', 'until the next Go'));
         card.addEventListener('click', () => {
           const v = voiceOf(x.i, x.k);
           if (v && !v.done && v.cut == null && v.t0 <= now()) { fadeVoice(v, settings.fade); toast(`Fading out ${c.name}.`, 1600); }
         });
         area.append(card);
-        P.dom.cards.set(`${x.i}:${x.k}`, { card, fill, time, thread, c, rp, len: 0 });
+        P.dom.cards.set(`${x.i}:${x.k}`, { card, fill, time, thread, c, rp, pb, len: 0 });
       });
       // The steps that follow on their own: a dot on the wire, tap to jump there.
       run.steps.slice(1).forEach((i) => {
@@ -490,7 +540,7 @@
     P.dom.cards.forEach((x, key) => {
       const [i, k] = key.split(':').map(Number);
       const st = P.starts[i];
-      const v = st != null ? voiceOf(i, k) : null;
+      const v = voiceOf(i, k);
       const c = x.c;
       let on = false, done = false, frac = 0, left = c.duration, stub = 0;
       if (v) {
@@ -505,6 +555,7 @@
       setCls(x.card, 'done', done && !on);
       setCls(x.card, 'warn', on && left <= 10);
       setCls(x.thread, 'lit', stub > 0);
+      setCls(x.card, 'reached', !!(on || done || P.forced.has(key) || (st != null && st + c.offset <= t) || (s.cur >= 0 && runIndex(i) < runIndex(s.cur))));
       x.fill.style.width = `${(done ? 1 : frac) * 100}%`;
       if (!x.len) { try { x.len = x.rp.getTotalLength(); x.rp.style.strokeDasharray = `${x.len} ${x.len}`; } catch (e) { x.len = 1; } }
       const ringP = stub > 0 ? (done ? 1 : frac) : 0;
