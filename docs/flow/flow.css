@@ -320,3 +320,13 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
   clip-path: inset(0 0 calc(100% - var(--g, 0px)) 0); filter: drop-shadow(0 0 4px var(--gold-glow)); }
 .fl-gold.on { opacity: 1; }
 .fl-ring { display: none; }
+/* Continuous wires: lane wires branch from the main wire, each card hangs from its lane by a soft elbow into its top edge. */
+.fl-threads .gilt .w { stroke: var(--gold); stroke-width: 3; filter: none; }
+.fl-threads .gilt { filter: drop-shadow(0 0 4px var(--gold-glow)); }
+.fl-threads .base .w { stroke-width: 2.5; }
+.fl-area .fl-card { border-top-left-radius: 0; }
+.fl-area .fl-gold { border-top-left-radius: 0; }
+.fl-run > .fl-link, .fl-end > .fl-link { margin-left: 12.5px; }
+.fl-run .fl-node-row { margin-left: -9px; }
+.fl-card.spent { filter: grayscale(1); opacity: .32; }
+.fl-card.spent .fl-gold { opacity: 0; }

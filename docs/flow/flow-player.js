@@ -308,8 +308,9 @@
    * (long sounds squeezed, short ones stretched to stay readable), so sounds that overlap sit side by side.
    * The golden wire runs down the left, a thread branches to each card, and a playhead sweeps down with time. */
   const GUTTER = 34;   // the wire's column
-  const WIRE_X = 15;
+  const WIRE_X = 14;
   const MIN_CARD = 70; // px: a card always fits its name and its countdown
+  const PAD = 40;      // room above the first sounds of a run, for the lane wires to branch off
   const gap = (dt) => 8 + 9 * Math.sqrt(Math.max(0, dt)); // px for dt seconds: longer is taller, but not linearly
 
   function runsOf(steps) {
@@ -388,34 +389,51 @@
       sec.append(row);
 
       const area = el('div', 'fl-area');
-      area.style.height = `${L.height + 18}px`;
-      const laneW = (width - GUTTER) / L.lanes;
+      const H = L.height + PAD + 9;
+      area.style.height = `${H}px`;
+      // Lanes side by side; each has its own wire on its left, branching from the main wire like the icon.
+      const laneW = (width - 8) / L.lanes;
+      const wx = (l) => l * laneW + WIRE_X;
+      const cardW = laneW - 16;
       if (laneW < 118) area.classList.add('narrow');
       const NS = 'http://www.w3.org/2000/svg';
       const svg = document.createElementNS(NS, 'svg');
       svg.setAttribute('class', 'fl-threads');
-      svg.setAttribute('width', width); svg.setAttribute('height', L.height + 18);
-      const base = document.createElementNS(NS, 'path');
-      base.setAttribute('class', 'w'); base.setAttribute('d', `M${WIRE_X} 0V${L.height + 18}`);
-      const lit = document.createElementNS(NS, 'path');
-      lit.setAttribute('class', 'w lit'); lit.setAttribute('d', `M${WIRE_X} 0V${L.height + 18}`);
-      lit.style.strokeDasharray = `${L.height + 18}`; lit.style.strokeDashoffset = `${L.height + 18}`;
-      svg.append(base, lit);
+      svg.setAttribute('width', width); svg.setAttribute('height', H);
+      const top0 = (x) => L.y(x.s0) + PAD;
+      const d = [`M${wx(0)} 0V${H}`];
+      for (let l = 1; l < L.lanes; l++) {
+        const inLane = L.items.filter((x) => x.lane === l);
+        if (!inLane.length) continue;
+        const y1 = Math.min(...inLane.map(top0));
+        const y2 = Math.max(...inLane.map(top0));
+        // The bend of the icon: the wire splits under the gate, each lane wire runs down its own rail
+        // (between the lanes, never behind a card) to the elbow of its last card.
+        const ys = 0;
+        void y1;
+        d.push(`M${wx(0)} ${ys}C${wx(0)} ${ys + 15} ${wx(l)} ${ys + 15} ${wx(l)} ${ys + 30}V${Math.max(ys + 30, y2 - 10)}`);
+      }
+      // Each card hangs from its lane wire: a soft elbow that becomes the card's top edge.
+      L.items.forEach((x) => {
+        const top = top0(x) + 0.5;
+        const xw = wx(x.lane);
+        d.push(`M${xw} ${Math.max(0, top - 10)}Q${xw} ${top} ${xw + 10} ${top}H${xw + 12}`);
+      });
+      const clipId = `fl-clip-${P.chapterToken}-${r}`;
+      svg.innerHTML = `<defs><clipPath id="${clipId}"><rect x="0" y="0" width="${width}" height="0"/></clipPath></defs>`
+        + `<g class="base">${d.map((p) => `<path class="w" d="${p}"/>`).join('')}</g>`
+        + `<g class="gilt" clip-path="url(#${clipId})">${d.map((p) => `<path class="w lit" d="${p}"/>`).join('')}</g>`;
+      const lit = svg.querySelector('clipPath rect');
       area.append(svg);
       L.items.forEach((x) => {
-        const top = L.y(x.s0) + 9;
+        const top = top0(x);
         const h = L.y(x.e) - L.y(x.s0);
-        const left = GUTTER + x.lane * laneW;
-        // The thread: from the wire, the same bend as the icon, into the card's side.
-        // The thread leaves the wire at the card's start, straight across: everything at one height starts together.
-        const thread = document.createElementNS(NS, 'path');
-        thread.setAttribute('class', 'w br');
-        thread.setAttribute('d', `M${WIRE_X} ${top}H${left + 6}`);
-        svg.append(thread);
+        const left = wx(x.lane) + 10;
+        const thread = null;
         const c = x.c;
         const card = el('button', `fl-card${x.cont ? ' cont' : ''}`);
         card.type = 'button';
-        card.style.cssText = `top:${top}px;left:${left + 3}px;width:${laneW - 6}px;height:${Math.max(24, h - 4)}px`;
+        card.style.cssText = `top:${top}px;left:${left}px;width:${cardW}px;height:${Math.max(24, h - 4)}px`;
         card.style.setProperty('--z', ZCOL[c.zone] || 'var(--accent)');
         const stub = el('i', 'fl-stub');
         const head = el('div', 'fl-ch');
@@ -449,7 +467,7 @@
       run.steps.slice(1).forEach((i) => {
         const d = el('button', 'fl-dot');
         d.type = 'button';
-        d.style.top = `${L.y(P.offsets[i]) + 9}px`;
+        d.style.top = `${L.y(P.offsets[i]) + PAD}px`;
         d.style.left = `${WIRE_X}px`;
         d.title = stepLabel(P.steps[i], i);
         d.setAttribute('aria-label', `Jump to ${stepLabel(P.steps[i], i)}`);
@@ -462,7 +480,7 @@
       area.append(head);
       sec.append(area);
       box.append(sec);
-      P.dom.runs.push({ run, L, sec, node, sub, area, lit, head, total: L.height + 18 });
+      P.dom.runs.push({ run, L, sec, node, sub, area, lit, head, total: H });
     });
     const end = el('div', 'fl-end');
     end.append(el('div', 'fl-link'));
@@ -518,9 +536,9 @@
         const p = started || waiting ? 1 : prt == null ? 0 : Math.min(1, prt / Math.max(0.01, P0.L.end));
         R.sec.style.setProperty('--link', p.toFixed(3));
       }
-      const y = started ? Math.min(R.L.map(rt) + 9, R.total) : 0;
+      const y = started ? Math.min(R.L.map(rt) + PAD, R.total) : 0;
       R.y = y;
-      R.lit.style.strokeDashoffset = `${R.total - y}`;
+      R.lit.setAttribute('height', String(y));
       const show = started && r === curRun && rt < R.L.end + 0.5 && s.mode !== 'idle';
       R.head.hidden = !show;
       if (show) { R.head.style.transform = `translateY(${y}px)`; focusY = R.sec.offsetTop + R.area.offsetTop + y; }
@@ -543,7 +561,7 @@
       setCls(x.card, 'on', on);
       setCls(x.card, 'done', done && !on);
       setCls(x.card, 'warn', on && left <= 10);
-      setCls(x.thread, 'lit', stub > 0);
+      setCls(x.card, 'spent', P.forced.has(key) && done);
       setCls(x.card, 'reached', !!(on || done || P.forced.has(key) || (st != null && st + c.offset <= t) || (s.cur >= 0 && runIndex(i) < runIndex(s.cur))));
       x.fill.style.width = `${(done ? 1 : frac) * 100}%`;
       // Gold height: down to the time line (a card started by hand follows its own sound).
