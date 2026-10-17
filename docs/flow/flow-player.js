@@ -51,7 +51,7 @@
     P.starts = []; P.gate = null; P.end = null; P.focus = -1; P.touched = 0; P.forced.clear();
     renderChapters();
     renderCascade();
-    $('#fl-scroll').scrollTop = 0;
+    toTop();
     // Decode the sounds of this chapter (and the soundbox) before the first tap.
     const want = new Set();
     P.steps.forEach((s) => s.cards.forEach((c) => want.add(c.file)));
@@ -72,7 +72,7 @@
     P.loading = 0;
     paintDock();
     renderPads();
-    if (autostart && P.steps.length) go(0);
+    if (autostart && P.steps.length) { go(0); toTop(); }
   }
 
   /* ---------- Timeline ---------- */
@@ -448,7 +448,6 @@
         const stick = el('div', 'fl-stick');
         stick.append(head, tags, track);
         card.append(gold, stub, stick);
-        if (x.cont) card.append(el('span', 'fl-cont', 'until the next Go'));
         card.addEventListener('click', () => {
           const v = voiceOf(x.i, x.k);
           if (v && !v.done && v.cut == null && v.t0 <= now()) { fadeVoice(v, settings.fade); toast(`Fading out ${c.name}.`, 1600); }
@@ -522,14 +521,10 @@
       setCls(R.sec, 'lit', started);
       setCls(R.sec, 'waiting', waiting);
       setCls(R.sec, 'past', started && rt >= R.L.end);
-      // The link above a gate charges while the run before it ends.
-      if (r > 0) {
-        const P0 = P.dom.runs[r - 1];
-        const prt = runTime(P0, t);
-        const p = started || waiting ? 1 : prt == null ? 0 : Math.min(1, prt / Math.max(0.01, P0.L.end));
-        R.sec.style.setProperty('--link', p.toFixed(3));
-      }
-      const y = started ? Math.min(R.L.map(rt) + PAD, R.total) : 0;
+      // The link to a gate fills once the run above has reached its end (the wire runs down into the gate).
+      if (r > 0) R.sec.style.setProperty('--link', started || waiting ? '1' : '0');
+      // Once the run has reached its end, its wire is gold all the way down to the next gate.
+      const y = !started ? 0 : rt >= R.L.end ? R.total : Math.min(R.L.map(rt) + PAD, R.total);
       R.y = y;
       R.rt = rt;
       R.lit.setAttribute('height', String(y));
@@ -570,7 +565,7 @@
       x.fill.style.width = `${p * 100}%`;
       g = Math.round(g);
       if (g !== x.g) { x.g = g; x.gold.style.setProperty('--g', `${g}px`); setCls(x.gold, 'on', g > 0); }
-      const txt = on ? (x.cont && left <= 0 ? 'Go' : F.clock(left)) : F.clock(c.duration);
+      const txt = on ? (x.cont && left <= 0 ? 'till Go' : F.clock(left)) : F.clock(c.duration);
       if (x.time.textContent !== txt) x.time.textContent = txt;
     });
     P.dom.dots.forEach(({ d, i }) => setCls(d, 'lit', P.starts[i] != null && P.starts[i] <= t));
@@ -578,12 +573,20 @@
     setCls(P.dom.end.btn, 'ready', s.mode === 'done' || (s.mode === 'run' && P.end != null && P.end - t < 5));
     const lastR = P.dom.runs[P.dom.runs.length - 1];
     if (lastR) {
-      const rt = runTime(lastR, t);
-      P.dom.end.end.style.setProperty('--link', (s.mode === 'done' ? 1 : rt == null ? 0 : Math.min(1, rt / Math.max(0.01, lastR.L.end))).toFixed(3));
+      P.dom.end.end.style.setProperty('--link', s.mode === 'done' ? '1' : '0');
     }
     if (s.mode === 'done') focusY = P.dom.end.end.offsetTop;
     follow(focusY);
     paintDock(s);
+  }
+
+  /** A new chapter opens at its top: any scroll still gliding is stopped. */
+  function toTop() {
+    const sc = $('#fl-scroll');
+    sc.scrollTo({ top: 0, behavior: 'auto' });
+    sc.scrollTop = 0;
+    P.scrolling = Date.now();
+    P.touched = 0;
   }
 
   /** Keeps the playhead (or the gate that waits) near the top of the screen, the coming sounds below it. */

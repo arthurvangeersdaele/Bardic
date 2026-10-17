@@ -111,7 +111,7 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-step.lit .fl-node { border-color: var(--gold); background: var(--gold); color: var(--on-z); box-shadow: 0 0 14px var(--gold-glow); }
 .fl-step.waiting .fl-node { border-color: var(--gold); background: var(--gold); color: #1A1206; animation: gate 1.4s ease-in-out infinite; }
 .fl-node:active { transform: scale(.94); }
-@keyframes gate { 0%, 100% { box-shadow: 0 0 0 0 var(--gold-glow), 0 0 14px var(--gold-glow); } 50% { box-shadow: 0 0 0 12px rgba(240, 194, 79, 0), 0 0 26px var(--gold-hot); } }
+@keyframes gate { 0%, 100% { box-shadow: 0 0 0 0 var(--gold-glow), 0 0 6px var(--gold-glow); } 50% { box-shadow: 0 0 0 4px rgba(240, 194, 79, 0), 0 0 10px var(--gold-glow); } }
 .fl-meta { max-width: 92%; }
 .fl-meta b { display: block; font-weight: 600; font-size: 16px; line-height: 1.2; }
 .fl-sub { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -301,7 +301,7 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
   background: linear-gradient(90deg, var(--gold), color-mix(in srgb, var(--gold) 0%, transparent)); box-shadow: 0 0 8px var(--gold-glow); }
 .fl-playhead::before { content: ""; position: absolute; left: 3px; top: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--gold-hot); box-shadow: 0 0 12px var(--gold); }
 .fl-run.waiting .fl-node { animation: gate 1.4s ease-in-out infinite; }
-.fl-run.lit .fl-node, .fl-run.waiting .fl-node { border-color: var(--gold); background: var(--gold); color: #1A1206; box-shadow: 0 0 14px var(--gold-glow); }
+.fl-run.lit .fl-node, .fl-run.waiting .fl-node { border-color: var(--gold); background: var(--gold); color: #1A1206; box-shadow: 0 0 7px var(--gold-glow); }
 .fl-run.waiting .fl-sub { color: var(--gold); font-weight: 600; }
 .fl-run.lit > .fl-link { box-shadow: 0 0 8px var(--gold-glow); }
 .fl-area .fl-ch b { overflow-wrap: anywhere; hyphens: auto; }
@@ -347,3 +347,13 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-area.narrow .fl-card.short .fl-tags { justify-content: flex-end; }
 .fl-area.narrow .fl-card.short .fl-force { margin: 0; }
 .fl-area .fl-card.short { padding-top: 3px; padding-bottom: 3px; }
+/* The link to a gate fills down smoothly once the wire reaches it. */
+@property --link { syntax: '<number>'; inherits: true; initial-value: 0; }
+.fl-run, .fl-end { transition: --link .6s ease-in; }
+/* The wire runs behind the gate node too: no gap between the link, the node and the run below. */
+.fl-run .fl-node-row { background: linear-gradient(var(--wire), var(--wire)) 21.5px 0 / 3px 100% no-repeat; }
+.fl-run.waiting .fl-node-row { background-image: linear-gradient(var(--gold) 50%, var(--wire) 50%); }
+.fl-run.lit .fl-node-row { background-image: linear-gradient(var(--gold), var(--gold)); }
+.fl-run:first-child .fl-node-row { background-size: 3px 50%; background-position: 21.5px 100%; }
+.fl-area { margin-top: 0; }
+.fl-run:first-child.waiting:not(.lit) .fl-node-row { background-image: linear-gradient(var(--wire), var(--wire)); }

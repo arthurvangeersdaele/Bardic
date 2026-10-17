@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '261017.9';
+  const VERSION = '261017.10';
   const { $, el, ICON, settings, saveSettings, applyTheme, toast, busy, idle, ask, deliver, audio, decode, applyAudioSession } = window.FlowUI;
   const F = window.BardicFlow;
   const DB = window.FlowDB;
