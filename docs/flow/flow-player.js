@@ -356,8 +356,15 @@
    * through every gate down to Next chapter, a bus under each gate feeds the lanes, and every card's
    * frame melts into its wire by a rounded corner. Lighting is one clip that grows down, so the gold
    * flows like a liquid: no seams between pieces, no glow doubled where two strokes meet. */
-  const BUS = 12;      // the bus sits this far under a gate
-  const FILLET = 10;   // radius of every bend of the wire
+  const BUS = 14;      // the bus sits this far under a gate
+  // Every bend of the wire is a quarter ellipse, taller than wide: the gold leans out gently, like the logo.
+  const BEND_X = 16, BEND_Y = 26;
+  const CARD_RX = 12, CARD_RY = 22;
+  const K = 0.5523;    // a cubic that follows a quarter ellipse
+  /** Bend from a vertical wire into a horizontal one: from (x, y) down-and-across by (dx, dy). */
+  const bendOut = (f, x, y, dx, dy) => `C${f(x)} ${f(y + K * dy)} ${f(x + dx - K * dx)} ${f(y + dy)} ${f(x + dx)} ${f(y + dy)}`;
+  /** Bend from a horizontal wire down into a vertical one. */
+  const bendDown = (f, x, y, dx, dy) => `C${f(x + K * dx)} ${f(y)} ${f(x + dx)} ${f(y + dy - K * dy)} ${f(x + dx)} ${f(y + dy)}`;
   const GAP = 14;      // between a card and the next lane's wire
 
   function renderCascade() {
@@ -418,11 +425,12 @@
         const pl = place(x.lane);
         const left = pl.left;
         const cardW = pl.w;
-        const rad = Math.min(12, ch / 2);
+        const rad = Math.min(CARD_RX, ch / 2);
+        const rady = Math.min(CARD_RY, ch / 2);
         const c = x.c;
         const card = el('button', `fl-card ${pl.side}${x.cont ? ' cont' : ''}${ch < 58 ? ' short' : ''}`);
         card.type = 'button';
-        card.style.cssText = `top:${top}px;left:${left}px;width:${cardW}px;height:${ch}px;border-radius:${rad}px`;
+        card.style.cssText = `top:${top}px;left:${left}px;width:${cardW}px;height:${ch}px;border-radius:${rad}px / ${rady}px`;
         card.style.setProperty('--z', ZCOL[c.zone] || 'var(--accent)');
         const head = el('div', 'fl-ch');
         head.append(el('b', '', c.name));
@@ -457,7 +465,7 @@
         pb.innerHTML = ICON.go;
         pb.addEventListener('click', (e) => { e.stopPropagation(); force(x.i, x.k); });
         area.append(pb);
-        const info = { card, fill, time, c, pb, top, left, w: cardW, ch, rad, side: pl.side, rail: pl.rail, lane: x.lane, run: r, s0: x.s0, e: x.e, cont: x.cont, span: (x.y1 - x.y0) / L.pps, extra: -1, spent: false, path: null };
+        const info = { card, fill, time, c, pb, top, left, w: cardW, ch, rad, rady, side: pl.side, rail: pl.rail, lane: x.lane, run: r, s0: x.s0, e: x.e, cont: x.cont, span: (x.y1 - x.y0) / L.pps, extra: -1, spent: false, path: null };
         cards.push(info);
         P.dom.cards.set(`${x.i}:${x.k}`, info);
       });
@@ -526,23 +534,26 @@
       D.dots.forEach((o) => { if (o.run === r) o.gy = a.y + o.y; });
       // Rails beyond the spine: a bus leaves the spine under the gate on each side, each rail drops off it to its last card.
       const ends = new Map();
-      R.cards.forEach((c) => { if (c.side !== 'c' && Math.abs(c.rail - R.X) > 1) ends.set(c.rail, Math.max(ends.get(c.rail) || 0, c.top + c.rad)); });
+      R.cards.forEach((c) => { if (c.side !== 'c' && Math.abs(c.rail - R.X) > 1) ends.set(c.rail, Math.max(ends.get(c.rail) || 0, c.top + c.rady)); });
       const by = a.y + BUS;
       [1, -1].forEach((dir) => {
         const rails = [...ends.keys()].filter((x) => (x - R.X) * dir > 0).sort((p, q) => (p - q) * dir);
         if (!rails.length) return;
         const xl = (x) => a.x + x;
         const last = rails[rails.length - 1];
-        wires.push(`M${f(X)} ${f(by - FILLET)}Q${f(X)} ${f(by)} ${f(X + dir * FILLET)} ${f(by)}H${f(xl(last) - dir * FILLET)}Q${f(xl(last))} ${f(by)} ${f(xl(last))} ${f(by + FILLET)}V${f(a.y + ends.get(last))}`);
-        rails.slice(0, -1).forEach((x) => wires.push(`M${f(xl(x) - dir * FILLET)} ${f(by)}Q${f(xl(x))} ${f(by)} ${f(xl(x))} ${f(by + FILLET)}V${f(a.y + ends.get(x))}`));
+        // Bends never wider than half the way between two wires.
+        const bx = Math.min(BEND_X, Math.abs(xl(rails[0]) - X) / 2 - 1);
+        const down = (x) => Math.max(a.y + ends.get(x), by + BEND_Y);
+        wires.push(`M${f(X)} ${f(by - BEND_Y)}${bendOut(f, X, by - BEND_Y, dir * bx, BEND_Y)}H${f(xl(last) - dir * bx)}${bendDown(f, xl(last) - dir * bx, by, dir * bx, BEND_Y)}V${f(down(last))}`);
+        rails.slice(0, -1).forEach((x) => wires.push(`M${f(xl(x) - dir * bx)} ${f(by)}${bendDown(f, xl(x) - dir * bx, by, dir * bx, BEND_Y)}V${f(down(x))}`));
       });
       R.cards.forEach((c) => { if (c.side === 'c') holes.push([a.y + c.top, a.y + c.top + c.ch]); });
       // Each card's frame: its left edge is the wire, its rounded corners melt into it.
       R.cards.forEach((c) => {
-        const x = a.x + c.left, y = a.y + c.top, w = c.w, h = c.ch, q = c.rad;
+        const x = a.x + c.left, y = a.y + c.top, w = c.w, h = c.ch, q = c.rad, qy = c.rady;
         c.gy = y; c.gx = x;
         // Rounded at every corner, always (a sound that waits for the next Go too).
-        const d = `M${f(x)} ${f(y + q)}A${q} ${q} 0 0 1 ${f(x + q)} ${f(y)}H${f(x + w - q)}A${q} ${q} 0 0 1 ${f(x + w)} ${f(y + q)}V${f(y + h - q)}A${q} ${q} 0 0 1 ${f(x + w - q)} ${f(y + h)}H${f(x + q)}A${q} ${q} 0 0 1 ${f(x)} ${f(y + h - q)}Z`;
+        const d = `M${f(x)} ${f(y + qy)}A${q} ${qy} 0 0 1 ${f(x + q)} ${f(y)}H${f(x + w - q)}A${q} ${qy} 0 0 1 ${f(x + w)} ${f(y + qy)}V${f(y + h - qy)}A${q} ${qy} 0 0 1 ${f(x + w - q)} ${f(y + h)}H${f(x + q)}A${q} ${qy} 0 0 1 ${f(x)} ${f(y + h - qy)}Z`;
         frames.push({ c, d });
       });
     });
