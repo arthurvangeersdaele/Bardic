@@ -309,6 +309,7 @@
    * The golden wire runs down the left, a thread branches to each card, and a playhead sweeps down with time. */
   const GUTTER = 34;   // the wire's column
   const WIRE_X = 14;
+  const CARD_R = 12;  // the cards' corner radius
   const PAD = 40;      // room above the first sounds of a run, for the lane wires to branch off
   const RUN_PX = 420;   // a run is drawn about this tall...
   const MIN_PPS = 2;    // ...at no less than 2 px per second
@@ -390,23 +391,23 @@
       svg.setAttribute('class', 'fl-threads');
       svg.setAttribute('width', width); svg.setAttribute('height', H);
       const top0 = (x) => x.y0 + PAD;
+      // Wires drawn like the app icon: straight lines and round corners only.
+      // The main wire comes down from under the gate; a bus leaves it just below and turns down into one rail
+      // per lane; each card hangs from its rail by a small round turn into its left edge.
+      const RR = 10;   // radius of every turn
+      const BUS = 16;  // height of the bus under the gate
+      const jy = (x) => top0(x) + CARD_R + 2; // where a card meets its rail: just below its round corner
       const d = [`M${wx(0)} 0V${H}`];
       for (let l = 1; l < L.lanes; l++) {
         const inLane = L.items.filter((x) => x.lane === l);
         if (!inLane.length) continue;
-        const y1 = Math.min(...inLane.map(top0));
-        const y2 = Math.max(...inLane.map(top0));
-        // The bend of the icon: the wire splits under the gate, each lane wire runs down its own rail
-        // (between the lanes, never behind a card) to the elbow of its last card.
-        const ys = 0;
-        void y1;
-        d.push(`M${wx(0)} ${ys}C${wx(0)} ${ys + 15} ${wx(l)} ${ys + 15} ${wx(l)} ${ys + 30}V${Math.max(ys + 30, y2 - 10)}`);
+        const last = Math.max(...inLane.map(jy));
+        d.push(`M${wx(0)} ${BUS - RR}Q${wx(0)} ${BUS} ${wx(0) + RR} ${BUS}H${wx(l) - RR}Q${wx(l)} ${BUS} ${wx(l)} ${BUS + RR}V${last - RR}`);
       }
-      // Each card hangs from its lane wire: a soft elbow that becomes the card's top edge.
       L.items.forEach((x) => {
-        const top = top0(x) + 0.5;
         const xw = wx(x.lane);
-        d.push(`M${xw} ${Math.max(0, top - 10)}Q${xw} ${top} ${xw + 10} ${top}H${xw + 12}`);
+        const y = jy(x);
+        d.push(`M${xw} ${y - RR}Q${xw} ${y} ${xw + RR} ${y}H${xw + RR + 2}`);
       });
       const clipId = `fl-clip-${P.chapterToken}-${r}`;
       svg.innerHTML = `<defs><clipPath id="${clipId}"><rect x="0" y="0" width="${width}" height="0"/></clipPath></defs>`
@@ -559,7 +560,7 @@
       if (!P.forced.has(key) && R.rt != null && !(done && !x.cont)) p = Math.min(1, Math.max(0, (R.rt - x.s0) / Math.max(0.01, x.span)));
       if (done) p = 1;
       let g = 0;
-      if (stub > 0) g = Math.max(3, p * x.ch);
+      if (stub > 0) g = Math.max(CARD_R + 4, p * x.ch); // from its start, lit down to where it meets its rail
       frac = p;
       if (x.cont && on) left = Math.max(0, x.s0 + x.span - R.rt);
       x.fill.style.width = `${p * 100}%`;

@@ -291,7 +291,6 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-ring path { fill: none; stroke: var(--gold); stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--gold-glow)); }
 .fl-area .fl-stub { display: none; }
 .fl-cont { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 8px 4px; font-size: 11px; color: var(--muted); text-align: center; background: linear-gradient(transparent, var(--card) 70%); }
-.fl-card.cont { border-bottom-style: dashed; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; }
 .fl-area.narrow .fl-zone { display: none; }
 .fl-area.narrow .fl-ch b { font-size: 14px; }
 .fl-area.narrow .fl-card { padding: 8px 7px 7px 9px; }
@@ -324,8 +323,6 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-threads .gilt .w { stroke: var(--gold); stroke-width: 3; filter: none; }
 .fl-threads .gilt { filter: drop-shadow(0 0 4px var(--gold-glow)); }
 .fl-threads .base .w { stroke-width: 2.5; }
-.fl-area .fl-card { border-top-left-radius: 0; }
-.fl-area .fl-gold { border-top-left-radius: 0; }
 .fl-run > .fl-link, .fl-end > .fl-link { margin-left: 12.5px; }
 .fl-run .fl-node-row { margin-left: -9px; }
 .fl-card.spent { filter: grayscale(1); opacity: .32; }
@@ -357,3 +354,19 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-run:first-child .fl-node-row { background-size: 3px 50%; background-position: 21.5px 100%; }
 .fl-area { margin-top: 0; }
 .fl-run:first-child.waiting:not(.lit) .fl-node-row { background-image: linear-gradient(var(--wire), var(--wire)); }
+/* ---------- Clean lines: round corners everywhere ---------- */
+.fl-threads .w { stroke-linecap: butt; stroke-linejoin: round; }
+.fl-area .fl-card { border-radius: 12px; box-shadow: inset 4px 0 0 var(--z); }
+.fl-area .fl-card::before { display: none; }
+.fl-area .fl-card.on { box-shadow: inset 4px 0 0 var(--z), 0 0 18px color-mix(in srgb, var(--gold) 26%, transparent); }
+.fl-gold { border-radius: 12px; }
+/* Next chapter: the wire runs down into the pill and becomes its left edge. */
+.fl-end .fl-nextch { position: relative; margin: 0 0 0 12.5px; border: 3px solid var(--wire); background: var(--card); }
+.fl-end .fl-nextch::before { content: ""; position: absolute; left: -3px; top: -3px; width: 3px; height: calc(50% + 3px); background: var(--wire); }
+.fl-end.lit .fl-nextch, .fl-end .fl-nextch.ready:not(:disabled) { border-color: var(--gold); }
+.fl-end.lit .fl-nextch::before, .fl-end .fl-nextch.ready:not(:disabled)::before { background: var(--gold); }
+.fl-end .fl-nextch:disabled { border-color: var(--wire); }
+.fl-end .fl-nextch { align-items: flex-start; padding-left: 26px; }
+/* Links meet the wires end to end: square ends, a pixel of overlap, the same glow. */
+.fl-run > .fl-link, .fl-end > .fl-link { border-radius: 0; margin-top: -1px; margin-bottom: -1px; height: 28px; position: relative; z-index: 0; }
+.fl-run.lit > .fl-link, .fl-end.lit > .fl-link { box-shadow: none; filter: drop-shadow(0 0 4px var(--gold-glow)); }
