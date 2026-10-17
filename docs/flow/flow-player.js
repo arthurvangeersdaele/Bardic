@@ -309,9 +309,11 @@
    * The golden wire runs down the left, a thread branches to each card, and a playhead sweeps down with time. */
   const GUTTER = 34;   // the wire's column
   const WIRE_X = 14;
-  const MIN_CARD = 70; // px: a card always fits its name and its countdown
   const PAD = 40;      // room above the first sounds of a run, for the lane wires to branch off
-  const gap = (dt) => 8 + 9 * Math.sqrt(Math.max(0, dt)); // px for dt seconds: longer is taller, but not linearly
+  const RUN_PX = 420;   // a run is drawn about this tall...
+  const MIN_PPS = 2;    // ...at no less than 2 px per second
+  const MAX_PPS = 36;   // and no more than 36
+  const MIN_PX = 30;    // a sound shorter than that still shows its name
 
   function runsOf(steps) {
     const runs = [];
@@ -331,34 +333,21 @@
     // A run that a gate follows ends with its steps: sounds still playing carry on under the next gate.
     const end = last ? Math.max(stepsEnd, ...items.map((x) => x.s1), 0) : stepsEnd;
     items.forEach((x) => { x.e = Math.min(x.s1, Math.max(end, x.s0 + 0.1)); x.cont = x.s1 > x.e + 0.05; });
-    // Lanes: each card takes the first lane free at its start.
+    // One speed for the whole run: so many pixels per second, the same for every card and for the time line.
+    // A card is as tall as it lasts; sounds side by side are sized by the same rule.
+    const pps = Math.min(MAX_PPS, Math.max(MIN_PPS, RUN_PX / Math.max(end, 0.1)));
+    const map = (t) => Math.max(0, Math.min(t, end)) * pps;
+    items.forEach((x) => { x.y0 = x.s0 * pps; x.y1 = Math.max(x.e * pps, x.y0 + MIN_PX); });
+    // Lanes: each card takes the first lane free at its top (a very short card keeps a readable height).
     const lanes = [];
     items.sort((a, b) => a.s0 - b.s0 || a.i - b.i || a.k - b.k).forEach((x) => {
-      let l = lanes.findIndex((free) => free <= x.s0 + 0.01);
+      let l = lanes.findIndex((free) => free <= x.y0 + 0.5);
       if (l < 0) { l = lanes.length; lanes.push(0); }
-      lanes[l] = x.e;
+      lanes[l] = x.y1 + 4;
       x.lane = l;
     });
-    // Time to pixels: a breakpoint at every start and end, a height for every gap between them.
-    const ts = [...new Set([0, end, ...items.flatMap((x) => [x.s0, x.e]), ...run.steps.map((i) => offsets[i])])].sort((a, b) => a - b);
-    const hs = ts.slice(1).map((t, n) => gap(t - ts[n]));
-    const ys = () => { const out = [0]; hs.forEach((h) => out.push(out[out.length - 1] + h)); return out; };
-    let y = ys();
-    const at = (t) => ts.indexOf(t);
-    // Stretch the last stretch of a card too short to read.
-    items.slice().sort((a, b) => a.e - b.e).forEach((x) => {
-      const a = at(x.s0), b = at(x.e);
-      const short = MIN_CARD - (y[b] - y[a]);
-      if (short > 0 && b > a) { hs[b - 1] += short; y = ys(); }
-    });
-    const map = (t) => {
-      if (t <= 0) return 0;
-      if (t >= ts[ts.length - 1]) return y[y.length - 1];
-      let n = 1;
-      while (ts[n] < t) n += 1;
-      return y[n - 1] + (y[n] - y[n - 1]) * ((t - ts[n - 1]) / Math.max(1e-6, ts[n] - ts[n - 1]));
-    };
-    return { items, lanes: Math.max(1, lanes.length), end, height: Math.max(y[y.length - 1], 24), map, y: (t) => y[at(t)] };
+    const height = Math.max(end * pps, ...items.map((x) => x.y1), 24);
+    return { items, lanes: Math.max(1, lanes.length), end, pps, height, map, y: (t) => t * pps };
   }
 
   function renderCascade() {
@@ -400,7 +389,7 @@
       const svg = document.createElementNS(NS, 'svg');
       svg.setAttribute('class', 'fl-threads');
       svg.setAttribute('width', width); svg.setAttribute('height', H);
-      const top0 = (x) => L.y(x.s0) + PAD;
+      const top0 = (x) => x.y0 + PAD;
       const d = [`M${wx(0)} 0V${H}`];
       for (let l = 1; l < L.lanes; l++) {
         const inLane = L.items.filter((x) => x.lane === l);
@@ -427,7 +416,7 @@
       area.append(svg);
       L.items.forEach((x) => {
         const top = top0(x);
-        const h = L.y(x.e) - L.y(x.s0);
+        const h = x.y1 - x.y0;
         const left = wx(x.lane) + 10;
         const thread = null;
         const c = x.c;
@@ -453,15 +442,19 @@
         track.append(fill);
         // The wire, once it touches the card's top, comes down both its sides with the time line.
         const ch = Math.max(24, h - 4);
+        if (ch < 58) card.classList.add('short');
         const gold = el('i', 'fl-gold');
-        card.append(gold, stub, head, tags, track);
+        // The name, time and bar stay in sight while a tall card scrolls by.
+        const stick = el('div', 'fl-stick');
+        stick.append(head, tags, track);
+        card.append(gold, stub, stick);
         if (x.cont) card.append(el('span', 'fl-cont', 'until the next Go'));
         card.addEventListener('click', () => {
           const v = voiceOf(x.i, x.k);
           if (v && !v.done && v.cut == null && v.t0 <= now()) { fadeVoice(v, settings.fade); toast(`Fading out ${c.name}.`, 1600); }
         });
         area.append(card);
-        P.dom.cards.set(`${x.i}:${x.k}`, { card, fill, time, thread, c, gold, pb, top, ch, run: r, g: -1 });
+        P.dom.cards.set(`${x.i}:${x.k}`, { card, fill, time, thread, c, gold, pb, top, ch, run: r, g: -1, s0: x.s0, e: x.e, cont: x.cont, span: (x.y1 - x.y0) / L.pps });
       });
       // The steps that follow on their own: a dot on the wire, tap to jump there.
       run.steps.slice(1).forEach((i) => {
@@ -538,6 +531,7 @@
       }
       const y = started ? Math.min(R.L.map(rt) + PAD, R.total) : 0;
       R.y = y;
+      R.rt = rt;
       R.lit.setAttribute('height', String(y));
       const show = started && r === curRun && rt < R.L.end + 0.5 && s.mode !== 'idle';
       R.head.hidden = !show;
@@ -563,13 +557,20 @@
       setCls(x.card, 'warn', on && left <= 10);
       setCls(x.card, 'spent', P.forced.has(key) && done);
       setCls(x.card, 'reached', !!(on || done || P.forced.has(key) || (st != null && st + c.offset <= t) || (s.cur >= 0 && runIndex(i) < runIndex(s.cur))));
-      x.fill.style.width = `${(done ? 1 : frac) * 100}%`;
-      // The gold on a card is the time of that sound: it comes down its sides exactly as its progress bar fills.
+      // One time for everything: the card's gold, its progress bar and the time line move together,
+      // at the run's speed (a card started by hand, off the wire, follows its own sound).
+      const R = P.dom.runs[x.run];
+      let p = frac;
+      if (!P.forced.has(key) && R.rt != null && !(done && !x.cont)) p = Math.min(1, Math.max(0, (R.rt - x.s0) / Math.max(0.01, x.span)));
+      if (done) p = 1;
       let g = 0;
-      if (stub > 0) g = done ? x.ch : Math.max(3, frac * x.ch);
+      if (stub > 0) g = Math.max(3, p * x.ch);
+      frac = p;
+      if (x.cont && on) left = Math.max(0, x.s0 + x.span - R.rt);
+      x.fill.style.width = `${p * 100}%`;
       g = Math.round(g);
       if (g !== x.g) { x.g = g; x.gold.style.setProperty('--g', `${g}px`); setCls(x.gold, 'on', g > 0); }
-      const txt = on ? F.clock(left) : F.clock(c.duration);
+      const txt = on ? (x.cont && left <= 0 ? 'Go' : F.clock(left)) : F.clock(c.duration);
       if (x.time.textContent !== txt) x.time.textContent = txt;
     });
     P.dom.dots.forEach(({ d, i }) => setCls(d, 'lit', P.starts[i] != null && P.starts[i] <= t));

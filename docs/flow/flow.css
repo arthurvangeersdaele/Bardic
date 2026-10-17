@@ -330,3 +330,20 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-run .fl-node-row { margin-left: -9px; }
 .fl-card.spent { filter: grayscale(1); opacity: .32; }
 .fl-card.spent .fl-gold { opacity: 0; }
+/* A short sound: one line, name and time. */
+.fl-area .fl-card.short { padding: 4px 8px 4px 10px; gap: 0; flex-direction: row; align-items: center; }
+.fl-area .fl-card.short .fl-ch { flex: 1; min-width: 0; }
+.fl-area .fl-card.short .fl-ch b { -webkit-line-clamp: 1; font-size: 13px; }
+.fl-area .fl-card.short .fl-zone, .fl-area .fl-card.short .fl-rep, .fl-area .fl-card.short .fl-track { display: none; }
+.fl-area .fl-card.short .fl-tags { flex: none; flex-wrap: nowrap; }
+.fl-area .fl-card.short .fl-force { width: 22px; height: 22px; margin: 0 0 0 4px; }
+.fl-area .fl-card.short .fl-cont { display: none; }
+.fl-area .fl-card { overflow: visible; }
+.fl-area .fl-card .fl-cont { border-radius: 0 0 11px 11px; }
+.fl-stick { position: sticky; top: 6px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.fl-area .fl-card.short .fl-stick { position: static; flex-direction: row; align-items: center; gap: 6px; flex: 1; }
+.fl-area.narrow .fl-card.short .fl-time { display: none; }
+.fl-area.narrow .fl-card.short .fl-stick { flex-direction: column; align-items: stretch; gap: 2px; }
+.fl-area.narrow .fl-card.short .fl-tags { justify-content: flex-end; }
+.fl-area.narrow .fl-card.short .fl-force { margin: 0; }
+.fl-area .fl-card.short { padding-top: 3px; padding-bottom: 3px; }
