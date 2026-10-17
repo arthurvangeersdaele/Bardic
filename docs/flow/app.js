@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '261017.1';
+  const VERSION = '261017.2';
   const { $, el, ICON, settings, saveSettings, applyTheme, toast, busy, idle, ask, deliver, audio, decode, applyAudioSession } = window.FlowUI;
   const F = window.BardicFlow;
   const DB = window.FlowDB;
@@ -300,16 +300,12 @@
     document.addEventListener('keydown', (e) => {
       if (screen === 'player' && e.code === 'Space' && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); window.FlowPlayer.togglePause(); }
     });
-    const tip = $('#install-tip');
-    const root = document.documentElement;
-    let hid = false;
-    try { hid = localStorage.getItem('bardic.flow.installTip') === 'hidden'; } catch (e) { /* private mode */ }
-    tip.hidden = !root.classList.contains('iphone') || root.classList.contains('standalone') || hid;
-    $('#install-hide').addEventListener('click', () => { tip.hidden = true; try { localStorage.setItem('bardic.flow.installTip', 'hidden'); } catch (e) { /* private mode */ } });
   }
 
   async function boot() {
     applyTheme();
+    // In a browser tab on an iPhone, or on another device, the page only shows how to install it.
+    if (!document.documentElement.classList.contains('mode-app')) return;
     applyAudioSession();
     wire();
     buildSettings();

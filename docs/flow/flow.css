@@ -44,8 +44,6 @@ html[data-screen="library"] .toast, html[data-screen="editor"] .toast { bottom: 
 }
 .logo em { font-style: normal; color: var(--gold); }
 .fl-lib { max-width: 620px; margin: 0 auto; padding: 18px 16px calc(40px + env(safe-area-inset-bottom)); }
-.fl-install { border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line)); border-radius: 12px; padding: 10px 14px; font-size: 14px; color: var(--muted); margin: 0 0 16px; }
-.fl-install b { color: var(--text); }
 .fl-list { display: grid; gap: 14px; }
 .fl-item { position: relative; border-radius: 16px; background: var(--card); border: 1px solid var(--line); overflow: hidden; }
 .fl-item::before { content: ""; position: absolute; left: 22px; top: 0; bottom: 0; width: 2px; background: linear-gradient(var(--gold), color-mix(in srgb, var(--gold) 0%, transparent)); opacity: .55; }
