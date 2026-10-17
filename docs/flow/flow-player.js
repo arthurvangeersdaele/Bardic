@@ -408,7 +408,7 @@
         const c = x.c;
         const card = el('button', `fl-card${x.cont ? ' cont' : ''}${ch < 58 ? ' short' : ''}`);
         card.type = 'button';
-        card.style.cssText = `top:${top}px;left:${left}px;width:${cardW}px;height:${ch}px;border-radius:${rad}px${x.cont ? ` ${rad}px 0 0` : ''}`;
+        card.style.cssText = `top:${top}px;left:${left}px;width:${cardW}px;height:${ch}px;border-radius:${rad}px`;
         card.style.setProperty('--z', ZCOL[c.zone] || 'var(--accent)');
         const head = el('div', 'fl-ch');
         head.append(el('b', '', c.name));
@@ -518,9 +518,8 @@
       R.cards.forEach((c) => {
         const x = a.x + c.left, y = a.y + c.top, w = c.w, h = c.ch, q = c.rad;
         c.gy = y; c.gx = x;
-        const d = c.cont
-          ? `M${f(x)} ${f(y + q)}A${q} ${q} 0 0 1 ${f(x + q)} ${f(y)}H${f(x + w - q)}A${q} ${q} 0 0 1 ${f(x + w)} ${f(y + q)}V${f(y + h)}M${f(x)} ${f(y + q)}V${f(y + h)}`
-          : `M${f(x)} ${f(y + q)}A${q} ${q} 0 0 1 ${f(x + q)} ${f(y)}H${f(x + w - q)}A${q} ${q} 0 0 1 ${f(x + w)} ${f(y + q)}V${f(y + h - q)}A${q} ${q} 0 0 1 ${f(x + w - q)} ${f(y + h)}H${f(x + q)}A${q} ${q} 0 0 1 ${f(x)} ${f(y + h - q)}Z`;
+        // Rounded at every corner, always (a sound that waits for the next Go too).
+        const d = `M${f(x)} ${f(y + q)}A${q} ${q} 0 0 1 ${f(x + q)} ${f(y)}H${f(x + w - q)}A${q} ${q} 0 0 1 ${f(x + w)} ${f(y + q)}V${f(y + h - q)}A${q} ${q} 0 0 1 ${f(x + w - q)} ${f(y + h)}H${f(x + q)}A${q} ${q} 0 0 1 ${f(x)} ${f(y + h - q)}Z`;
         frames.push({ c, d });
       });
     });
