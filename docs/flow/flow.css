@@ -393,3 +393,12 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-area .fl-stick { top: 15px; }
 .fl-node.gate svg[fill="none"] { width: 22px; height: 22px; }
 .fl-area .fl-card.mid .fl-ch b { -webkit-line-clamp: 1; }
+/* Settings on a phone: a sheet that always fits between the status bar and the home bar, scrolling inside. */
+dialog.settings { position: fixed; inset: calc(env(safe-area-inset-top) + 10px) 0 calc(env(safe-area-inset-bottom) + 10px); margin: auto;
+  height: fit-content; max-height: calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px); width: min(520px, calc(100vw - 20px));
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+dialog.ask { height: fit-content; }
+.settings .row-set { flex-wrap: wrap; }
+.settings .row-set > span { flex: 1 1 180px; min-width: 0; }
+.settings .themes { max-width: 100%; }
+a.ico { color: var(--text); text-decoration: none; }

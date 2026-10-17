@@ -41,7 +41,7 @@
 
   /* ---------- Settings, kept on this device ---------- */
   const KEY = 'bardic.flow.settings';
-  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, awake: true, silent: true, master: 0.8, sbVolume: 0.8 };
+  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, awake: true, silent: true, master: 0.8, sbVolume: 0.8, autoNext: false };
   function loadSettings() {
     let s = {};
     try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { s = null; }

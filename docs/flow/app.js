@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '261017.14';
+  const VERSION = '261017.15';
   const { $, el, ICON, settings, saveSettings, applyTheme, toast, busy, idle, ask, deliver, audio, decode, applyAudioSession } = window.FlowUI;
   const F = window.BardicFlow;
   const DB = window.FlowDB;
@@ -229,6 +229,7 @@
       const b = e.target.closest('[data-v]'); if (!b) return;
       settings.fade = Number(b.dataset.v); saveSettings(); paintSettings();
     });
+    $('#opt-autonext').addEventListener('change', (e) => { settings.autoNext = e.target.checked; saveSettings(); });
     $('#opt-awake').addEventListener('change', (e) => { settings.awake = e.target.checked; saveSettings(); settings.awake ? acquireWake() : releaseWake(); });
     $('#opt-silent').addEventListener('change', (e) => { settings.silent = e.target.checked; saveSettings(); applyAudioSession(); });
     $('[data-action="wipe"]').addEventListener('click', async () => {
@@ -249,6 +250,7 @@
     document.querySelectorAll('#mode-pick [data-v]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.mode)));
     document.querySelectorAll('#fade-pick [data-v]').forEach((b) => b.setAttribute('aria-checked', String(Number(b.dataset.v) === settings.fade)));
     $('#opt-awake').checked = settings.awake;
+    $('#opt-autonext').checked = !!settings.autoNext;
     $('#opt-silent').checked = settings.silent;
   }
   async function openSettings() {
@@ -318,6 +320,7 @@
 
   /* ================= Wiring ================= */
   function wire() {
+    $('#help').innerHTML = window.FlowUI.svg('<circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.1-2.4 3.6M12 17v.5"/>', 19);
     document.querySelectorAll('[data-action="settings"]').forEach((b) => { b.innerHTML = ICON.gear; b.addEventListener('click', openSettings); });
     document.querySelectorAll('.set-head .ico, [data-action="close-sheet"]').forEach((b) => { b.innerHTML = ICON.close; });
     $('[data-action="close-sheet"]').addEventListener('click', () => $('#sheet').close());

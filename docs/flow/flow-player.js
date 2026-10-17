@@ -523,7 +523,7 @@
     else label.append(el('span', 'k', 'Next chapter'), el('b', '', P.rec.story.chapters[P.ch + 1].title || `Chapter ${P.ch + 2}`));
     btn.append(enode, label);
     btn.disabled = last;
-    btn.addEventListener('click', () => { if (!last) openChapter(P.ch + 1, true); });
+    btn.addEventListener('click', () => { if (!last) openChapter(P.ch + 1, !!settings.autoNext); });
     end.append(btn);
     box.append(end);
     P.dom.end = { end, btn, node: enode, cy: 0 };
@@ -798,7 +798,7 @@
 
   function onGo() {
     const s = state();
-    if (s.mode === 'done') { if (P.ch + 1 < P.rec.story.chapters.length) openChapter(P.ch + 1, true); return; }
+    if (s.mode === 'done') { if (P.ch + 1 < P.rec.story.chapters.length) openChapter(P.ch + 1, !!settings.autoNext); return; }
     const t = nextTarget(s);
     if (t >= 0) go(t);
   }
