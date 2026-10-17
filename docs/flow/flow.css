@@ -358,3 +358,36 @@ html.pc .fl-player { border-left: 1px solid var(--line); border-right: 1px solid
 .fl-nextch:disabled b { color: var(--muted); font-size: 19px; }
 .fl-nextch:active:not(:disabled) .fl-node { transform: scale(.94); }
 @media (prefers-reduced-motion: reduce) { .fl-nextch .fl-node { animation: none !important; } }
+
+/* ---------- The spine down the middle, as in the logo ---------- */
+.fl-run .fl-node-row { margin-left: 0; padding-left: calc(50% - 23px); }
+.fl-nextch { margin: 0; padding-left: calc(50% - 23px); width: 100%; }
+.fl-run .fl-meta, .fl-nextch .fl-meta { min-width: 0; }
+.fl-playhead { left: 0; right: 0; background: linear-gradient(90deg, transparent, var(--gold) 50%, transparent); }
+.fl-playhead::before { left: 50%; margin-left: -6px; }
+.fl-flow path { transition: opacity .5s ease-out; }
+
+/* A finished sound is grey at once. */
+.fl-area .fl-card.done:not(.on) { opacity: .4; filter: grayscale(1); }
+.fl-area .fl-card.done:not(.on) .fl-track i { background: var(--muted); }
+
+/* Right of the spine the wire is the card's left edge; left of it, its right edge; on it, the gold enters at the top. */
+.fl-area .fl-card.l { padding: 8px 12px 8px 9px; }
+.fl-area .fl-card.l:not(.short) .fl-ch b { text-indent: 0; }
+.fl-area .fl-card.l:not(.short) .fl-ch { padding-right: 9px; }
+.fl-area.narrow .fl-card.l { padding: 8px 16px 7px 5px; }
+.fl-area.narrow .fl-card.l:not(.short) .fl-ch { padding-right: 0; }
+.fl-area .fl-card.l.short { padding: 3px 18px 3px 8px; }
+.fl-area .fl-card.c { padding: 16px 14px 9px; }
+.fl-area .fl-card.c:not(.short) .fl-ch b { text-indent: 0; }
+.fl-area .fl-card.c .fl-ch b { text-align: center; }
+.fl-area .fl-card.c .fl-stick { top: 16px; }
+/* The bead sits on the top edge: the name starts just under it. */
+.fl-area .fl-card:not(.short), .fl-area.narrow .fl-card:not(.short) { padding-top: 15px; }
+.fl-area .fl-card:not(.short) .fl-ch b { text-indent: 0 !important; }
+.fl-area .fl-card.l:not(.short) .fl-ch { padding-right: 0; }
+.fl-area .fl-card.r:not(.short) { padding-left: 11px; }
+.fl-area .fl-card.l:not(.short) { padding-right: 11px; }
+.fl-area.narrow .fl-card.r:not(.short) { padding-left: 8px; padding-right: 5px; }
+.fl-area.narrow .fl-card.l:not(.short) { padding-left: 5px; padding-right: 8px; }
+.fl-area .fl-stick { top: 15px; }
