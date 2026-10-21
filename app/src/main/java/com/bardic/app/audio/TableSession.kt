@@ -36,6 +36,9 @@ class Card(val chapterIndex: Int, val zone: Zone, sound: Sound) {
     /** Random events: when it plays again (uptime ms), 0 while it plays. */
     var nextAt by mutableLongStateOf(0L)
     @Volatile var startedAt = 0L
+    /** Simple volume buttons: the volume heard right now while it moves to [Sound.volume], or -1 when still. */
+    var shownVolume by mutableStateOf(-1f)
+    var volumeJob: Job? = null
 
     /** A random event between two plays. */
     val waiting: Boolean get() = randomOn && nextAt > 0L
@@ -286,9 +289,35 @@ class TableSession(
     }
 
     fun setVolume(card: Card, v: Float) {
+        card.volumeJob?.cancel(); card.shownVolume = -1f
         card.sound = card.sound.copy(volume = (v * 100).toInt() / 100f)
         card.slot?.let { if (owner[it] === card) NativeEngine.setVolume(it, curve(v)) }
         saveSoon()
+    }
+
+    /** Simple volume buttons: one step of 25 %, reached smoothly over 2 s (several steps queue up). */
+    fun stepVolume(card: Card, dir: Int) {
+        val from = if (card.shownVolume >= 0f) card.shownVolume else card.sound.volume
+        val q = card.sound.volume * 4f
+        val target = if (dir > 0) ((kotlin.math.floor(q + 1e-4f) + 1f) / 4f).coerceAtMost(1f)
+        else ((kotlin.math.ceil(q - 1e-4f) - 1f) / 4f).coerceAtLeast(0f)
+        if (target == card.sound.volume) return
+        card.sound = card.sound.copy(volume = target)
+        saveSoon()
+        val ms = (kotlin.math.abs(target - from) / 0.25f * 2000f).toLong().coerceAtLeast(300L)
+        card.volumeJob?.cancel()
+        card.volumeJob = scope.launch(Dispatchers.Main) {
+            val start = SystemClock.uptimeMillis()
+            while (isActive) {
+                val f = ((SystemClock.uptimeMillis() - start).toFloat() / ms).coerceIn(0f, 1f)
+                val v = from + (target - from) * f
+                card.shownVolume = v
+                card.slot?.let { if (owner[it] === card) NativeEngine.setVolume(it, curve(v)) }
+                if (f >= 1f) break
+                delay(30)
+            }
+            card.shownVolume = -1f
+        }
     }
 
     fun pauseAll() {

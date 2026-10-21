@@ -44,6 +44,8 @@ object BIcons {
     val pause = fill(rrect(6f, 4.5f, 4f, 15f, 1.2f), rrect(14f, 4.5f, 4f, 15f, 1.2f))
     val stop = fill(rrect(5.5f, 5.5f, 13f, 13f, 2f))
     val star = stroke("M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z")
+    val volDown = stroke("M4 9.5h3.5L12 6v12l-4.5-3.5H4z", "M16 12h5")
+    val volUp = stroke("M4 9.5h3.5L12 6v12l-4.5-3.5H4z", "M16 12h5M18.5 9.5v5")
     val starFill = fill("M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z")
     val plus = stroke("M12 5v14M5 12h14")
     val import = stroke("M12 3v12M7 10l5 5 5-5M5 21h14")

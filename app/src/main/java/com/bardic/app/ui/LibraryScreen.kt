@@ -1,5 +1,7 @@
 package com.bardic.app.ui
 
+import androidx.compose.ui.text.style.TextAlign
+import kotlin.math.roundToInt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -294,6 +296,15 @@ fun EditCard(m: AppModel, t: Target, s: Sound, index: Int, count: Int, z: Color,
             IconBtn(BIcons.right, "Move later", size = 28.dp, iconSize = 12.dp, enabled = index < count - 1) { m.moveSound(t, index, 1) }
             // Soundbox effects fire once per tap: no loop button for them.
             if (t is Target.ChapterZone) LoopChip(s.loop, height = 24.dp) { m.updateSound(t, s.uid) { x -> x.copy(loop = x.loop.next(allowRandom = t.zone != Zone.MUSIC)) } }
+        }
+        // Default volume: the level the sound starts at on the table.
+        Row(Modifier.height(28.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            T("Volume", color = C.muted, size = 12.sp)
+            BardSlider(
+                s.volume, { v -> m.updateSound(t, s.uid) { x -> x.copy(volume = (v * 20f).roundToInt() / 20f) } }, z,
+                Modifier.weight(1f).height(28.dp), label = "Default volume of ${s.name}",
+            )
+            T("${(s.volume * 100).roundToInt()}", color = C.muted, size = 12.sp, weight = FontWeight.SemiBold, align = TextAlign.End, modifier = Modifier.width(28.dp))
         }
     }
 }

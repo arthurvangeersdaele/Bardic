@@ -637,10 +637,26 @@ class AppModel(private val app: Context, private val host: Host, val scope: Coro
         if (ed?.story?.uid != storyUid) {
             stopPreview()
             ed = EditorState(s, chapter.coerceIn(-1, s.chapters.lastIndex))
+            forgeTip(storyUid)
         } else {
             ed!!.chapter = chapter.coerceIn(-1, ed!!.story.chapters.lastIndex)
         }
         screen = Screen.Editor
+    }
+
+    /** On a phone, building a story is easier in the website's Story builder: say so on entering the editor
+     *  (once per story each time the app opens, until turned off). */
+    private val tipShown = mutableSetOf<String>()
+    private fun forgeTip(storyUid: String) {
+        if (!settings.forgeTip || !tipShown.add(storyUid)) return
+        scope.launch {
+            val r = ask(
+                "Forging a story?",
+                "For creating a story, the Story builder of the Bardic website, on a computer, is the most comfortable: room for every chapter and your MP3s dropped in with the mouse. Forge it there, then import the .bardic here. The editor of this app is made for quick changes.",
+                listOf(AskButton("Do not show again", "never"), AskButton("Got it", "ok", BtnKind.PRIMARY)),
+            )
+            if (r?.value == "never") settings.hideForgeTip()
+        }
     }
 
     private fun leaveEditor() {

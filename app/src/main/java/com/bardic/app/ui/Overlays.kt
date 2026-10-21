@@ -412,6 +412,18 @@ private fun SettingsPanel(m: AppModel) {
         }
         Muted("The sounds keep playing with the screen off or Bardic in the background.", 13)
 
+        SetSection("Volume on the cards")
+        Muted("Hidden keeps the cards narrow. Simple adds two buttons that move the volume by 25 % steps, smoothly over 2 s. Full adds a slider. Each sound starts at the volume set in the story editor.", 13)
+        val volModes = com.bardic.app.settings.VolumeMode.values().map { it to it.label }
+        SetRow("Music", null) { Segmented(volModes, st.volMusic) { st.changeVolMusic(it) } }
+        SetRow("Ambiances", null) { Segmented(volModes, st.volAmbience) { st.changeVolAmbience(it) } }
+        SetRow("Events", null) { Segmented(volModes, st.volEvents) { st.changeVolEvents(it) } }
+
+        SetSection("Screen")
+        SetRow("Lock landscape", "Off: Bardic turns with the phone, upright too") {
+            Toggle(st.landscape) { st.changeLandscape(it) }
+        }
+
         SetSection("Storage")
         var bytes by remember { mutableLongStateOf(-1L) }
         val stories by Library.stories.collectAsState()

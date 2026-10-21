@@ -1,5 +1,6 @@
 package com.bardic.app
 
+import android.content.pm.ActivityInfo
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.ClipData
@@ -79,6 +80,11 @@ class MainActivity : ComponentActivity(), Host {
         // Keep the screen on while a story is open (table or editor), as on iPhone.
         val awake = m.settings.keepAwake && (m.table != null || screen is Screen.Table || screen == Screen.Editor)
         val view = LocalView.current
+        // Lock landscape (setting, on by default); off, the app turns with the phone.
+        LaunchedEffect(m.settings.landscape) {
+            requestedOrientation = if (m.settings.landscape) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            else ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+        }
         DisposableEffect(awake) {
             view.keepScreenOn = awake
             if (awake) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

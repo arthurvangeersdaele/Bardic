@@ -1,5 +1,7 @@
 package com.bardic.app.ui
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -102,7 +104,7 @@ fun EditorScreen(m: AppModel) {
                         color = C.muted, size = 14.sp, modifier = Modifier.padding(vertical = 6.dp),
                     )
                     EditZoneRow(m, Target.StorySoundbox, "Soundbox", C.accent, story.soundbox,
-                        "Add quick effects: critical hits, level ups", Modifier.height(112.dp))
+                        "Add quick effects: critical hits, level ups", Modifier.height(120.dp))
                 } else {
                     val ch = story.chapters.getOrNull(e.chapter) ?: return@Column
                     var chTitle by remember(ch.uid) { mutableStateOf(ch.title) }
@@ -126,11 +128,12 @@ fun EditorScreen(m: AppModel) {
                             m.removeChapter(e.chapter)
                         }
                     }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // Rows keep the room of a full card (name, controls, volume) and the column scrolls on short screens.
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Zone.values().forEach { z ->
                             EditZoneRow(
                                 m, Target.ChapterZone(ch.uid, z), z.label, zoneColor(z), ch.sounds(z),
-                                z.hint, Modifier.weight(1f),
+                                z.hint, Modifier.height(120.dp),
                             )
                         }
                     }
@@ -162,7 +165,7 @@ private fun EditZoneRow(m: AppModel, t: Target, label: String, z: Color, list: L
 @Composable
 private fun EditorRail(m: AppModel, e: EditorState) {
     LazyColumn(
-        Modifier.width(186.dp).fillMaxHeight().background(C.bar),
+        Modifier.width(if (narrow()) 128.dp else 186.dp).fillMaxHeight().background(C.bar),
         contentPadding = PaddingValues(8.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {

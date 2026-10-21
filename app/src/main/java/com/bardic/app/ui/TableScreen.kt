@@ -2,7 +2,9 @@ package com.bardic.app.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -52,6 +54,9 @@ import com.bardic.app.audio.TableSession
 import com.bardic.app.bardic.LoopMode
 import com.bardic.app.data.Zone
 import com.bardic.app.data.formatTime
+import com.bardic.app.settings.VolumeMode
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.delay
 
 @Composable
@@ -81,7 +86,7 @@ fun TableScreen(m: AppModel) {
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Icon(BIcons.starFill, null, tint = if (open) C.onZ else C.accent, modifier = Modifier.size(16.dp))
-                    T("Soundbox", color = if (open) C.onZ else C.accent, weight = FontWeight.SemiBold)
+                    if (!narrow()) T("Soundbox", color = if (open) C.onZ else C.accent, weight = FontWeight.SemiBold)
                 }
                 IconBtn(BIcons.gear, "Settings") { m.settingsOpen = true }
             }
@@ -157,10 +162,10 @@ private fun MasterChip(m: AppModel, s: TableSession) {
         IconBtn(BIcons.stop, "Fade out everything", size = 32.dp, iconSize = 13.dp, background = Color.Transparent, border = Color.Transparent) {
             s.stopAll()
         }
-        T("Master", color = C.muted, size = 13.sp, modifier = Modifier.padding(start = 4.dp))
+        if (!narrow()) T("Master", color = C.muted, size = 13.sp, modifier = Modifier.padding(start = 4.dp))
         BardSlider(
             m.settings.master, { v -> m.settings.changeMaster(v); s.applyMaster() }, C.text,
-            Modifier.width(112.dp), label = "Master volume",
+            Modifier.width(if (narrow()) 72.dp else 112.dp), label = "Master volume",
         )
         T("${(m.settings.master * 100).toInt()}", weight = FontWeight.SemiBold, size = 14.sp, modifier = Modifier.width(28.dp))
     }
@@ -169,7 +174,7 @@ private fun MasterChip(m: AppModel, s: TableSession) {
 @Composable
 private fun TableRail(s: TableSession) {
     LazyColumn(
-        Modifier.width(160.dp).fillMaxHeight().background(C.bar),
+        Modifier.width(if (narrow()) 112.dp else 160.dp).fillMaxHeight().background(C.bar),
         contentPadding = PaddingValues(8.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
@@ -198,9 +203,17 @@ private fun TableRail(s: TableSession) {
 /**
  * A sound card at the table: name, time left and loop on top, play, fade out and volume below.
  * The progress is the card's bottom edge, so the controls keep their room on short screens.
+ * The volume control follows the row's setting: hidden (narrowest card), simple (two buttons) or full (slider).
+ * A name longer than the card rolls inside it.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PlayCard(m: AppModel, s: TableSession, c: Card, z: Color) {
+    val mode = when (c.zone) {
+        Zone.MUSIC -> m.settings.volMusic
+        Zone.AMBIENCE -> m.settings.volAmbience
+        else -> m.settings.volEvents
+    }
     val live = s.live
     val st = s.stateOf(c, live)
     val waiting = c.waiting
@@ -211,7 +224,7 @@ private fun PlayCard(m: AppModel, s: TableSession, c: Card, z: Color) {
     val loop = c.sound.loop
     BoxWithConstraints(
         Modifier
-            .width(220.dp)
+            .width(when (mode) { VolumeMode.HIDDEN -> 148.dp; VolumeMode.SIMPLE -> 196.dp; VolumeMode.FULL -> 220.dp })
             .fillMaxHeight()
             .clip(shape)
             .background(C.card)
@@ -225,10 +238,14 @@ private fun PlayCard(m: AppModel, s: TableSession, c: Card, z: Color) {
                 .padding(start = 10.dp, end = 6.dp, top = 6.dp, bottom = 9.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
+            var info = ""
+            var warn = false
             Row(Modifier.height(24.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                T(c.sound.name, weight = FontWeight.SemiBold, size = 14.sp, maxLines = 1, modifier = Modifier.weight(1f))
-                var info = ""
-                var warn = false
+                Text(
+                    c.sound.name, color = C.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, fontFamily = Barlow,
+                    maxLines = 1, overflow = TextOverflow.Clip,
+                    modifier = Modifier.weight(1f).basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 1500, repeatDelayMillis = 1500),
+                )
                 when {
                     c.failed -> info = "unavailable"
                     waiting -> info = "next ${formatTime(((c.nextAt - android.os.SystemClock.uptimeMillis()) / 1000.0).coerceAtLeast(0.0))}"
@@ -237,7 +254,7 @@ private fun PlayCard(m: AppModel, s: TableSession, c: Card, z: Color) {
                     }
                     st == NativeEngine.LOADING -> info = "loading…"
                 }
-                if (info.isNotEmpty()) T(info, color = if (warn) C.evt else C.muted, size = 12.sp, weight = if (warn) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1)
+                if (info.isNotEmpty() && mode != VolumeMode.HIDDEN) T(info, color = if (warn) C.evt else C.muted, size = 12.sp, weight = if (warn) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1)
                 LoopChip(loop, height = 22.dp) { s.setLoop(c, loop.next(allowRandom = c.zone != Zone.MUSIC)) }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -252,7 +269,20 @@ private fun PlayCard(m: AppModel, s: TableSession, c: Card, z: Color) {
                     BIcons.stop, "Fade out ${c.sound.name}", size = btn, iconSize = 12.dp,
                     background = Color.Transparent, enabled = on || paused,
                 ) { s.end(c) }
-                BardSlider(c.sound.volume, { v -> s.setVolume(c, v) }, z, Modifier.weight(1f).height(btn), label = "${c.sound.name} volume")
+                when (mode) {
+                    VolumeMode.FULL -> BardSlider(c.sound.volume, { v -> s.setVolume(c, v) }, z, Modifier.weight(1f).height(btn), label = "${c.sound.name} volume")
+                    VolumeMode.SIMPLE -> {
+                        val small = (btn - 6.dp).coerceAtLeast(24.dp)
+                        IconBtn(BIcons.volDown, "Lower ${c.sound.name}", size = small, iconSize = 15.dp, background = Color.Transparent) { s.stepVolume(c, -1) }
+                        val shown = if (c.shownVolume >= 0f) c.shownVolume else c.sound.volume
+                        T("${(shown * 100).toInt()}", color = if (c.shownVolume >= 0f) z else C.muted, size = 12.sp, weight = FontWeight.SemiBold, align = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f))
+                        IconBtn(BIcons.volUp, "Raise ${c.sound.name}", size = small, iconSize = 15.dp, background = Color.Transparent) { s.stepVolume(c, 1) }
+                    }
+                    VolumeMode.HIDDEN -> if (info.isNotEmpty()) T(
+                        info, color = if (warn) C.evt else C.muted, size = 12.sp, weight = if (warn) FontWeight.SemiBold else FontWeight.Normal,
+                        maxLines = 1, align = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
         // Progress as the bottom edge: green to red near the end, electric blue for an infinite loop.
@@ -366,3 +396,7 @@ private fun PadButton(m: AppModel, s: TableSession, p: Pad, pinned: Boolean) {
         ) { m.settings.togglePin(p.sound.uid) }
     }
 }
+
+/** An upright phone (Lock landscape off): narrower rails and a compact top bar. */
+@Composable
+internal fun narrow(): Boolean = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600

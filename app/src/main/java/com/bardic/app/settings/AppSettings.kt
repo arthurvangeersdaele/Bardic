@@ -25,6 +25,15 @@ enum class ThemeName(val id: String, val label: String, val special: Boolean = f
     }
 }
 
+/** Volume control on the table cards of a row: none (narrowest cards), two buttons, or a slider. */
+enum class VolumeMode(val id: String, val label: String) {
+    HIDDEN("hidden", "Hidden"), SIMPLE("simple", "Simple"), FULL("full", "Full");
+
+    companion object {
+        fun from(id: String?) = values().firstOrNull { it.id == id } ?: HIDDEN
+    }
+}
+
 enum class Appearance(val id: String, val label: String) {
     DARK("dark", "Dark"), LIGHT("light", "Light"), SYSTEM("system", "System");
 
@@ -77,6 +86,19 @@ class AppSettings(context: Context) {
     /** Random events: longest pause before a sound plays again, in seconds (1 to 10). The shortest is 0.5 s. */
     var randomMax by mutableIntStateOf(prefs.getInt("randomMax", 5).coerceIn(1, 10))
         private set
+    /** Volume on the cards, per row (music, ambience, events): hidden by default. */
+    var volMusic by mutableStateOf(VolumeMode.from(prefs.getString("volMusic", null)))
+        private set
+    var volAmbience by mutableStateOf(VolumeMode.from(prefs.getString("volAmbience", null)))
+        private set
+    var volEvents by mutableStateOf(VolumeMode.from(prefs.getString("volEvents", null)))
+        private set
+    /** Lock landscape (on by default); off, the app turns with the phone. */
+    var landscape by mutableStateOf(prefs.getBoolean("landscape", true))
+        private set
+    /** The tip about the website's Story builder, shown on entering the editor until turned off. */
+    var forgeTip by mutableStateOf(prefs.getBoolean("forgeTip", true))
+        private set
     var pins by mutableStateOf(prefs.getString("pins", "").orEmpty().split(',').filter { it.isNotBlank() })
         private set
     /** GitHub connection (optional): the sign-in token, the GitHub username and the registered bard name. */
@@ -98,6 +120,11 @@ class AppSettings(context: Context) {
     fun changeMaster(v: Float) { master = v; prefs.edit().putFloat("master", v).apply() }
     fun changeSoundboxVolume(v: Float) { soundboxVolume = v; prefs.edit().putFloat("sbVol", v).apply() }
     fun changeRandomMax(v: Int) { randomMax = v.coerceIn(1, 10); prefs.edit().putInt("randomMax", randomMax).apply() }
+    fun changeVolMusic(v: VolumeMode) { volMusic = v; prefs.edit().putString("volMusic", v.id).apply() }
+    fun changeVolAmbience(v: VolumeMode) { volAmbience = v; prefs.edit().putString("volAmbience", v.id).apply() }
+    fun changeVolEvents(v: VolumeMode) { volEvents = v; prefs.edit().putString("volEvents", v.id).apply() }
+    fun changeLandscape(v: Boolean) { landscape = v; prefs.edit().putBoolean("landscape", v).apply() }
+    fun hideForgeTip() { forgeTip = false; prefs.edit().putBoolean("forgeTip", false).apply() }
     fun changeSoundboxOpen(v: Boolean) { soundboxOpen = v; prefs.edit().putBoolean("sbOpen", v).apply() }
     fun setAccount(token: String, login: String, name: String) {
         ghToken = token
