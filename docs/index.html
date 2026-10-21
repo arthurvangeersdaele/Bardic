@@ -14,7 +14,11 @@
   var ios=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
   h.classList.toggle('ios',ios);
   h.classList.toggle('iphone',/iPhone|iPod/.test(ua));
-  h.classList.toggle('android',!ios&&/Android/i.test(ua));
+  // An Android tablet gets both: the app, and the web app made for tablets.
+  var atab=!ios&&/Android/i.test(ua)&&!/Mobile/.test(ua);
+  h.classList.toggle('android',!ios&&!atab&&/Android/i.test(ua));
+  h.classList.toggle('ipad',ios&&!/iPhone|iPod/.test(ua));
+  h.classList.toggle('atablet',atab);
 })();
 </script>
 <title>Bardic, the sound table for game masters</title>
@@ -235,7 +239,7 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
       </a>
       <a class="for-ios" href="ios/">
         <span class="gi"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8v6M9 11h6"/></svg></span>
-        <span><small>Free, on your Home Screen</small><b>Get Bardic for iPhone</b></span>
+        <span><small>Free, on your Home Screen</small><b>Get Bardic for <span class="dev-name">iPhone</span></b></span>
       </a>
     </div>
     <div class="qr-veil" id="qr" hidden role="dialog" aria-modal="true" aria-labelledby="qr-title">
@@ -504,15 +508,21 @@ footer{margin-top:72px;padding:40px 0 60px;border-top:1px solid var(--line);colo
     if(n>0){document.getElementById('dl-n').textContent=n.toLocaleString('en');document.getElementById('dl').hidden=false;}
   }).catch(function(){});
 
+  /* The web app button names the device it installs on */
+  (function(){
+    var h=document.documentElement,n=h.classList.contains('ipad')?'iPad':h.classList.contains('atablet')?'your tablet':h.classList.contains('pc')?'iPhone and tablets':'iPhone';
+    document.querySelectorAll('.dev-name').forEach(function(e){e.textContent=n;});
+  })();
+
   /* On a computer, the download buttons show a QR code to scan with the phone */
   (function(){
     var veil=document.getElementById('qr'),last=null;
     function show(kind,btn){
       var android=kind==='android',url=android?(apkUrl||RELEASE):new URL('ios/',location.href).href;
-      document.getElementById('qr-title').textContent=android?'Bardic for Android':'Bardic for iPhone';
+      document.getElementById('qr-title').textContent=android?'Bardic for Android':'Bardic for iPhone and tablets';
       document.getElementById('qr-text').textContent=android
         ?'Scan with your Android phone: the APK downloads there. Open it to install Bardic, and allow installs from your browser when asked.'
-        :'Scan with your iPhone camera and open the page in Safari. Then tap Share and Add to Home Screen.';
+        :'Scan with your iPhone, iPad or Android tablet and open the page. Then add it to your Home Screen.';
       var q=qrcode(0,'M');q.addData(url);q.make();
       document.getElementById('qr-code').innerHTML=q.createSvgTag({cellSize:4,margin:0,scalable:true});
       var more=document.getElementById('qr-more');

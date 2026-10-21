@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261021.1';
+  const VERSION = '261021.2';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -14,6 +14,9 @@
   }
 
   const $ = (s) => document.querySelector(s);
+  // The device the app runs on, for its texts: iPhone, iPad or tablet (Android).
+  const DEV = window.BARDIC_DEVICE || 'iPhone';
+  const IOS = DEV !== 'tablet';
   const DB = window.BardicDB;
   const FMT = window.Bardic;
   const ZONES = [
@@ -374,7 +377,7 @@
 
   async function deleteStory(s) {
     const n = soundCount(s);
-    const v = await ask(`Delete “${s.title}”?`, `Its ${plural(s.chapters.length, 'chapter')} and ${plural(n, 'sound')} leave this iPhone. Export it first if you want to keep a copy.`, [
+    const v = await ask(`Delete “${s.title}”?`, `Its ${plural(s.chapters.length, 'chapter')} and ${plural(n, 'sound')} leave this ${DEV}. Export it first if you want to keep a copy.`, [
       { label: 'Cancel', value: null }, { label: 'Delete', value: 'del', cls: 'danger' },
     ]);
     if (v !== 'del') return;
@@ -475,7 +478,7 @@
 
   function quotaMessage(err) {
     if (err && (err.name === 'QuotaExceededError' || /quota/i.test(err.message || ''))) {
-      return new Error('Your iPhone has no room left for these sounds. Free some space, or delete a story you no longer play.');
+      return new Error(`Your ${DEV} has no room left for these sounds. Free some space, or delete a story you no longer play.`);
     }
     return err;
   }
@@ -515,8 +518,8 @@
       } catch (e) { /* offline */ }
     }
     const v = await ask(`Repair “${s.title}”`, tale
-      ? 'An older version of Bardic stored its sounds wrongly: they all play the first sound. Bardic downloads this tale from the Recueil again. Changes you made to it on this iPhone are lost.'
-      : 'An older version of Bardic stored its sounds wrongly: they all play the first sound. Choose its .bardic file again (from Files or iCloud Drive) to repair it. Changes you made to it on this iPhone are lost.', [
+      ? `An older version of Bardic stored its sounds wrongly: they all play the first sound. Bardic downloads this tale from the Recueil again. Changes you made to it on this ${DEV} are lost.`
+      : `An older version of Bardic stored its sounds wrongly: they all play the first sound. Choose its .bardic file again (from Files or iCloud Drive) to repair it. Changes you made to it on this ${DEV} are lost.`, [
       { label: 'Cancel', value: null }, { label: tale ? 'Download again' : 'Choose the file', value: 'go', cls: 'primary' },
     ]);
     if (!v) return;
@@ -540,7 +543,7 @@
   async function openRecueil() {
     const body = openSheet('The Recueil');
     body.className = 'rec-sheet';
-    body.append(el('p', 'muted', 'Tales forged by the Compagnie des bardes. Adding one downloads it to your iPhone, sounds included: it then plays without a connection.'));
+    body.append(el('p', 'muted', `Tales forged by the Compagnie des bardes. Adding one downloads it to your ${DEV}, sounds included: it then plays without a connection.`));
     const list = el('div', 'rlist');
     list.append(el('p', 'muted', 'Fetching the Recueil…'));
     body.append(list);
@@ -549,7 +552,7 @@
       data = await fetch('../recueil/index.json', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
     } catch (e) {
       list.textContent = '';
-      list.append(el('p', 'muted', 'The Recueil needs a connection. Try again once your iPhone is online.'));
+      list.append(el('p', 'muted', `The Recueil needs a connection. Try again once your ${DEV} is online.`));
       return;
     }
     await refresh();
@@ -586,7 +589,7 @@
   /* ---------- Discovery stories (the web edition's three stories) ---------- */
   async function openDiscovery() {
     const body = openSheet('Discovery stories');
-    body.append(el('p', 'muted', 'The three stories of the web edition, with their sounds. Each one downloads once, then lives on your iPhone like any story you forge, ready to edit and play offline.'));
+    body.append(el('p', 'muted', `The three stories of the web edition, with their sounds. Each one downloads once, then lives on your ${DEV} like any story you forge, ready to edit and play offline.`));
     const list = el('div', 'rlist');
     list.append(el('p', 'muted', 'Fetching the stories…'));
     body.append(list);
@@ -598,7 +601,7 @@
       ]);
     } catch (e) {
       list.textContent = '';
-      list.append(el('p', 'muted', 'These stories need a connection to download. Try again once your iPhone is online.'));
+      list.append(el('p', 'muted', `These stories need a connection to download. Try again once your ${DEV} is online.`));
       return;
     }
     await refresh();
@@ -679,7 +682,7 @@
   async function draftOf(story) {
     const conv = async (s) => {
       const blob = await DB.getBlob(s.blob);
-      if (!blob) throw new Error(`The sound “${s.name}” is missing from this iPhone.`);
+      if (!blob) throw new Error(`The sound “${s.name}” is missing from this ${DEV}.`);
       return { name: s.name, blob, fileName: s.fileName || `${FMT.slug(s.name, 'sound')}.mp3`, loop: s.loop, volume: s.volume, duration: s.duration, extra: s.extra || {} };
     };
     const chapters = [];
@@ -708,7 +711,7 @@
         const draft = await draftOf(story);
         const errors = FMT.validate(draft, bard);
         if (errors.length) { idle(); await ask(`“${story.title}” cannot be exported yet`, errors.join(' '), [{ label: 'OK', value: 'ok', cls: 'primary' }]); continue; }
-        const out = await FMT.pack(draft, bard, (f) => busy('Forging the .bardic', label, f), { generator: `Bardic for iPhone ${VERSION}` });
+        const out = await FMT.pack(draft, bard, (f) => busy('Forging the .bardic', label, f), { generator: `Bardic web app (${DEV}) ${VERSION}` });
         story.id = out.story.id;
         story.revision = out.story.revision;
         story.created = out.story.created;
@@ -1019,7 +1022,7 @@
     const facts = [];
     facts.push(s.revision ? `Exported as revision ${s.revision}${s.bard ? `, signed by ${s.bard}` : ''}.` : 'Not exported yet: the first export forges revision 1.');
     if (s.source && s.source.startsWith('discovery')) facts.push('A discovery story of the web edition.');
-    facts.push(`${plural(s.chapters.length, 'chapter')}, ${plural(soundCount(s), 'sound')}, ${size(storyBytes(s))} on this iPhone.`);
+    facts.push(`${plural(s.chapters.length, 'chapter')}, ${plural(soundCount(s), 'sound')}, ${size(storyBytes(s))} on this ${DEV}.`);
     body.append(el('p', 'muted small', facts.join(' ')));
     const acts = el('div', 'set-acts');
     acts.append(
@@ -1045,7 +1048,7 @@
     body.className = 'picker';
     const fromFiles = btn('btn primary big-pick', `${ICON.files}<span>Choose from Files</span>`, null, () => $('#pick-audio').click());
     const top = el('div', 'pick-top');
-    top.append(fromFiles, el('p', 'muted small', 'MP3, M4A, WAV or OGG, from your iPhone, iCloud Drive or any Files location. Choose several at once.'));
+    top.append(fromFiles, el('p', 'muted small', `MP3, M4A, WAV or OGG, from your ${DEV}, iCloud Drive or any Files location. Choose several at once.`));
     body.append(top);
 
     // Sounds already on this iPhone (from any story or the shared soundbox): reusing one takes no extra space.
@@ -1057,7 +1060,7 @@
     const inList = new Set(list.map((s) => s.blob));
     const all = [...seen.values()].filter((x) => !inList.has(x.s.blob)).sort((a, b) => a.s.name.localeCompare(b.s.name));
     if (!all.length) return;
-    body.append(el('h3', 'pick-h', 'Or reuse a sound already on this iPhone'));
+    body.append(el('h3', 'pick-h', `Or reuse a sound already on this ${DEV}`));
     const q = el('input', 'pick-q');
     q.type = 'search';
     q.placeholder = `Search ${plural(all.length, 'sound')}`;
@@ -1758,6 +1761,7 @@
     $('#opt-landscape').addEventListener('change', (e) => { settings.landscape = e.target.checked; save(); applyOrientation(); });
     if (window.BardAccount) window.BardAccount.mount($('#bard-account'));
     $('#app-version').textContent = `version ${VERSION}`;
+    $('#app-device').textContent = DEV === 'tablet' ? 'Android tablet' : DEV;
     syncSettings();
   }
   function segment(sel, key, cast) {
@@ -1797,7 +1801,7 @@
     prot.textContent = p.persisted
       ? 'Protected: iOS keeps your stories, even when space runs low.'
       : p.persisted === false
-        ? 'Not protected yet: iOS may clear them if your iPhone runs out of space. Keep a backup with Export every story.'
+        ? `Not protected yet: ${IOS ? 'iOS' : 'Android'} may clear them if your ${DEV} runs out of space. Keep a backup with Export every story.`
         : 'This iOS version does not say whether your stories are protected. Keep a backup with Export every story.';
     info.append(prot);
     if (p.quota) info.append(el('p', 'muted small', `Room left for Bardic: about ${size(Math.max(0, p.quota - (p.usage || 0)))}.`));
@@ -1883,7 +1887,7 @@
   });
 
   async function wipeAll() {
-    const v = await ask('Erase everything?', 'Every story, sound and effect leaves this iPhone for good. Export your stories first if you want to keep them.', [
+    const v = await ask('Erase everything?', `Every story, sound and effect leaves this ${DEV} for good. Export your stories first if you want to keep them.`, [
       { label: 'Cancel', value: null }, { label: 'Erase', value: 'erase', cls: 'danger' },
     ]);
     if (v !== 'erase') return;
@@ -2010,7 +2014,7 @@
       await DB.open();
       DB.persistence().catch(() => {});
     } catch (e) {
-      document.body.append(el('p', 'fatal', `Bardic cannot reach its storage on this iPhone (${e.message || e}). Close the app and open it again.`));
+      document.body.append(el('p', 'fatal', `Bardic cannot reach its storage on this ${DEV} (${e.message || e}). Close the app and open it again.`));
       return;
     }
     await route();

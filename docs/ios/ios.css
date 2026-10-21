@@ -420,3 +420,6 @@ html.mode-app input[type="range"].dragging::-webkit-slider-thumb { transform: sc
   html.allow-portrait .lib-doors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   html.allow-portrait .sbar .tabs a { padding: 0 8px; }
 }
+
+#m-sheet-hl { font-style: normal; }
+.inst-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0 0 16px; }

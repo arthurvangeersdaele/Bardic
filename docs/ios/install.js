@@ -1,5 +1,5 @@
-/* Bardic for iPhone: the install page (an iPhone, in a browser tab).
- * Tells the steps for the browser in use and points the arrow at the right button. */
+/* Bardic web app: the install page (an iPhone, an iPad or an Android tablet, in a browser tab).
+ * Tells the steps for the device and browser in use and points the arrow at the right button. */
 (() => {
   'use strict';
   if (!document.documentElement.classList.contains('mode-install')) return;
@@ -16,7 +16,42 @@
   let title = 'Tap Share', text = 'At the bottom of Safari, where the arrow points.';
   let where = 'bottom-center', label = 'Share', btn = 'share';
 
-  if (inApp) {
+  const dev = window.BARDIC_DEVICE || 'iPhone';
+  $('#inst-dev').textContent = dev === 'tablet' ? 'Bardic for your tablet' : `Bardic for ${dev}`;
+
+  if (dev === 'tablet') {
+    // Android tablet: the browser menu installs the app; Chrome can also do it in one tap.
+    title = 'Open the browser menu';
+    text = 'In Chrome, the three dots button at the top right, where the arrow points.';
+    where = 'top-right'; label = 'Menu'; btn = 'dots';
+    $('#m-sheet-hl').textContent = 'Install app';
+    $('#m-sheet-1').textContent = 'New tab';
+    $('#m-sheet-2').textContent = 'Bookmarks';
+    document.querySelector('.m-toggle').hidden = true;
+    $('#step2-title').textContent = 'Tap Install app';
+    $('#step2-text').textContent = 'Or Add to Home screen, depending on the browser.';
+    $('#m-add-btn').textContent = 'Install';
+    $('#step3-title').textContent = 'Tap Install';
+    $('#step3-text').textContent = 'The Bardic icon appears on your Home Screen.';
+    $('#inst-once').textContent = 'Only once: after that, Bardic opens from its icon like any app.';
+    let prompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      prompt = e;
+      $('#inst-quick').hidden = false;
+    });
+    $('#inst-go').addEventListener('click', async () => {
+      if (!prompt) return;
+      prompt.prompt();
+      try { await prompt.userChoice; } catch (err) { /* dismissed */ }
+      prompt = null;
+      $('#inst-quick').hidden = true;
+    });
+  } else if (dev === 'iPad' && !inApp && !chrome && !firefox && !edge) {
+    title = 'Tap Share, at the top right';
+    text = 'In the Safari toolbar, next to the address, where the arrow points.';
+    where = 'top-right';
+  } else if (inApp) {
     $('#inst-inapp').hidden = false;
     document.documentElement.classList.add('in-app-browser');
     where = 'none';

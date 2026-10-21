@@ -22,8 +22,8 @@
 <link rel="stylesheet" href="ios.css">
 <script src="../themes.js"></script>
 <script>
-  // Theme before first paint, then which face of the page to show:
-  // the app (iPhone, opened from the Home Screen), the install guide (iPhone, in a browser) or the iPhone-only notice.
+  // Theme before first paint, then which face of the page to show: the app (iPhone, iPad or Android tablet,
+  // opened from the Home Screen), the install guide (one of those, in a browser) or the notice for other devices.
   (function () {
     var root = document.documentElement;
     try {
@@ -33,33 +33,40 @@
       root.dataset.theme = window.BardicThemes ? BardicThemes.resolve(s.theme || 'obsidian') : (s.theme || 'obsidian');
       root.dataset.mode = mode;
     } catch (e) {}
-    var iphone = /iPhone|iPod/.test(navigator.userAgent);
-    var standalone = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-    root.classList.add(iphone ? (standalone ? 'mode-app' : 'mode-install') : 'mode-other');
+    var ua = navigator.userAgent;
+    var iphone = /iPhone|iPod/.test(ua);
+    // iPadOS Safari presents itself as a Mac: a Mac with a touch screen is an iPad.
+    var ipad = /iPad/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var tablet = /Android/.test(ua) && !/Mobile/.test(ua);
+    var dev = iphone ? 'iPhone' : ipad ? 'iPad' : tablet ? 'tablet' : null;
+    window.BARDIC_DEVICE = dev;
+    var standalone = navigator.standalone === true || (window.matchMedia && (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches));
+    root.classList.add(dev ? (standalone ? 'mode-app' : 'mode-install') : 'mode-other');
+    root.classList.add('dev-' + (dev ? dev.toLowerCase() : 'other'));
   })();
 </script>
 </head>
 <body>
 
-<!-- ============ Not an iPhone ============ -->
+<!-- ============ Not an iPhone, an iPad or an Android tablet ============ -->
 <main class="gate gate-other">
   <div class="gate-card">
     <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
-    <p class="kicker">Bardic for iPhone</p>
-    <h1>Made for iPhone</h1>
-    <p>This edition of Bardic installs on an iPhone, from Safari, as an app on the Home Screen. Open this page on your iPhone to install it.</p>
-    <p class="muted">On Android, the Bardic app is in beta: download it from the Bardic page. On a computer, the web edition and the Compagnie des bardes are waiting for you.</p>
+    <p class="kicker">Bardic web app</p>
+    <h1>Made for iPhone and tablets</h1>
+    <p>This edition of Bardic installs as an app on the Home Screen of an iPhone, an iPad or an Android tablet. Open this page on one of them to install it.</p>
+    <p class="muted">On an Android phone, the Bardic app is your table: download it from the Bardic page. On a computer, the web edition and the Compagnie des bardes are waiting for you.</p>
     <a class="btn primary" href="../">Back to Bardic</a>
   </div>
 </main>
 
-<!-- ============ iPhone, in a browser: install guide ============ -->
+<!-- ============ iPhone, iPad or Android tablet, in a browser: install guide ============ -->
 <main class="gate gate-install">
   <div class="gate-card inst">
     <div class="inst-hero">
       <img class="gate-icon" src="icons/261014_bardic_ios_180.png" alt="" width="72" height="72">
       <div>
-        <p class="kicker">Bardic for iPhone</p>
+        <p class="kicker" id="inst-dev">Bardic for iPhone</p>
         <h1>Add this page to your Home Screen</h1>
       </div>
     </div>
@@ -72,6 +79,12 @@
       <button class="btn primary" type="button" id="inst-copy">Copy the link</button>
     </div>
 
+    <!-- Android tablets: Chrome can install the app in one tap. -->
+    <div class="inst-quick" id="inst-quick" hidden>
+      <button class="btn primary" type="button" id="inst-go">Install Bardic</button>
+      <span class="muted small">One tap, then open Bardic from your Home Screen. Or follow the steps below.</span>
+    </div>
+
     <ol class="isteps" id="isteps">
       <li>
         <div class="mock m-bar" id="m-bar" aria-hidden="true">
@@ -81,26 +94,26 @@
       </li>
       <li>
         <div class="mock m-sheet" aria-hidden="true">
-          <span>Copy</span><span>Add to Reading List</span><span class="hl"><i class="m-plus"></i>Add to Home Screen</span>
+          <span id="m-sheet-1">Copy</span><span id="m-sheet-2">Add to Reading List</span><span class="hl"><i class="m-plus"></i><em id="m-sheet-hl">Add to Home Screen</em></span>
         </div>
-        <div class="itxt"><b>Tap Add to Home Screen</b><span>Scroll down the list if needed.</span></div>
+        <div class="itxt"><b id="step2-title">Tap Add to Home Screen</b><span id="step2-text">Scroll down the list if needed.</span></div>
       </li>
       <li>
         <div class="mock m-add" aria-hidden="true">
-          <span class="m-top"><i>Cancel</i><em>Add</em></span>
+          <span class="m-top"><i>Cancel</i><em id="m-add-btn">Add</em></span>
           <span class="m-name"><img src="icons/261014_bardic_ios_180.png" alt="">Bardic</span>
           <span class="m-toggle">Open as Web App<i></i></span>
         </div>
-        <div class="itxt"><b>Tap Add</b><span>If you see <b>Open as Web App</b>, keep it on.</span></div>
+        <div class="itxt"><b id="step3-title">Tap Add</b><span id="step3-text">If you see <b>Open as Web App</b>, keep it on.</span></div>
       </li>
       <li>
         <div class="mock m-home" aria-hidden="true">
           <i></i><i></i><i></i><i></i><i></i><i></i><i></i><img src="icons/261014_bardic_ios_180.png" alt="">
         </div>
-        <div class="itxt"><b>Play from the Bardic icon</b><span>Close the browser, open Bardic from your Home Screen and turn your phone sideways.</span></div>
+        <div class="itxt"><b>Play from the Bardic icon</b><span>Close the browser, open Bardic from your Home Screen and turn it sideways.</span></div>
       </li>
     </ol>
-    <p class="muted small">Only once: iOS lets an app be added from a page through these steps only.</p>
+    <p class="muted small" id="inst-once">Only once: iOS lets an app be added from a page through these steps only.</p>
     <a class="back-link" href="../">Back to the Bardic page</a>
   </div>
   <div class="to-share" id="to-share" aria-hidden="true"><span id="to-share-label">Share</span><i></i></div>
@@ -286,7 +299,7 @@
       <label class="row-set toggle"><span>Crossfade music tracks<small>Starting a track fades out the one playing</small></span><input type="checkbox" id="opt-crossfade"><i></i></label>
       <label class="row-set toggle"><span>Silence between chapters<small>Opening another chapter fades out the sounds of the previous one over 4 s</small></span><input type="checkbox" id="opt-silence"><i></i></label>
       <label class="row-set toggle"><span>Keep screen awake<small>While a story is open, so the music never stops with the screen</small></span><input type="checkbox" id="opt-awake"><i></i></label>
-      <label class="row-set toggle"><span>Play with the silent switch on<small>Sounds still play when your iPhone is set to silent</small></span><input type="checkbox" id="opt-silent"><i></i></label>
+      <label class="row-set toggle"><span>Play with the silent switch on<small>Sounds still play when your iPhone or iPad is set to silent</small></span><input type="checkbox" id="opt-silent"><i></i></label>
     </section>
 
     <section>
@@ -330,12 +343,12 @@
         <button class="btn" type="button" data-action="export-all">Export every story</button>
         <button class="btn danger" type="button" data-action="wipe">Erase everything</button>
       </div>
-      <p class="muted small">Your stories live on this iPhone only. Export them now and then as .bardic files (to Files, iCloud Drive or AirDrop): it is your backup, and the way to share a story with another bard.</p>
+      <p class="muted small">Your stories live on this device only. Export them now and then as .bardic files (to Files, iCloud Drive or AirDrop): it is your backup, and the way to share a story with another bard.</p>
     </section>
 
     <section class="about">
       <h3>About</h3>
-      <p class="muted">Bardic for iPhone, <span id="app-version"></span>. <a href="../" target="_blank" rel="noopener">Bardic page</a>, <a href="../compagnie/recueil.html" target="_blank" rel="noopener">the Recueil</a>, <a href="https://discord.gg/EkcyrgKQT" target="_blank" rel="noopener">Discord</a></p>
+      <p class="muted">Bardic web app (<span id="app-device">iPhone</span>), <span id="app-version"></span>. <a href="../" target="_blank" rel="noopener">Bardic page</a>, <a href="../compagnie/recueil.html" target="_blank" rel="noopener">the Recueil</a>, <a href="https://discord.gg/EkcyrgKQT" target="_blank" rel="noopener">Discord</a></p>
     </section>
   </dialog>
 
