@@ -27,12 +27,16 @@
     stop: svg('<rect x="5.5" y="5.5" width="13" height="13" rx="2"/>', 14, true),
     random: svg('<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>', 14),
     star: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>', 16),
+    volDown: svg('<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M16 12h5"/>', 15),
+    volUp: svg('<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M16 12h5M18.5 9.5v5"/>', 15),
     starFill: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>', 16, true),
   };
 
   /* ---------------- Settings ---------------- */
-  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, silence: false, awake: false, master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], randomMax: 5 };
+  // vol: volume control on the cards of each row: 'hidden' (narrowest cards), 'simple' (two buttons, 25 % steps over 2 s) or 'full' (a slider).
+  const DEFAULTS = { theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, silence: false, awake: false, master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], randomMax: 5, vol: { music: 'hidden', ambience: 'hidden', events: 'hidden' } };
   const settings = Object.assign({}, DEFAULTS, readJSON('bardic.settings'));
+  settings.vol = Object.assign({}, DEFAULTS.vol, settings.vol || {});
   function readJSON(key) { try { return JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (e) { return {}; } }
   function save() { try { const cur = readJSON('bardic.settings'); localStorage.setItem('bardic.settings', JSON.stringify(Object.assign(cur, settings))); } catch (e) { /* private mode */ } }
 
@@ -165,7 +169,31 @@
     }
     setVol(v) {
       this.vol = v;
-      if (this.vg) this.vg.gain.setTargetAtTime(curve(v), ctx.currentTime, 0.03);
+      this.volMs = 0;
+      if (this.vg) { const g = this.vg.gain; g.cancelScheduledValues(ctx.currentTime); g.setTargetAtTime(curve(v), ctx.currentTime, 0.03); }
+    }
+    /** Simple volume buttons: one step is 25 %, reached smoothly over 2 s. */
+    stepVol(dir) {
+      const q = this.vol * 4;
+      const t = dir > 0 ? Math.min(1, (Math.floor(q + 1e-6) + 1) / 4) : Math.max(0, (Math.ceil(q - 1e-6) - 1) / 4);
+      if (t === this.vol) return;
+      const secs = Math.max(0.3, Math.abs(t - this.shownVol()) / 0.25 * 2);
+      this.volFrom = this.shownVol(); this.volAt = performance.now(); this.volMs = secs * 1000;
+      this.vol = t;
+      if (this.vg) {
+        const g = this.vg.gain, now = ctx.currentTime;
+        g.cancelScheduledValues(now);
+        g.setValueAtTime(g.value, now);
+        g.linearRampToValueAtTime(curve(t), now + secs);
+      }
+      this.paint();
+    }
+    /** The volume heard right now (follows a ramp in progress). */
+    shownVol() {
+      if (!this.volMs) return this.vol;
+      const f = Math.min(1, (performance.now() - this.volAt) / this.volMs);
+      if (f >= 1) { this.volMs = 0; return this.vol; }
+      return this.volFrom + (this.vol - this.volFrom) * f;
     }
     /** Absolute progress 0..1 including loops, or -1 for an infinite loop that is running. */
     progress() {
@@ -521,7 +549,7 @@
     const zones = $('#zones');
     zones.textContent = '';
     ZONES.forEach((zone) => {
-      const row = el('div', 'zrow');
+      const row = el('div', `zrow vm-${settings.vol[zone.id] || 'hidden'}`);
       row.style.setProperty('--z', zone.color);
       const label = el('div', 'zl');
       label.append(el('span', '', zone.label));
@@ -533,19 +561,25 @@
       zones.append(row);
     });
     zones.scrollTop = 0;
+    requestAnimationFrame(() => rollTitles(zones));
     story.all.forEach((v) => v.card && paintCard(v));
   }
 
   function buildCard(v) {
     const c = el('div', 'c');
     c.style.setProperty('--z', v.zone.color);
+    const mode = settings.vol[v.zone.id] || 'hidden';
+    c.classList.add(`vm-${mode}`);
     const head = el('div', 'ch');
-    const name = el('b', '', v.sound.name); name.title = v.sound.name;
+    // The title rolls inside its frame when it is longer than the card (see rollTitles).
+    const name = el('b', 'nm'); name.title = v.sound.name; name.append(el('span', '', v.sound.name));
     const rem = el('small');
     const loop = el('button', 'loop');
     loop.type = 'button'; loop.title = v.zone.id !== 'music' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
     loop.addEventListener('click', () => v.setLoop((v.loop + 1) % (v.zone.id !== 'music' ? 4 : 3)));
-    head.append(name, rem, loop);
+    head.append(name);
+    if (mode !== 'hidden') head.append(rem);
+    head.append(loop);
     const track = el('div', 'track'); const fill = el('div', 'fill'); track.append(fill);
     const ctrl = el('div', 'ctrl');
     const play = el('button', 'pb play'); play.type = 'button';
@@ -558,9 +592,18 @@
     vol.setAttribute('aria-label', `${v.sound.name} volume`);
     vol.style.setProperty('--z', v.zone.color); setP(vol);
     vol.addEventListener('input', () => { v.setVol(+vol.value); setP(vol); });
-    ctrl.append(play, end, vol);
+    let lvl = null;
+    if (mode === 'full') ctrl.append(play, end, vol);
+    else if (mode === 'simple') {
+      lvl = el('span', 'lvl');
+      const dn = el('button', 'vb'); dn.type = 'button'; dn.innerHTML = ICON.volDown; dn.setAttribute('aria-label', `Lower ${v.sound.name}`); dn.title = 'Lower';
+      const up = el('button', 'vb'); up.type = 'button'; up.innerHTML = ICON.volUp; up.setAttribute('aria-label', `Raise ${v.sound.name}`); up.title = 'Raise';
+      dn.addEventListener('click', () => v.stepVol(-1));
+      up.addEventListener('click', () => v.stepVol(1));
+      ctrl.append(play, end, dn, lvl, up);
+    } else ctrl.append(play, end, rem);
     c.append(head, track, ctrl);
-    v.card = { root: c, rem, loop, fill, play, end };
+    v.card = { root: c, rem, loop, fill, play, end, lvl };
     paintCard(v);
     return c;
   }
@@ -616,7 +659,28 @@
     }
     if (k.rem.textContent !== txt) k.rem.textContent = txt;
     k.rem.classList.toggle('warn', warn);
+    if (k.lvl) {
+      const pct = `${Math.round(v.shownVol() * 100)}`;
+      if (k.lvl.textContent !== pct) k.lvl.textContent = pct;
+      k.lvl.classList.toggle('moving', !!v.volMs);
+    }
   }
+
+  /* Titles longer than their card roll slowly back and forth inside it. */
+  function rollTitles(scope) {
+    scope.querySelectorAll('.nm').forEach((b) => {
+      const span = b.firstElementChild;
+      if (!span) return;
+      b.classList.remove('roll');
+      const over = span.scrollWidth - b.clientWidth;
+      if (over > 2) {
+        b.classList.add('roll');
+        b.style.setProperty('--roll', `${-over - 4}px`);
+        b.style.setProperty('--rd', `${(3 + over / 18).toFixed(1)}s`);
+      }
+    });
+  }
+  window.addEventListener('resize', () => { if (story) rollTitles($('#zones')); });
 
   /* ---------------- Master ---------------- */
   function pauseAll() {
@@ -706,7 +770,7 @@
     src.start();
     sb.sources.add(src);
     src.onended = () => sb.sources.delete(src);
-    if (btn) { btn.classList.remove('fire'); void btn.offsetWidth; btn.classList.add('fire'); }
+    if (btn) { btn.classList.remove('fire'); void btn.offsetWidth; btn.classList.add('fire'); btn.addEventListener('animationend', () => btn.classList.remove('fire'), { once: true }); }
   }
   function stopSoundbox() {
     sb.sources.forEach((s) => { try { s.stop(); } catch (e) {} });
@@ -726,6 +790,11 @@
     $('#random-more').addEventListener('click', () => stepRandom(1));
     $('#opt-crossfade').addEventListener('change', (e) => { settings.crossfade = e.target.checked; save(); });
     $('#opt-silence').addEventListener('change', (e) => { settings.silence = e.target.checked; save(); });
+    document.querySelectorAll('[id^="vol-"][data-zone]').forEach((g) => g.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+      settings.vol[g.dataset.zone] = b.dataset.v; save(); syncSettings();
+      // Rebuild the cards of the table with their new controls.
+      if (story) { story.all.forEach((v) => { v.card = null; }); setChapter(chapterIdx); }
+    })));
     if (window.BardAccount) window.BardAccount.mount($('#bard-account'));
     $('#opt-awake').addEventListener('change', (e) => { settings.awake = e.target.checked; save(); settings.awake ? acquireWake() : releaseWake(); });
     syncSettings();
@@ -740,6 +809,7 @@
   function syncSettings() {
     document.querySelectorAll('#theme-pick .theme').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === BardicThemes.resolve(settings.theme))));
     document.querySelectorAll('#mode-pick button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.mode)));
+    document.querySelectorAll('[id^="vol-"][data-zone]').forEach((g) => g.querySelectorAll('button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.vol[g.dataset.zone]))));
     document.querySelectorAll('#fade-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === settings.fade)));
     $('#random-val').textContent = `${randomMax()} s`;
     $('#random-note').textContent = `Plays again after a pause of 0.5\u00a0s to ${randomMax()}\u00a0s`;
@@ -816,7 +886,7 @@
   setInterval(() => {
     if (!story || document.hidden) return;
     const ch = story.chapters[chapterIdx];
-    ZONES.forEach((z) => ch.voices[z.id].forEach((v) => (v.active || v.state === 'paused' || v.waiting || heldRandom.includes(v)) && paintCard(v)));
+    ZONES.forEach((z) => ch.voices[z.id].forEach((v) => (v.active || v.state === 'paused' || v.waiting || heldRandom.includes(v) || v.volMs) && paintCard(v)));
     story.chapters.forEach((c) => c.railBtn.classList.toggle('playing', ZONES.some((z) => c.voices[z.id].some((v) => v.active || v.waiting))));
     if (pausedByAll.length && !pausedByAll.some((v) => v.state === 'paused')) { pausedByAll = []; paintMaster(); }
   }, 66);

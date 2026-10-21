@@ -317,3 +317,9 @@ html.pc .discord-bar { width: min(100%, 906px); }
 .discord-bar b { display: block; font-family: 'Cormorant SC', serif; font-size: 24px; line-height: 1.1; }
 .discord-bar span span { color: var(--muted); font-size: 15px; }
 .discord-bar .go { flex: none; color: var(--accent); }
+
+/* Default volume of each sound (the level it starts at on the table). */
+.sc .edvol { display: flex; align-items: center; gap: 8px; cursor: default; }
+.sc .edvol .vl { font-size: 12px; color: var(--muted); }
+.sc .edvol input[type="range"] { flex: 1; height: 24px; }
+.sc .edvol .vp { width: 26px; text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 500; }

@@ -28,7 +28,7 @@ html.mode-app input[type="text"], html.mode-app input[type="search"], html.mode-
 /* ---------- Landscape only ---------- */
 .rotate { display: none; }
 @media (orientation: portrait) {
-  .rotate {
+  html:not(.allow-portrait) .rotate {
     position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 24px;
   }
@@ -164,7 +164,6 @@ html.mode-app input[type="text"], html.mode-app input[type="search"], html.mode-
 .pad-g { grid-column: 1 / -1; margin: 6px 2px 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .pad-g:first-child { margin-top: 0; }
 .pad { min-height: 64px; }
-.pad.shared { border-style: dashed; }
 .soundbox { padding-right: env(safe-area-inset-right); }
 .pads { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
 
@@ -400,3 +399,24 @@ html.mode-app input[type="range"].dragging::-webkit-slider-thumb { transform: sc
 .scard.damaged { border-top-color: var(--evt); }
 .scard.damaged .meta::after { content: "Its sounds all play the first one. Repair them to play this story."; display: block; white-space: normal; color: var(--evt); margin-top: 4px; }
 .scard .btn.repair { height: 38px; justify-content: center; background: var(--evt); border-color: var(--evt); color: var(--on-z); }
+
+/* ---------- Editor: default volume of each sound ---------- */
+.sc .edvol { display: flex; align-items: center; gap: 8px; }
+.sc .edvol .vl { font-size: 12px; color: var(--muted); }
+.sc .edvol input[type="range"] { flex: 1; height: 28px; }
+.sc .edvol .vp { width: 28px; text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.set-note { margin: -4px 0 6px; }
+
+/* ---------- Upright phone (Lock landscape off) ---------- */
+@media (orientation: portrait) and (max-width: 700px) {
+  html.allow-portrait .ed-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  html.allow-portrait .ed-body .rail { flex-direction: row; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--line); padding: 6px 8px; }
+  html.allow-portrait .ed-body .rail h3 { display: none; }
+  html.allow-portrait .ed-body .rail .chap:not(.sbchap) { width: auto; flex: none; max-width: 70vw; grid-template-areas: "n title mv"; grid-template-columns: 16px auto auto; }
+  html.allow-portrait .ed-body .rail .chap:not(.sbchap) .cnt { display: none; }
+  html.allow-portrait .ed-body .rail .chap:not(.sbchap) .t > span:first-child { -webkit-line-clamp: 1; white-space: nowrap; }
+  html.allow-portrait .ed-body .add-chap, html.allow-portrait .ed-body .sbchap { width: auto; flex: none; margin: 0; }
+  html.allow-portrait .ed .dz { grid-template-columns: minmax(0, 1fr); }
+  html.allow-portrait .lib-doors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.allow-portrait .sbar .tabs a { padding: 0 8px; }
+}

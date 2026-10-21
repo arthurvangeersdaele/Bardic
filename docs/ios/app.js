@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261016.2';
+  const VERSION = '261021.1';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -38,6 +38,8 @@
     pause: svg('<rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/>', 16, true),
     stop: svg('<rect x="5.5" y="5.5" width="13" height="13" rx="2"/>', 14, true),
     random: svg('<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>', 14),
+    volDown: svg('<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M16 12h5"/>', 15),
+    volUp: svg('<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M16 12h5M18.5 9.5v5"/>', 15),
     star: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>', 16),
     starFill: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>', 16, true),
     plus: svg('<path d="M12 5v14M5 12h14"/>', 16),
@@ -62,8 +64,12 @@
   const DEFAULTS = {
     theme: 'obsidian', mode: 'dark', fade: 2000, crossfade: true, silence: false, awake: true, silent: true,
     master: 0.8, sbVol: 0.8, sbOpen: null, pins: [], randomMax: 5,
+    // Volume on the table cards, per row: 'hidden' (no control, narrowest cards), 'simple' (two buttons) or 'full' (a slider).
+    vol: { music: 'hidden', ambience: 'hidden', events: 'hidden' },
+    landscape: true,
   };
   const settings = Object.assign({}, DEFAULTS, readJSON(KEY));
+  settings.vol = Object.assign({}, DEFAULTS.vol, settings.vol || {});
   function readJSON(key) { try { return JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (e) { return {}; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch (e) { /* storage full */ } }
 
@@ -755,7 +761,7 @@
   }, 500);
   function openEditor(story, ch) {
     const fresh = !ed || ed.story.uid !== story.uid;
-    if (fresh) { stopPreview(); ed = { story, ch: 0 }; }
+    if (fresh) { stopPreview(); ed = { story, ch: 0 }; forgeTip(); }
     ed.ch = ch === 'soundbox' ? 'soundbox' : Math.min(ch, story.chapters.length - 1);
     show('editor');
     document.title = `${story.title} | Bardic`;
@@ -766,6 +772,18 @@
     renderEdMain();
     acquireWake();
   }
+  /* On a phone or a tablet, building a story is easier in the website's Story builder: say so on entering the editor. */
+  const tipShown = new Set();
+  async function forgeTip() {
+    // Once per story each time the app opens (not again when coming back from the table).
+    if (settings.noForgeTip || !ed || tipShown.has(ed.story.uid)) return;
+    tipShown.add(ed.story.uid);
+    const v = await ask('Forging a story?', 'For creating a story, the Story builder of the Bardic website, on a computer, is the most comfortable: room for every chapter and your MP3s dropped in with the mouse. Forge it there, then import the .bardic here. The editor of this app is made for quick changes.', [
+      { label: 'Do not show again', value: 'never' }, { label: 'Got it', value: 'ok', cls: 'primary' },
+    ]);
+    if (v === 'never') { settings.noForgeTip = true; save(); }
+  }
+
   function leaveEditor() {
     if (!ed) return;
     saveSoon.flush();
@@ -933,7 +951,22 @@
     // Soundbox effects fire once per tap: no loop button for them.
     bottom.append(play, meta, mv);
     if (zone.id !== 'soundbox') bottom.append(loop);
-    c.append(top, bottom);
+    // Default volume of the sound: the level it starts at on the table.
+    const volRow = el('label', 'row edvol');
+    volRow.append(el('span', 'vl', 'Volume'));
+    const vr = el('input');
+    vr.type = 'range'; vr.min = 0; vr.max = 1; vr.step = 0.05; vr.value = typeof s.volume === 'number' ? s.volume : 0.75;
+    vr.setAttribute('aria-label', `Default volume of ${s.name}`);
+    vr.style.setProperty('--z', zone.color); setP(vr);
+    const vp = el('b', 'vp', `${Math.round(+vr.value * 100)}`);
+    vr.addEventListener('input', () => {
+      s.volume = Math.round(+vr.value * 100) / 100;
+      vp.textContent = `${Math.round(s.volume * 100)}`;
+      setP(vr);
+      dirty();
+    });
+    volRow.append(vr, vp);
+    c.append(top, bottom, volRow);
     return c;
   }
 
@@ -1244,7 +1277,32 @@
       this.vol = v;
       this.sound.volume = Math.round(v * 100) / 100;
       tableDirty();
-      if (this.vg) this.vg.gain.setTargetAtTime(curve(v), ctx.currentTime, 0.03);
+      if (this.vg) { const g = this.vg.gain; g.cancelScheduledValues(ctx.currentTime); g.setTargetAtTime(curve(v), ctx.currentTime, 0.03); }
+    }
+    /** Simple volume buttons: one step is 25 %, reached smoothly over 2 s. */
+    stepVol(dir) {
+      const q = this.vol * 4;
+      const t = dir > 0 ? Math.min(1, (Math.floor(q + 1e-6) + 1) / 4) : Math.max(0, (Math.ceil(q - 1e-6) - 1) / 4);
+      if (t === this.vol) return;
+      const secs = Math.max(0.3, Math.abs(t - this.shownVol()) / 0.25 * 2);
+      this.volFrom = this.shownVol(); this.volAt = performance.now(); this.volMs = secs * 1000;
+      this.vol = t;
+      this.sound.volume = t;
+      tableDirty();
+      if (this.vg) {
+        const g = this.vg.gain, now = ctx.currentTime;
+        g.cancelScheduledValues(now);
+        g.setValueAtTime(g.value, now);
+        g.linearRampToValueAtTime(curve(t), now + secs);
+      }
+      this.paint();
+    }
+    /** The volume heard right now (follows a ramp in progress). */
+    shownVol() {
+      if (!this.volMs) return this.vol;
+      const f = Math.min(1, (performance.now() - this.volAt) / this.volMs);
+      if (f >= 1) { this.volMs = 0; return this.vol; }
+      return this.volFrom + (this.vol - this.volFrom) * f;
     }
     progress() {
       if (this.state === 'ready' || this.state === 'loading' || this.state === 'error') return 0;
@@ -1388,7 +1446,7 @@
     const zones = $('#zones');
     zones.textContent = '';
     ZONES.forEach((zone) => {
-      const row = el('div', 'zrow');
+      const row = el('div', `zrow vm-${(settings.vol && settings.vol[zone.id]) || 'hidden'}`);
       row.style.setProperty('--z', zone.color);
       const label = el('div', 'zl');
       label.append(el('span', '', zone.label));
@@ -1400,19 +1458,25 @@
       zones.append(row);
     });
     zones.scrollTop = 0;
+    requestAnimationFrame(() => rollTitles(zones));
     tbl.all.forEach((v) => v.card && paintCard(v));
   }
 
   function buildCard(v) {
     const c = el('div', 'c');
     c.style.setProperty('--z', v.zone.color);
+    const mode = (settings.vol && settings.vol[v.zone.id]) || 'hidden';
+    c.classList.add(`vm-${mode}`);
     const head = el('div', 'ch');
-    const name = el('b', '', v.sound.name); name.title = v.sound.name;
+    // The title rolls inside its frame when it is longer than the card (see rollTitles).
+    const name = el('b', 'nm'); name.title = v.sound.name; name.append(el('span', '', v.sound.name));
     const rem = el('small');
     const loop = el('button', 'loop');
     loop.type = 'button'; loop.title = v.zone.id !== 'music' ? 'Loop: once, twice, forever, random' : 'Loop: once, twice, forever';
     loop.addEventListener('click', () => v.setLoop((v.loop + 1) % (v.zone.id !== 'music' ? 4 : 3)));
-    head.append(name, rem, loop);
+    head.append(name);
+    if (mode !== 'hidden') head.append(rem);
+    head.append(loop);
     const track = el('div', 'track'); const fill = el('div', 'fill'); track.append(fill);
     const ctrl = el('div', 'ctrl');
     const play = el('button', 'pb play'); play.type = 'button';
@@ -1425,9 +1489,16 @@
     vol.setAttribute('aria-label', `${v.sound.name} volume`);
     vol.style.setProperty('--z', v.zone.color); setP(vol);
     vol.addEventListener('input', () => { v.setVol(+vol.value); setP(vol); });
-    ctrl.append(play, end, vol);
+    let lvl = null;
+    if (mode === 'full') ctrl.append(play, end, vol);
+    else if (mode === 'simple') {
+      lvl = el('span', 'lvl');
+      const dn = btn('vb', ICON.volDown, `Lower ${v.sound.name}`, () => v.stepVol(-1));
+      const up = btn('vb', ICON.volUp, `Raise ${v.sound.name}`, () => v.stepVol(1));
+      ctrl.append(play, end, dn, lvl, up);
+    } else ctrl.append(play, end, rem);
     c.append(head, track, ctrl);
-    v.card = { root: c, rem, loop, fill, play, end };
+    v.card = { root: c, rem, loop, fill, play, end, lvl };
     paintCard(v);
     return c;
   }
@@ -1483,7 +1554,28 @@
     }
     if (k.rem.textContent !== txt) k.rem.textContent = txt;
     k.rem.classList.toggle('warn', warn);
+    if (k.lvl) {
+      const pct = `${Math.round(v.shownVol() * 100)}`;
+      if (k.lvl.textContent !== pct) k.lvl.textContent = pct;
+      k.lvl.classList.toggle('moving', !!v.volMs);
+    }
   }
+
+  /* Titles longer than their card roll slowly back and forth inside it. */
+  function rollTitles(scope) {
+    scope.querySelectorAll('.nm').forEach((b) => {
+      const span = b.firstElementChild;
+      if (!span) return;
+      b.classList.remove('roll');
+      const over = span.scrollWidth - b.clientWidth;
+      if (over > 2) {
+        b.classList.add('roll');
+        b.style.setProperty('--roll', `${-over - 4}px`);
+        b.style.setProperty('--rd', `${(3 + over / 18).toFixed(1)}s`);
+      }
+    });
+  }
+  window.addEventListener('resize', () => { if (tbl) rollTitles($('#zones')); });
 
   function pauseAll() {
     if (!tbl) return;
@@ -1601,7 +1693,7 @@
     src.start();
     sb.sources.add(src);
     src.onended = () => sb.sources.delete(src);
-    if (b) { b.classList.remove('fire'); void b.offsetWidth; b.classList.add('fire'); }
+    if (b) { b.classList.remove('fire'); void b.offsetWidth; b.classList.add('fire'); b.addEventListener('animationend', () => b.classList.remove('fire'), { once: true }); }
   }
   function stopSoundbox() {
     sb.sources.forEach((s) => { try { s.stop(); } catch (e) { /* already stopped */ } });
@@ -1623,7 +1715,7 @@
     if (!tbl || document.hidden || screen !== 'table') return;
     const ch = tbl.chapters[chapterIdx];
     if (!ch) return;
-    ZONES.forEach((z) => ch.voices[z.id].forEach((v) => (v.active || v.state === 'paused' || v.waiting || heldRandom.includes(v)) && paintCard(v)));
+    ZONES.forEach((z) => ch.voices[z.id].forEach((v) => (v.active || v.state === 'paused' || v.waiting || heldRandom.includes(v) || v.volMs) && paintCard(v)));
     tbl.chapters.forEach((c) => c.railBtn.classList.toggle('playing', ZONES.some((z) => c.voices[z.id].some((v) => v.active || v.waiting))));
     if (pausedByAll.length && !pausedByAll.some((v) => v.state === 'paused')) { pausedByAll = []; paintMaster(); }
   }, 66);
@@ -1658,6 +1750,12 @@
     $('#opt-silence').addEventListener('change', (e) => { settings.silence = e.target.checked; save(); });
     $('#opt-awake').addEventListener('change', (e) => { settings.awake = e.target.checked; save(); settings.awake ? acquireWake() : releaseWake(); });
     $('#opt-silent').addEventListener('change', (e) => { settings.silent = e.target.checked; save(); applyAudioSession(); });
+    document.querySelectorAll('[id^="vol-"][data-zone]').forEach((g) => g.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+      settings.vol[g.dataset.zone] = b.dataset.v; save(); syncSettings();
+      // Rebuild the cards of the table with their new controls.
+      if (tbl) { tbl.all.forEach((v) => { v.card = null; }); setChapter(chapterIdx); }
+    })));
+    $('#opt-landscape').addEventListener('change', (e) => { settings.landscape = e.target.checked; save(); applyOrientation(); });
     if (window.BardAccount) window.BardAccount.mount($('#bard-account'));
     $('#app-version').textContent = `version ${VERSION}`;
     syncSettings();
@@ -1671,6 +1769,8 @@
   function syncSettings() {
     document.querySelectorAll('#theme-pick .theme').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === BardicThemes.resolve(settings.theme))));
     document.querySelectorAll('#mode-pick button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.mode)));
+    document.querySelectorAll('[id^="vol-"][data-zone]').forEach((g) => g.querySelectorAll('button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === settings.vol[g.dataset.zone]))));
+    $('#opt-landscape').checked = settings.landscape;
     document.querySelectorAll('#fade-pick button').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.v === settings.fade)));
     $('#random-val').textContent = `${randomMax()} s`;
     $('#random-note').textContent = `Plays again after a pause of 0.5\u00a0s to ${randomMax()}\u00a0s`;
@@ -1863,6 +1963,21 @@
     input.addEventListener('pointerup', up);
     input.addEventListener('pointercancel', up);
   }, { passive: false });
+
+  /* ================= Orientation ================= */
+  // iOS does not let a web app lock the screen: with Lock landscape on, an upright phone shows the
+  // turn-your-phone screen. Where the browser can lock (Android), it is asked to.
+  function applyOrientation() {
+    root.classList.toggle('allow-portrait', !settings.landscape);
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        if (settings.landscape) screen.orientation.lock('landscape').catch(() => {});
+        else if (screen.orientation.unlock) screen.orientation.unlock();
+      }
+    } catch (e) { /* not supported */ }
+    if (tbl) requestAnimationFrame(() => rollTitles($('#zones')));
+  }
+  applyOrientation();
 
   /* ================= Updates ================= */
   let updateReady = false;

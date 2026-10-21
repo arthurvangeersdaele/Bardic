@@ -409,7 +409,26 @@
     // Soundbox effects fire once per tap: no loop button for them.
     bottom.append(play, meta, cut);
     if (zone !== 'soundbox') bottom.append(loop);
-    c.append(top, bottom);
+    // Default volume: the level the sound starts at on the table, in every Bardic.
+    const volRow = el('label', 'row edvol');
+    volRow.append(el('span', 'vl', 'Volume'));
+    const vr = el('input');
+    vr.type = 'range'; vr.min = 0; vr.max = 1; vr.step = 0.05; vr.value = typeof s.volume === 'number' ? s.volume : 0.75;
+    vr.setAttribute('aria-label', `Default volume of ${s.name}`);
+    vr.style.setProperty('--z', ZONE_INFO[zone].color);
+    vr.style.setProperty('--p', `${vr.value * 100}%`);
+    vr.draggable = false;
+    vr.addEventListener('mousedown', (e) => e.stopPropagation());
+    vr.addEventListener('dragstart', (e) => { e.preventDefault(); e.stopPropagation(); });
+    const vp = el('b', 'vp', `${Math.round(+vr.value * 100)}`);
+    vr.addEventListener('input', () => {
+      s.volume = Math.round(+vr.value * 100) / 100;
+      vp.textContent = `${Math.round(s.volume * 100)}`;
+      vr.style.setProperty('--p', `${vr.value * 100}%`);
+      if (playingId === s.id) player.volume = s.volume;
+    });
+    volRow.append(vr, vp);
+    c.append(top, bottom, volRow);
     c.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/x-bardic-sound', s.id);
       e.dataTransfer.effectAllowed = 'move';

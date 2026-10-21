@@ -218,9 +218,9 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .pad .k { position: absolute; left: 10px; top: 8px; font-size: 11px; color: var(--muted); font-weight: 500; }
 .pad .pin { position: absolute; right: 4px; top: 4px; width: 26px; height: 26px; border: 0; background: transparent; color: var(--muted); padding: 0; display: grid; place-items: center; border-radius: 6px; }
 .pad.pinned .pin { color: var(--accent); }
-.pad.fire { border-color: var(--accent); animation: flash .5s ease-out; }
+.pad.fire { animation: flash .5s ease-out; }
 .pad:disabled { color: var(--muted); }
-@keyframes flash { from { background: color-mix(in srgb, var(--accent) 35%, var(--card)); } }
+@keyframes flash { from { background: color-mix(in srgb, var(--accent) 35%, var(--card)); border-color: var(--accent); } }
 .sb-hint { font-size: 12px; color: var(--muted); padding: 4px 16px 14px; margin: 0; }
 .sb-empty { grid-column: 1 / -1; color: var(--muted); font-size: 14px; border: 1px dashed var(--line); border-radius: 12px; padding: 14px; }
 .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.35); z-index: 3; }
@@ -360,3 +360,33 @@ kbd { font: 600 12px/1 ui-monospace, Menlo, Consolas, monospace; border: 1px sol
 .dropbig .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
 .dropbig.err > span#drop-sub { color: var(--evt); }
 .btn-link { color: var(--accent); font-weight: 600; }
+
+/* ---------- Table cards: volume modes (Settings), narrow cards, rolling titles. Shared with the iPhone app. ---------- */
+/* Card width per row, from the volume mode chosen in Settings. */
+.zrow { --cw: 228px; }
+.zrow.vm-hidden { --cw: 148px; }
+.zrow.vm-simple { --cw: 196px; }
+.table .cards, .cards { grid-template-columns: repeat(auto-fill, var(--cw, 232px)); }
+@media (max-width: 640px), (max-height: 520px) {
+  .table .c { width: var(--cw, 228px); }
+}
+.c .ch { gap: 5px; }
+.c .nm { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; font-weight: 600; font-size: 15px; }
+.c .nm > span { display: inline-block; }
+/* A title too long for its card rolls back and forth inside it. */
+.c .nm.roll { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6px, #000 calc(100% - 10px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 6px, #000 calc(100% - 10px), transparent 100%); }
+.c .nm.roll > span { padding: 0 4px; animation: roll var(--rd, 5s) ease-in-out infinite alternate; }
+@keyframes roll { 0%, 18% { transform: translateX(0); } 82%, 100% { transform: translateX(var(--roll, 0)); } }
+@media (prefers-reduced-motion: reduce) { .c .nm.roll > span { animation: none; } }
+.c.vm-hidden .ctrl small { flex: 1; text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.c.vm-hidden .ctrl small.warn { color: var(--evt); font-weight: 600; }
+.c.vm-simple .ctrl { gap: 4px; }
+.c .vb {
+  width: 30px; height: 30px; flex: none; border-radius: 8px; border: 1px solid var(--line); background: transparent;
+  display: grid; place-items: center; padding: 0; color: var(--text);
+}
+.c .vb:active { background: var(--line); }
+.c .lvl { flex: 1; min-width: 26px; text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.c .lvl.moving { color: var(--z); }
+
+.set-note { margin: -4px 0 6px; font-size: 13px; }

@@ -290,6 +290,40 @@
     </section>
 
     <section>
+      <h3>Volume on the cards</h3>
+      <p class="muted small set-note">Hidden keeps the cards narrow. Simple adds two buttons that move the volume by 25&nbsp;% steps, smoothly over 2&nbsp;s. Full adds a slider. Each sound starts at the volume set in the story editor.</p>
+      <div class="row-set">
+        <span>Music</span>
+        <div class="seg small" id="vol-music" data-zone="music" role="radiogroup" aria-label="Volume on the Music cards">
+          <button type="button" role="radio" data-v="hidden">Hidden</button>
+          <button type="button" role="radio" data-v="simple">Simple</button>
+          <button type="button" role="radio" data-v="full">Full</button>
+        </div>
+      </div>
+      <div class="row-set">
+        <span>Ambiances</span>
+        <div class="seg small" id="vol-ambience" data-zone="ambience" role="radiogroup" aria-label="Volume on the Ambiances cards">
+          <button type="button" role="radio" data-v="hidden">Hidden</button>
+          <button type="button" role="radio" data-v="simple">Simple</button>
+          <button type="button" role="radio" data-v="full">Full</button>
+        </div>
+      </div>
+      <div class="row-set">
+        <span>Events</span>
+        <div class="seg small" id="vol-events" data-zone="events" role="radiogroup" aria-label="Volume on the Events cards">
+          <button type="button" role="radio" data-v="hidden">Hidden</button>
+          <button type="button" role="radio" data-v="simple">Simple</button>
+          <button type="button" role="radio" data-v="full">Full</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h3>Screen</h3>
+      <label class="row-set toggle"><span>Lock landscape<small>Off: Bardic also works with the phone upright</small></span><input type="checkbox" id="opt-landscape"><i></i></label>
+    </section>
+
+    <section>
       <h3>Storage</h3>
       <div class="store-info" id="store-info">Checking…</div>
       <div class="set-acts">
