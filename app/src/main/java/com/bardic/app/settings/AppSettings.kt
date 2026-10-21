@@ -124,6 +124,10 @@ class AppSettings(context: Context) {
     fun changeVolAmbience(v: VolumeMode) { volAmbience = v; prefs.edit().putString("volAmbience", v.id).apply() }
     fun changeVolEvents(v: VolumeMode) { volEvents = v; prefs.edit().putString("volEvents", v.id).apply() }
     fun changeLandscape(v: Boolean) { landscape = v; prefs.edit().putBoolean("landscape", v).apply() }
+    /** Bardic is now Troubadour: the moving message is no longer shown once the stories have moved. */
+    var movedDone by mutableStateOf(prefs.getBoolean("movedDone", false))
+        private set
+    fun markMovedDone() { movedDone = true; prefs.edit().putBoolean("movedDone", true).apply() }
     fun hideForgeTip() { forgeTip = false; prefs.edit().putBoolean("forgeTip", false).apply() }
     fun changeSoundboxOpen(v: Boolean) { soundboxOpen = v; prefs.edit().putBoolean("sbOpen", v).apply() }
     fun setAccount(token: String, login: String, name: String) {

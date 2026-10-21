@@ -138,9 +138,27 @@ class AppModel(private val app: Context, private val host: Host, val scope: Coro
     fun start() {
         scope.launch {
             withContext(Dispatchers.IO) { Library.reload() }
-            // A little after the opening, look for a newer build (never in the middle of a session).
-            delay(4000)
-            checkForUpdate(manual = false)
+            delay(3200)
+            movedNotice()
+        }
+    }
+
+    /** Bardic is now Troubadour: each launch, until the stories have moved, say how to take them along. */
+    private suspend fun movedNotice() {
+        if (settings.movedDone) return
+        val r = ask(
+            "Bardic is now Troubadour",
+            "Same app, same stories, a new name. Troubadour installs next to Bardic, as a new app. To take your stories along: 1. Export every story here. 2. Install Troubadour from its page. 3. In Troubadour, Import the exported files. Then you can uninstall Bardic.",
+            listOf(
+                AskButton("Done, do not show again", "done"),
+                AskButton("Export every story", "export"),
+                AskButton("Get Troubadour", "open", BtnKind.PRIMARY),
+            ),
+        )
+        when (r?.value) {
+            "done" -> settings.markMovedDone()
+            "export" -> exportAll()
+            "open" -> openLink("https://arthurvangeersdaele.github.io/Troubadour/")
         }
     }
 

@@ -6,7 +6,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '261021.2';
+  const VERSION = '261021.3';
   const root = document.documentElement;
   if (!root.classList.contains('mode-app')) {
     // In a browser tab or on another device the page only shows its notice: register nothing, store nothing.
@@ -1993,6 +1993,19 @@
   window.addEventListener('hashchange', () => setTimeout(reloadIfIdle, 600));
 
   /* ================= Boot ================= */
+  /* Bardic is now Troubadour: each launch, until the stories have moved, say how to take them along. */
+  async function movedNotice() {
+    if (settings.movedDone) return;
+    const v = await ask('Bardic is now Troubadour', `Same app, same stories, a new name and a new home. To take your stories along: 1. Export every story here (to Files or iCloud Drive). 2. Install Troubadour from its page and add it to your Home Screen. 3. In Troubadour, Import the exported files. Then you can remove Bardic from your Home Screen.`, [
+      { label: 'Done, do not show again', value: 'done' },
+      { label: 'Export every story', value: 'export' },
+      { label: 'Open Troubadour', value: 'open', cls: 'primary' },
+    ]);
+    if (v === 'done') { settings.movedDone = true; save(); }
+    else if (v === 'export') { await refresh(); exportStories(STORIES); }
+    else if (v === 'open') window.open('https://arthurvangeersdaele.github.io/Troubadour/ios/', '_blank');
+  }
+
   async function boot() {
     renderStaticIcons();
     buildSettings();
@@ -2019,6 +2032,7 @@
     }
     await route();
     scanDamage().catch(() => {});
+    movedNotice();
   }
   boot();
 })();
