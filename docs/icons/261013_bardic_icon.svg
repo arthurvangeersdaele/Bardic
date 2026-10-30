@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Bardic">
-  <title>Bardic</title>
-  <rect width="1024" height="1024" rx="256" fill="#15151B"/>
-  <rect x="224" y="416" width="128" height="320" rx="64" fill="#E0A84B"/>
-  <rect x="448" y="256" width="128" height="512" rx="64" fill="#4FB3A5"/>
-  <rect x="672" y="352" width="128" height="384" rx="64" fill="#E06A63"/>
-</svg>
